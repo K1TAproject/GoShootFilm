@@ -1,0 +1,16 @@
+* text=auto
+
+*.ts text eol=lf
+*.vue text eol=lf
+*.rs text eol=lf
+*.toml text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.svg text eol=lf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.ico binary
+*.icns binary
+*.db binary

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="420" viewBox="0 0 640 420" role="img" aria-label="Film stock placeholder">
+  <rect width="640" height="420" fill="#111827"/>
+  <rect x="88" y="110" width="464" height="200" rx="14" fill="#1f2937" stroke="#374151" stroke-width="3"/>
+  <rect x="132" y="146" width="376" height="128" rx="8" fill="#0f172a"/>
+  <text x="320" y="218" text-anchor="middle" fill="#9ca3af" font-family="Arial, sans-serif" font-size="34">FILM STOCK</text>
+</svg>
