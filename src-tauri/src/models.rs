@@ -1,4 +1,4 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -53,6 +53,65 @@ pub struct PhotoResponse {
     pub lab_scan_path: Option<String>,
     pub edit_scan_path: Option<String>,
     pub is_favorite: bool,
+    pub lab_original_name: Option<String>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ImportDraft {
+    pub source_path: String,
+    pub frame_number: Option<i32>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PhotoImportEntry {
+    pub source_path: String,
+    pub frame_number: i32,
+    pub conflict_action: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ImportAnalysisItemResponse {
+    pub source_path: String,
+    pub file_name: String,
+    pub frame_number: Option<i32>,
+    pub existing_version: bool,
+    pub paired_version: bool,
+    pub issue: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ImportResultResponse {
+    pub imported_count: usize,
+    pub updated_count: usize,
+    pub skipped_count: usize,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LabPreviewResponse {
+    pub photo_id: i64,
+    pub preview_path: String,
+    pub original_path: String,
+    pub original_name: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LabOriginalResponse {
+    pub photo_id: i64,
+    pub path: String,
+    pub file_name: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ExportOriginalResponse {
+    pub status: String,
+    pub path: String,
 }
 
 #[derive(Debug, Clone, Serialize)]

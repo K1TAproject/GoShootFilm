@@ -42,6 +42,61 @@ export interface Photo {
   labScanPath?: string
   editScanPath?: string
   isFavorite: boolean
+  labOriginalName?: string
+}
+
+export type PhotoVersion = 'edit' | 'lab'
+export type ImportConflictAction = 'add' | 'ask' | 'skip' | 'replace' | 'cancel'
+
+export interface ImportDraft {
+  sourcePath: string
+  frameNumber?: number
+}
+
+export interface ImportAnalysisItem {
+  sourcePath: string
+  fileName: string
+  frameNumber?: number
+  existingVersion: boolean
+  pairedVersion: boolean
+  issue?: string
+  conflictAction: ImportConflictAction
+}
+
+export interface PhotoImportEntry {
+  sourcePath: string
+  frameNumber: number
+  conflictAction: ImportConflictAction
+}
+
+export interface ImportResult {
+  importedCount: number
+  updatedCount: number
+  skippedCount: number
+}
+
+export interface LabPreview {
+  photoId: number
+  previewPath: string
+  originalPath: string
+  originalName: string
+}
+
+export interface LabPreviewState {
+  loading: boolean
+  previewPath?: string
+  error?: string
+}
+
+export interface LabOriginal {
+  photoId: number
+  path: string
+  fileName: string
+}
+
+export interface ExportOriginalResult {
+  status: 'exists' | 'saved'
+  path: string
 }
 
 export interface RollDetail extends RollSummary {

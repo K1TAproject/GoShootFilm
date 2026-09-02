@@ -19,10 +19,12 @@ tauri-build = { version = "2", features = [] }
 
 [dependencies]
 tauri = { version = "2", features = ["protocol-asset"] }
+tauri-plugin-opener = "2"
 serde = { version = "1", features = ["derive"] }
 sqlx = { version = "0.8", features = ["sqlite", "runtime-tokio", "tls-rustls", "macros"] }
 tokio = { version = "1.0", features = ["full"] }
 tauri-plugin-dialog = "2"
+image = { version = "0.24", default-features = false, features = ["png", "jpeg", "tiff", "webp", "bmp", "gif"] }
 
 # Read the optimization guideline for more details: https://tauri.app/concept/size/#cargo-configuration
 [profile.release]

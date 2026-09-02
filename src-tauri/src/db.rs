@@ -11,6 +11,7 @@ static MIGRATOR: sqlx::migrate::Migrator = sqlx::migrate!("./migrations");
 pub struct DatabaseResources {
     pub pool: SqlitePool,
     pub media_dir: PathBuf,
+    pub preview_dir: PathBuf,
 }
 
 pub async fn init_db(app: &tauri::App) -> Result<DatabaseResources, Box<dyn std::error::Error>> {
@@ -34,8 +35,14 @@ pub async fn init_db(app: &tauri::App) -> Result<DatabaseResources, Box<dyn std:
 
     let media_dir = app_dir.join("media");
     fs::create_dir_all(&media_dir)?;
+    let preview_dir = app_dir.join("previews");
+    fs::create_dir_all(&preview_dir)?;
 
-    Ok(DatabaseResources { pool, media_dir })
+    Ok(DatabaseResources {
+        pool,
+        media_dir,
+        preview_dir,
+    })
 }
 
 async fn repair_legacy_camera_schema(pool: &SqlitePool) -> Result<(), sqlx::Error> {

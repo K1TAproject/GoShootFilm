@@ -156,7 +156,7 @@ function cancelEditing() {
 }
 
 async function handleDeleteCamera(id: number) {
-  if (!confirm('确定要删除这台相机吗？相关拍摄卷也会被删除。')) return
+  if (!confirm('确定要删除这台相机吗？相关拍摄卷和照片记录也会被删除，但正式图库文件会保留。')) return
 
   isBusy.value = true
   visibleError.value = ''

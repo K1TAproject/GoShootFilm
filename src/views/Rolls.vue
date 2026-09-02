@@ -1,11 +1,32 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { convertFileSrc, invoke } from '@tauri-apps/api/core'
-import { open } from '@tauri-apps/plugin-dialog'
+import { open, save } from '@tauri-apps/plugin-dialog'
+import { openPath, revealItemInDir } from '@tauri-apps/plugin-opener'
 import { getCurrentWebview } from '@tauri-apps/api/webview'
 import { useRoute, useRouter } from 'vue-router'
 import PageHeader from '../components/PageHeader.vue'
-import type { Camera, Film, Photo, RollDetail, RollSummary } from '../types'
+import PhotoGallery from '../components/PhotoGallery.vue'
+import PhotoImportDialog from '../components/PhotoImportDialog.vue'
+import PhotoLightbox from '../components/PhotoLightbox.vue'
+import PhotoVersionTabs from '../components/PhotoVersionTabs.vue'
+import type {
+  Camera,
+  ExportOriginalResult,
+  Film,
+  ImportAnalysisItem,
+  ImportConflictAction,
+  ImportDraft,
+  ImportResult,
+  LabOriginal,
+  LabPreview,
+  LabPreviewState,
+  Photo,
+  PhotoImportEntry,
+  PhotoVersion,
+  RollDetail,
+  RollSummary,
+} from '../types'
 import { errorMessage as formatError } from '../utils/errors'
 
 const route = useRoute()
@@ -22,6 +43,9 @@ const isLoading = ref(false)
 const isBusy = ref(false)
 const visibleError = ref('')
 const visibleInfo = ref('')
+const activePhotoVersion = ref<PhotoVersion>('edit')
+const labPreviews = ref<Record<number, LabPreviewState>>({})
+const imageErrors = ref<Record<string, string>>({})
 let unlistenDragDrop: (() => void) | null = null
 
 const draftFilmBrand = ref('')
@@ -48,17 +72,30 @@ const editShotMonth = ref('')
 const editCity = ref('')
 const editNote = ref('')
 
-const lightboxImageSrc = ref<string | null>(null)
+const lightboxImageSrc = ref<string>()
+const lightboxPhoto = ref<Photo>()
+const lightboxVersion = ref<PhotoVersion>('edit')
 const isLightboxOpen = ref(false)
+const importDialogOpen = ref(false)
+const importVersion = ref<PhotoVersion>('edit')
+const importItems = ref<ImportAnalysisItem[]>([])
+const importError = ref('')
+const importBusy = ref(false)
 
-function openLightbox(src: string) {
-  lightboxImageSrc.value = src
+const editCount = computed(() => selectedRoll.value?.photos.filter(photo => photo.editScanPath).length ?? 0)
+const labCount = computed(() => selectedRoll.value?.photos.filter(photo => photo.labScanPath).length ?? 0)
+
+function openLightbox(photo: Photo, src: string) {
+  lightboxPhoto.value = photo
+  lightboxVersion.value = activePhotoVersion.value
+  lightboxImageSrc.value = getImageUrl(src)
   isLightboxOpen.value = true
 }
 
 function closeLightbox() {
   isLightboxOpen.value = false
-  lightboxImageSrc.value = null
+  lightboxImageSrc.value = undefined
+  lightboxPhoto.value = undefined
 }
 
 function handleWindowKeydown(event: KeyboardEvent) {
@@ -71,16 +108,71 @@ function getImageUrl(rawPath?: string) {
   return convertFileSrc(rawPath)
 }
 
-function handleImageError(event: Event) {
+function handleRollImageError(event: Event) {
   const image = event.target as HTMLImageElement
   image.src = '/film-stocks/placeholder.svg'
 }
 
-const imageExtensions = new Set(['png', 'jpg', 'jpeg', 'tif', 'tiff', 'webp'])
+const imageExtensions = new Set(['png', 'jpg', 'jpeg', 'tif', 'tiff', 'webp', 'bmp', 'gif'])
 
 function isImagePath(path: string) {
   const ext = path.split(/[\\/]/).pop()?.split('.').pop()?.toLowerCase()
   return ext ? imageExtensions.has(ext) : false
+}
+
+function chooseDefaultPhotoVersion(photos: Photo[]) {
+  activePhotoVersion.value = photos.some(photo => photo.editScanPath)
+    ? 'edit'
+    : photos.some(photo => photo.labScanPath)
+      ? 'lab'
+      : 'edit'
+}
+
+async function loadLabPreview(photo: Photo) {
+  if (!photo.labScanPath || labPreviews.value[photo.id]?.loading || labPreviews.value[photo.id]?.previewPath) return
+  labPreviews.value = {
+    ...labPreviews.value,
+    [photo.id]: { loading: true },
+  }
+  try {
+    const preview = await invoke<LabPreview>('get_lab_preview', { photoId: photo.id })
+    labPreviews.value = {
+      ...labPreviews.value,
+      [photo.id]: { loading: false, previewPath: preview.previewPath },
+    }
+  } catch (error) {
+    labPreviews.value = {
+      ...labPreviews.value,
+      [photo.id]: { loading: false, error: formatError(error, '原始扫描图片无法读取') },
+    }
+  }
+}
+
+function loadCurrentLabPreviews() {
+  if (activePhotoVersion.value !== 'lab' || !selectedRoll.value) return
+  for (const photo of selectedRoll.value.photos) {
+    if (photo.labScanPath) void loadLabPreview(photo)
+  }
+}
+
+function switchPhotoVersion(version: PhotoVersion) {
+  activePhotoVersion.value = version
+  if (version === 'lab') loadCurrentLabPreviews()
+}
+
+function handleVersionImageError(photo: Photo, version: PhotoVersion) {
+  const reason = version === 'lab' ? '原始扫描预览无法显示' : '调色图不存在或图片无法读取'
+  imageErrors.value = { ...imageErrors.value, [`${version}:${photo.id}`]: reason }
+}
+
+function handleLightboxImageError() {
+  if (lightboxPhoto.value) {
+    handleVersionImageError(lightboxPhoto.value, lightboxVersion.value)
+  }
+  visibleError.value = lightboxVersion.value === 'lab'
+    ? '原始扫描预览无法显示；原始文件未被修改。'
+    : '调色图不存在或图片无法读取。'
+  closeLightbox()
 }
 
 async function fetchRolls() {
@@ -212,6 +304,10 @@ async function openRollDetail(rollId: number, syncRoute = true) {
   try {
     const roll = await invoke<RollDetail>('get_roll_detail', { id: rollId })
     selectedRoll.value = { ...roll, photos: roll.photos || [] }
+    labPreviews.value = {}
+    imageErrors.value = {}
+    chooseDefaultPhotoVersion(selectedRoll.value.photos)
+    loadCurrentLabPreviews()
     resetEditForm(selectedRoll.value)
     isEditing.value = false
     currentView.value = 'detail'
@@ -309,32 +405,54 @@ function getCameraOptionLabel(camera: Camera) {
   return `${camera.brand} ${camera.model}`
 }
 
-async function importPhotoPaths(filePaths: string[]) {
-  if (!selectedRoll.value) return
+async function analyzeImport(version: PhotoVersion, drafts: ImportDraft[]) {
+  if (!selectedRoll.value) return []
+  return invoke<Omit<ImportAnalysisItem, 'conflictAction'>[]>('analyze_photo_import', {
+    rollId: selectedRoll.value.id,
+    version,
+    drafts,
+  })
+}
 
+function mergeImportAnalysis(
+  analyzed: Omit<ImportAnalysisItem, 'conflictAction'>[],
+  previous: ImportAnalysisItem[] = [],
+) {
+  return analyzed.map(item => {
+    const oldAction = previous.find(previousItem => previousItem.sourcePath === item.sourcePath)?.conflictAction
+    return {
+      ...item,
+      conflictAction: item.existingVersion
+        ? oldAction && oldAction !== 'add' ? oldAction : 'ask'
+        : 'add',
+    } satisfies ImportAnalysisItem
+  })
+}
+
+async function openImportReview(version: PhotoVersion, filePaths: string[]) {
   const imagePaths = filePaths.filter(isImagePath)
-  if (imagePaths.length === 0) return
-
-  isBusy.value = true
+  if (imagePaths.length === 0) {
+    visibleError.value = '所选内容中没有支持的图片文件'
+    return
+  }
   visibleError.value = ''
   visibleInfo.value = ''
-  const rollId = selectedRoll.value.id
+  importError.value = ''
+  importItems.value = []
+  importVersion.value = version
+  importBusy.value = true
+  importDialogOpen.value = true
   try {
-    const importedCount = await invoke<number>('import_photos', {
-      rollId,
-      filePaths: imagePaths
-    })
-    await fetchRolls()
-    await openRollDetail(rollId)
-    visibleInfo.value = importedCount > 0
-      ? `已复制 ${importedCount} 张照片到应用图库。`
-      : '没有可导入的照片。'
+    const analyzed = await analyzeImport(version, imagePaths.map(sourcePath => ({ sourcePath })))
+    importItems.value = mergeImportAnalysis(analyzed)
+  } catch (error) {
+    importError.value = formatError(error, '无法检查待导入图片')
   } finally {
-    isBusy.value = false
+    importBusy.value = false
   }
 }
 
-async function selectAndImportPhotos() {
+async function selectAndImportPhotos(version: PhotoVersion) {
   if (!selectedRoll.value) return
 
   try {
@@ -342,19 +460,92 @@ async function selectAndImportPhotos() {
       multiple: true,
       filters: [
         {
-          name: 'Images',
-          extensions: ['png', 'jpg', 'jpeg', 'tif', 'tiff', 'webp']
+          name: version === 'lab' ? '原始扫描图片' : '调色图片',
+          extensions: version === 'lab'
+            ? ['png', 'jpg', 'jpeg', 'tif', 'tiff', 'webp', 'bmp', 'gif']
+            : ['png', 'jpg', 'jpeg', 'webp']
         }
       ]
     })
 
     if (!selected) return
     const filePaths = Array.isArray(selected) ? selected : [selected]
-    await importPhotoPaths(filePaths)
+    await openImportReview(version, filePaths)
   } catch (err) {
     console.error('Failed to import photos:', err)
-    visibleError.value = formatError(err, '导入照片失败，本批次未写入')
+    visibleError.value = formatError(err, '选择照片失败')
     isBusy.value = false
+  }
+}
+
+function updateImportFrame(index: number, value?: number) {
+  const item = importItems.value[index]
+  if (!item) return
+  importItems.value[index] = { ...item, frameNumber: value, issue: undefined }
+}
+
+function updateImportAction(index: number, value: ImportConflictAction) {
+  const item = importItems.value[index]
+  if (!item) return
+  importItems.value[index] = { ...item, conflictAction: value }
+}
+
+function closeImportDialog() {
+  if (importBusy.value) return
+  importDialogOpen.value = false
+  importItems.value = []
+  importError.value = ''
+}
+
+async function confirmPhotoImport() {
+  if (!selectedRoll.value) return
+  if (importItems.value.some(item => item.conflictAction === 'cancel')) {
+    closeImportDialog()
+    visibleInfo.value = '已取消整批导入，未写入任何数据。'
+    return
+  }
+  importBusy.value = true
+  importError.value = ''
+  try {
+    const analyzed = await analyzeImport(importVersion.value, importItems.value.map(item => ({
+      sourcePath: item.sourcePath,
+      frameNumber: item.frameNumber,
+    })))
+    importItems.value = mergeImportAnalysis(analyzed, importItems.value)
+    const issue = importItems.value.find(item => item.issue)?.issue
+    if (issue) {
+      importError.value = `请修正后重试：${issue}`
+      return
+    }
+    const unresolved = importItems.value.find(item => item.existingVersion && !['skip', 'replace'].includes(item.conflictAction))
+    if (unresolved) {
+      importError.value = `Frame ${String(unresolved.frameNumber).padStart(2, '0')} 已有同版本图片，请选择跳过、替换或取消。`
+      return
+    }
+    const entries: PhotoImportEntry[] = importItems.value.map(item => ({
+      sourcePath: item.sourcePath,
+      frameNumber: item.frameNumber!,
+      conflictAction: item.conflictAction,
+    }))
+    const result = await invoke<ImportResult>('import_photo_versions', {
+      rollId: selectedRoll.value.id,
+      version: importVersion.value,
+      entries,
+    })
+    const rollId = selectedRoll.value.id
+    const importedVersion = importVersion.value
+    importDialogOpen.value = false
+    importItems.value = []
+    labPreviews.value = {}
+    imageErrors.value = {}
+    await fetchRolls()
+    await openRollDetail(rollId)
+    switchPhotoVersion(importedVersion)
+    visibleInfo.value = `整批导入完成：新增 ${result.importedCount}，配对或替换 ${result.updatedCount}，跳过 ${result.skippedCount}。`
+  } catch (error) {
+    importError.value = formatError(error, '导入失败，整批未写入')
+  } finally {
+    importBusy.value = false
   }
 }
 
@@ -375,7 +566,11 @@ async function setupNativeDragDrop() {
 
       if (event.payload.type === 'drop') {
         isDraggingFiles.value = false
-        void importPhotoPaths(event.payload.paths).catch(err => {
+        const paths = event.payload.paths.filter(isImagePath)
+        const inferredVersion: PhotoVersion = paths.some(path => /\.tiff?$/i.test(path))
+          ? 'lab'
+          : activePhotoVersion.value
+        void openImportReview(inferredVersion, paths).catch(err => {
           console.error('Failed to import dropped photos:', err)
           visibleError.value = formatError(err, '拖入照片失败，本批次未写入')
           isBusy.value = false
@@ -384,6 +579,7 @@ async function setupNativeDragDrop() {
     })
   } catch (err) {
     console.warn('Native drag-and-drop listener is unavailable:', err)
+    visibleError.value = formatError(err, '系统拖拽导入不可用，请使用导入按钮选择文件')
   }
 }
 
@@ -401,8 +597,61 @@ async function toggleFavorite(photo: Photo) {
   }
 }
 
+async function resolveLabOriginal(photo: Photo) {
+  return invoke<LabOriginal>('get_lab_original', { photoId: photo.id })
+}
+
+async function openLabOriginal(photo: Photo) {
+  visibleError.value = ''
+  try {
+    const original = await resolveLabOriginal(photo)
+    await openPath(original.path)
+  } catch (error) {
+    visibleError.value = formatError(error, '打开原件失败')
+  }
+}
+
+async function revealLabOriginal(photo: Photo) {
+  visibleError.value = ''
+  try {
+    const original = await resolveLabOriginal(photo)
+    await revealItemInDir(original.path)
+  } catch (error) {
+    visibleError.value = formatError(error, '无法在文件夹中定位原件')
+  }
+}
+
+async function saveLabOriginal(photo: Photo) {
+  visibleError.value = ''
+  try {
+    const original = await resolveLabOriginal(photo)
+    const extension = original.fileName.split('.').pop()?.toLowerCase() || 'tif'
+    const destination = await save({
+      defaultPath: original.fileName,
+      filters: [{ name: '原始扫描文件', extensions: [extension] }],
+    })
+    if (!destination) return
+    let result = await invoke<ExportOriginalResult>('export_lab_original', {
+      photoId: photo.id,
+      destinationPath: destination,
+      overwrite: false,
+    })
+    if (result.status === 'exists') {
+      if (!confirm(`目标位置已存在同名文件：\n${result.path}\n\n是否覆盖？`)) return
+      result = await invoke<ExportOriginalResult>('export_lab_original', {
+        photoId: photo.id,
+        destinationPath: destination,
+        overwrite: true,
+      })
+    }
+    visibleInfo.value = `原始扫描图已另存至：${result.path}`
+  } catch (error) {
+    visibleError.value = formatError(error, '导出原件失败')
+  }
+}
+
 async function deletePhoto(photoId: number) {
-  if (!confirm('确定删除应用图库中的这张照片吗？外部原始文件不会被删除。')) return
+  if (!confirm('确定删除这条照片记录吗？只会清理可再生预览，原始扫描图和调色图文件都会保留。')) return
   isBusy.value = true
   visibleError.value = ''
   try {
@@ -410,6 +659,10 @@ async function deletePhoto(photoId: number) {
     if (selectedRoll.value) {
       selectedRoll.value.photos = selectedRoll.value.photos.filter(photo => photo.id !== photoId)
     }
+    const remainingPreviews = { ...labPreviews.value }
+    delete remainingPreviews[photoId]
+    labPreviews.value = remainingPreviews
+    visibleInfo.value = '照片记录已删除；正式图库文件已保留。'
   } catch (err) {
     console.error('Failed to delete photo:', err)
     visibleError.value = formatError(err, '移除照片记录失败')
@@ -500,7 +753,7 @@ onUnmounted(() => {
             <img
               :src="getImageUrl(rollCover(roll))"
               :alt="roll.filmInfo"
-              @error="handleImageError"
+              @error="handleRollImageError"
             />
           </div>
           <div class="card-body">
@@ -565,7 +818,6 @@ onUnmounted(() => {
       <PageHeader title="卷详情">
         <div class="actions">
           <button v-if="!isEditing" class="secondary-btn" @click="isEditing = true">编辑</button>
-          <button v-if="!isEditing" class="secondary-btn" :disabled="isBusy" @click="selectAndImportPhotos">导入照片</button>
           <button class="secondary-btn" @click="backToGrid()">返回</button>
         </div>
       </PageHeader>
@@ -616,61 +868,70 @@ onUnmounted(() => {
       </div>
 
       <section class="related-section">
-        <div class="section-title">照片</div>
+        <div class="gallery-toolbar">
+          <div>
+            <div class="section-title">照片</div>
+            <small>同一 Frame 的两个版本共用一条照片记录。</small>
+          </div>
+          <PhotoVersionTabs
+            :model-value="activePhotoVersion"
+            :edit-count="editCount"
+            :lab-count="labCount"
+            @update:model-value="switchPhotoVersion"
+          />
+          <div class="gallery-actions">
+            <button class="secondary-btn" :disabled="isBusy" @click="selectAndImportPhotos('edit')">导入调色图</button>
+            <button class="secondary-btn" :disabled="isBusy" @click="selectAndImportPhotos('lab')">导入原始扫描</button>
+          </div>
+        </div>
         <div class="feedback-info path-notice">
-          导入时会将照片复制到应用图库；外部原始文件移动或删除后，应用内照片仍可正常显示。
+          原始扫描与调色图存放在正式图库；原始扫描预览存放在独立、可再生的预览图库。界面中的 TIFF 预览不是原件。
         </div>
         <div
           :class="['drop-zone', isDraggingFiles ? 'drag-active' : '']"
         >
-          <div v-if="selectedRoll.photos.filter(photo => photo.editScanPath).length === 0" class="empty-state">
-            暂无照片，拖入文件或点击导入即可添加。
-          </div>
-
-          <div class="photo-grid">
-            <div
-              v-for="photo in selectedRoll.photos.filter(photo => photo.editScanPath)"
-              :key="photo.id"
-              class="photo-card"
-            >
-              <div class="photo-frame">
-                <img
-                  :src="getImageUrl(photo.editScanPath)"
-                  :alt="`Frame ${photo.frameNumber || ''}`"
-                  role="button"
-                  tabindex="0"
-                  :aria-label="`打开 Frame ${photo.frameNumber || ''} 大图`"
-                  @click.stop="openLightbox(getImageUrl(photo.editScanPath))"
-                  @keydown.enter.stop="openLightbox(getImageUrl(photo.editScanPath))"
-                  @keydown.space.prevent.stop="openLightbox(getImageUrl(photo.editScanPath))"
-                  @error="handleImageError"
-                />
-                <button
-                  class="photo-action favorite-action"
-                  :class="{ active: photo.isFavorite }"
-                  :aria-label="photo.isFavorite ? '取消收藏' : '收藏照片'"
-                  :title="photo.isFavorite ? '取消收藏' : '收藏照片'"
-                  @click.stop="toggleFavorite(photo)"
-                >
-                  {{ photo.isFavorite ? '★' : '☆' }}
-                </button>
-                <button class="photo-action delete-action" aria-label="移除照片记录" title="移除照片记录" :disabled="isBusy" @click.stop="deletePhoto(photo.id)">
-                  ×
-                </button>
-              </div>
-              <div class="photo-footer">Frame {{ photo.frameNumber || '?' }}</div>
-            </div>
-          </div>
+          <PhotoGallery
+            :photos="selectedRoll.photos"
+            :version="activePhotoVersion"
+            :previews="labPreviews"
+            :image-errors="imageErrors"
+            :busy="isBusy"
+            @view="openLightbox"
+            @switch-version="switchPhotoVersion"
+            @favorite="toggleFavorite"
+            @delete="deletePhoto"
+            @image-error="handleVersionImageError"
+            @open-original="openLabOriginal"
+            @reveal-original="revealLabOriginal"
+            @save-original="saveLabOriginal"
+          />
         </div>
       </section>
     </div>
 
-    <div v-if="isLightboxOpen" class="lightbox-overlay" @click="closeLightbox">
-      <div class="lightbox-content">
-        <img :src="lightboxImageSrc ?? undefined" alt="Enlarged Photo" class="lightbox-img" />
-      </div>
-      <button class="close-btn" aria-label="关闭大图" title="关闭大图" @click.stop="closeLightbox">×</button>
-    </div>
+    <PhotoLightbox
+      :open="isLightboxOpen"
+      :source="lightboxImageSrc"
+      :frame-number="lightboxPhoto?.frameNumber"
+      :version="lightboxVersion"
+      @close="closeLightbox"
+      @image-error="handleLightboxImageError"
+      @open-original="lightboxPhoto && openLabOriginal(lightboxPhoto)"
+      @reveal-original="lightboxPhoto && revealLabOriginal(lightboxPhoto)"
+      @save-original="lightboxPhoto && saveLabOriginal(lightboxPhoto)"
+    />
+
+    <PhotoImportDialog
+      :open="importDialogOpen"
+      :version="importVersion"
+      :items="importItems"
+      :busy="importBusy"
+      :error="importError"
+      @close="closeImportDialog"
+      @update-frame="updateImportFrame"
+      @update-action="updateImportAction"
+      @confirm="confirmPhotoImport"
+    />
   </section>
 </template>
 
@@ -922,9 +1183,28 @@ label {
 }
 
 .section-title {
-  margin-bottom: 12px;
   color: #f9fafb;
   font-weight: 600;
+}
+
+.gallery-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.gallery-toolbar small {
+  display: block;
+  margin-top: 5px;
+  color: #7f8a99;
+  font-size: 11px;
+}
+
+.gallery-actions {
+  display: flex;
+  gap: 8px;
 }
 
 .path-notice {
@@ -945,115 +1225,9 @@ label {
   padding: 12px;
 }
 
-.photo-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 14px;
-}
-
-.photo-card {
-  min-width: 0;
-  border: 1px solid #262c38;
-  border-radius: 8px;
-  background: #10141c;
-  overflow: hidden;
-}
-
-.photo-frame {
-  position: relative;
-  aspect-ratio: 4 / 3;
-  background: #0f131b;
-  overflow: hidden;
-}
-
-.photo-frame img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-.photo-action {
-  position: absolute;
-  width: 30px;
-  height: 30px;
-  border-radius: 999px;
-  border: 1px solid #394152;
-  background: rgba(15, 19, 27, 0.85);
-  color: #e5e7eb;
-  cursor: pointer;
-  opacity: 0;
-  transform: translateY(-4px);
-  transition: opacity 0.16s ease, transform 0.16s ease, background 0.16s ease, border-color 0.16s ease;
-}
-
-.photo-frame:hover .photo-action {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.favorite-action {
-  top: 8px;
-  right: 8px;
-}
-
-.favorite-action.active {
-  border-color: #8b5cf6;
-  color: #f5d0fe;
-}
-
-.delete-action {
-  top: 8px;
-  left: 8px;
-}
-
-.photo-action:hover {
-  background: #1d2430;
-}
-
-.photo-footer {
-  padding: 10px 12px;
-  color: #9ca3af;
-  font-size: 13px;
-}
-
 .empty-state {
   color: #9ca3af;
   font-size: 13px;
-}
-
-.lightbox-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.84);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-}
-
-.lightbox-content {
-  max-width: 92vw;
-  max-height: 92vh;
-}
-
-.lightbox-img {
-  max-width: 92vw;
-  max-height: 92vh;
-  object-fit: contain;
-}
-
-.close-btn {
-  position: absolute;
-  top: 18px;
-  right: 22px;
-  width: 36px;
-  height: 36px;
-  border-radius: 999px;
-  border: 1px solid #394152;
-  background: #10141c;
-  color: #e5e7eb;
-  cursor: pointer;
 }
 
 @media (max-width: 900px) {
@@ -1068,6 +1242,11 @@ label {
 
   .roll-photo-count {
     display: none;
+  }
+
+  .gallery-toolbar {
+    grid-template-columns: 1fr;
+    align-items: start;
   }
 }
 
