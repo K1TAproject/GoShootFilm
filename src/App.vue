@@ -1,47 +1,35 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import Cameras from './views/Cameras.vue'
-import Films from './views/Films.vue'
-import Rolls from './views/Rolls.vue'
+import { useRouter } from 'vue-router'
 
-const currentTab = ref<'cameras' | 'films' | 'rolls'>('cameras')
-const activeRollId = ref<number | null>(null)
-
-function switchTab(tab: 'cameras' | 'films' | 'rolls') {
-  currentTab.value = tab
-  if (tab !== 'rolls') {
-    activeRollId.value = null
-  }
-}
+const router = useRouter()
 
 function openRollFromRelation(rollId: number) {
-  activeRollId.value = rollId
-  currentTab.value = 'rolls'
-}
-
-function openRollsList() {
-  activeRollId.value = null
-  currentTab.value = 'rolls'
+  void router.push({ name: 'rolls', query: { roll: String(rollId) } })
 }
 </script>
 
 <template>
   <div class="app-layout">
     <aside class="sidebar">
-      <div class="brand-block">
-        <div class="app-title">GoShootFilm</div>
-      </div>
+      <RouterLink class="brand-block" to="/">
+        <div class="app-mark">G</div>
+        <div>
+          <div class="app-title">GoShootFilm</div>
+          <div class="app-caption">Film archive</div>
+        </div>
+      </RouterLink>
       <nav class="nav-tabs">
-        <button :class="{ active: currentTab === 'cameras' }" @click="switchTab('cameras')">Cameras</button>
-        <button :class="{ active: currentTab === 'films' }" @click="switchTab('films')">Films</button>
-        <button :class="{ active: currentTab === 'rolls' }" @click="openRollsList">Rolls</button>
+        <RouterLink to="/" active-class="" exact-active-class="router-link-exact-active">Home</RouterLink>
+        <RouterLink to="/cameras">Cameras</RouterLink>
+        <RouterLink to="/films">Films</RouterLink>
+        <RouterLink to="/rolls">Rolls</RouterLink>
       </nav>
     </aside>
 
     <main class="main-content">
-      <Cameras v-if="currentTab === 'cameras'" @jump-to-roll="openRollFromRelation" />
-      <Films v-else-if="currentTab === 'films'" @jump-to-roll="openRollFromRelation" />
-      <Rolls v-else-if="currentTab === 'rolls'" :initialRollId="activeRollId" />
+      <RouterView v-slot="{ Component }">
+        <component :is="Component" @jump-to-roll="openRollFromRelation" />
+      </RouterView>
     </main>
   </div>
 </template>
@@ -62,13 +50,28 @@ function openRollsList() {
   min-width: 0;
   min-height: 100vh;
   border-right: 1px solid #242833;
-  background: #11141a;
+  background: #10141a;
   padding: 22px 16px;
 }
 
 .brand-block {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   padding: 4px 4px 20px;
   border-bottom: 1px solid #242833;
+  text-decoration: none;
+}
+
+.app-mark {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: #e5e7eb;
+  color: #111827;
+  font-weight: 800;
 }
 
 .app-title {
@@ -78,6 +81,12 @@ function openRollsList() {
   letter-spacing: 0;
 }
 
+.app-caption {
+  margin-top: 2px;
+  color: #6f7b8c;
+  font-size: 11px;
+}
+
 .nav-tabs {
   display: flex;
   flex-direction: column;
@@ -85,7 +94,7 @@ function openRollsList() {
   margin-top: 18px;
 }
 
-.nav-tabs button {
+.nav-tabs a {
   width: 100%;
   border: 1px solid transparent;
   border-radius: 6px;
@@ -94,11 +103,12 @@ function openRollsList() {
   cursor: pointer;
   padding: 10px 12px;
   text-align: left;
+  text-decoration: none;
   transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease;
 }
 
-.nav-tabs button:hover,
-.nav-tabs button.active {
+.nav-tabs a:hover,
+.nav-tabs a.router-link-exact-active {
   background: #1a1f2a;
   border-color: #2f3746;
   color: #f9fafb;
@@ -107,7 +117,7 @@ function openRollsList() {
 .main-content {
   width: 100%;
   min-width: 0;
-  padding: 28px;
+  padding: clamp(20px, 4vw, 44px);
   overflow-x: hidden;
 }
 

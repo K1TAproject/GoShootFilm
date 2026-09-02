@@ -25,6 +25,46 @@ textarea {
   font: inherit;
 }
 
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid #60a5fa;
+  outline-offset: 2px;
+}
+
+.feedback-error,
+.feedback-info {
+  width: 100%;
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.feedback-error {
+  border: 1px solid #7f1d1d;
+  background: #2a1518;
+  color: #fecaca;
+}
+
+.feedback-info {
+  border: 1px solid #374151;
+  background: #171c24;
+  color: #cbd5e1;
+}
+
+.page > .feedback-error,
+.page > .feedback-info {
+  margin-bottom: 16px;
+}
+
 button {
   white-space: nowrap;
 }

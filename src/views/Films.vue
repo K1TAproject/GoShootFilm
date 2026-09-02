@@ -1,38 +1,22 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
-
-interface FilmStock {
-  id: number
-  brand: string
-  name: string
-  iso: number
-  type: string
-  target_status?: string
-  note?: string
-}
-
-interface RollItem {
-  id: number
-  cameraId: number
-  filmId: number
-  index: number
-  shot_month?: string
-  city?: string
-  camera_info?: string
-  film_info?: string
-}
+import PageHeader from '../components/PageHeader.vue'
+import type { Film, RollSummary } from '../types'
+import { errorMessage as formatError } from '../utils/errors'
 
 const filmTypes = ['Color Negative', 'B&W', 'Slide']
 
-const films = ref<FilmStock[]>([])
-const rolls = ref<RollItem[]>([])
+const films = ref<Film[]>([])
+const rolls = ref<RollSummary[]>([])
 const currentView = ref<'grid' | 'add' | 'detail'>('grid')
 
 const draftBrand = ref('')
 const draftType = ref('')
+const draftShotStatus = ref('')
 const activeBrand = ref('')
 const activeType = ref('')
+const activeShotStatus = ref('')
 
 const formBrand = ref('')
 const formName = ref('')
@@ -41,19 +25,28 @@ const formType = ref('Color Negative')
 const formTargetStatus = ref('untested')
 const formNote = ref('')
 
-const selectedFilm = ref<FilmStock | null>(null)
-const relatedRolls = ref<RollItem[]>([])
+const selectedFilm = ref<Film | null>(null)
+const editSnapshot = ref<Film | null>(null)
+const relatedRolls = ref<RollSummary[]>([])
 const isEditing = ref(false)
+const isLoading = ref(false)
+const isBusy = ref(false)
+const visibleError = ref('')
 
 const emit = defineEmits<{
   (e: 'jump-to-roll', rollId: number): void
 }>()
 
 async function fetchData() {
+  isLoading.value = true
+  visibleError.value = ''
   try {
-    const data: any = await invoke('get_all_data')
-    films.value = data.films || []
-    rolls.value = data.rolls || []
+    const [filmData, rollData] = await Promise.all([
+      invoke<Film[]>('get_films'),
+      invoke<RollSummary[]>('get_rolls')
+    ])
+    films.value = filmData
+    rolls.value = rollData
     if (selectedFilm.value) {
       const updated = films.value.find(film => film.id === selectedFilm.value?.id)
       if (updated) {
@@ -63,6 +56,9 @@ async function fetchData() {
     }
   } catch (err) {
     console.error('Failed to fetch films:', err)
+    visibleError.value = formatError(err, '无法读取胶片数据')
+  } finally {
+    isLoading.value = false
   }
 }
 
@@ -78,27 +74,36 @@ const filteredFilms = computed(() => {
   return films.value.filter(film => {
     const matchBrand = activeBrand.value ? film.brand === activeBrand.value : true
     const matchType = activeType.value ? film.type === activeType.value : true
-    return matchBrand && matchType
+    const shot = isFilmShot(film.id)
+    const matchShotStatus = activeShotStatus.value === 'shot'
+      ? shot
+      : activeShotStatus.value === 'unshot'
+        ? !shot
+        : true
+    return matchBrand && matchType && matchShotStatus
   })
 })
 
 function applyFilters() {
   activeBrand.value = draftBrand.value
   activeType.value = draftType.value
+  activeShotStatus.value = draftShotStatus.value
 }
 
 function resetFilters() {
   draftBrand.value = ''
   draftType.value = ''
+  draftShotStatus.value = ''
   activeBrand.value = ''
   activeType.value = ''
+  activeShotStatus.value = ''
 }
 
 function isFilmShot(filmId: number) {
   return rolls.value.some(roll => roll.filmId === filmId)
 }
 
-function filmImageSrc(film: FilmStock) {
+function filmImageSrc(film: Film) {
   return `/film-stocks/${film.id}.jpg`
 }
 
@@ -122,8 +127,13 @@ function resetFilmForm() {
 }
 
 async function handleAddFilm() {
-  if (!formBrand.value || !formName.value || !formIso.value || !formType.value) return
+  if (!formBrand.value.trim() || !formName.value.trim() || !formIso.value || !formType.value) {
+    visibleError.value = '请填写品牌、名称、ISO 和类型'
+    return
+  }
 
+  isBusy.value = true
+  visibleError.value = ''
   try {
     await invoke('add_film_stock', {
       brand: formBrand.value,
@@ -138,10 +148,13 @@ async function handleAddFilm() {
     await fetchData()
   } catch (err) {
     console.error('Failed to add film:', err)
+    visibleError.value = formatError(err, '新增胶片型号失败')
+  } finally {
+    isBusy.value = false
   }
 }
 
-function viewFilmDetail(film: FilmStock) {
+function viewFilmDetail(film: Film) {
   selectedFilm.value = { ...film }
   relatedRolls.value = rolls.value.filter(roll => roll.filmId === film.id)
   isEditing.value = false
@@ -151,6 +164,8 @@ function viewFilmDetail(film: FilmStock) {
 async function handleUpdateFilm() {
   if (!selectedFilm.value) return
 
+  isBusy.value = true
+  visibleError.value = ''
   try {
     await invoke('update_film_stock', {
       id: selectedFilm.value.id,
@@ -158,14 +173,30 @@ async function handleUpdateFilm() {
       name: selectedFilm.value.name,
       iso: Number(selectedFilm.value.iso),
       filmType: selectedFilm.value.type,
-      targetStatus: selectedFilm.value.target_status || 'untested',
+      targetStatus: selectedFilm.value.targetStatus || 'untested',
       note: selectedFilm.value.note || null
     })
     isEditing.value = false
+    editSnapshot.value = null
     await fetchData()
   } catch (err) {
     console.error('Failed to update film:', err)
+    visibleError.value = formatError(err, '更新胶片型号失败')
+  } finally {
+    isBusy.value = false
   }
+}
+
+function startEditing() {
+  if (!selectedFilm.value) return
+  editSnapshot.value = { ...selectedFilm.value }
+  isEditing.value = true
+}
+
+function cancelEditing() {
+  if (editSnapshot.value) selectedFilm.value = { ...editSnapshot.value }
+  editSnapshot.value = null
+  isEditing.value = false
 }
 
 function backToGrid() {
@@ -182,26 +213,36 @@ onMounted(() => {
 
 <template>
   <section class="page">
+    <div v-if="visibleError" class="feedback-error" role="alert">{{ visibleError }}</div>
+    <div v-else-if="isLoading" class="feedback-info">正在读取胶片数据…</div>
     <div v-if="currentView === 'grid'" class="stack">
-      <div class="page-header">
-        <h1>Films</h1>
-      </div>
+      <PageHeader title="Films" subtitle="整理胶卷资料，并按拍摄状态快速筛选。" />
 
-      <div class="filter-panel">
-        <select v-model="draftBrand">
-          <option value="">全部品牌</option>
-          <option v-for="brand in availableBrands" :key="brand" :value="brand">{{ brand }}</option>
-        </select>
-        <select v-model="draftType">
-          <option value="">全部类型</option>
-          <option v-for="type in availableTypes" :key="type" :value="type">{{ type }}</option>
-        </select>
-        <button class="primary-btn" @click="applyFilters">确定</button>
-        <button class="secondary-btn fixed-action" @click="resetFilters">重置筛选</button>
+      <div class="filter-panel film-filter-panel">
+        <div class="filter-fields">
+          <select v-model="draftBrand">
+            <option value="">全部品牌</option>
+            <option v-for="brand in availableBrands" :key="brand" :value="brand">{{ brand }}</option>
+          </select>
+          <select v-model="draftType">
+            <option value="">全部类型</option>
+            <option v-for="type in availableTypes" :key="type" :value="type">{{ type }}</option>
+          </select>
+          <select v-model="draftShotStatus">
+            <option value="">全部拍摄状态</option>
+            <option value="shot">已拍摄</option>
+            <option value="unshot">未拍摄</option>
+          </select>
+        </div>
+        <div class="filter-actions">
+          <button class="primary-btn" @click="applyFilters">确定</button>
+          <button class="secondary-btn" @click="resetFilters">重置</button>
+        </div>
       </div>
 
       <div class="cards-grid">
-        <article
+        <button
+          type="button"
           v-for="film in filteredFilms"
           :key="film.id"
           class="film-card"
@@ -215,11 +256,11 @@ onMounted(() => {
             <h2>{{ film.name }}</h2>
             <div class="meta-row">
               <span>ISO {{ film.iso }}</span>
-              <span>{{ film.type }}</span>
               <span>{{ isFilmShot(film.id) ? '已拍摄' : '未拍摄' }}</span>
+              <span>{{ film.type }}</span>
             </div>
           </div>
-        </article>
+        </button>
 
         <button class="add-card" @click="openAddForm">
           <span class="plus-mark">+</span>
@@ -231,10 +272,9 @@ onMounted(() => {
     </div>
 
     <div v-else-if="currentView === 'add'" class="stack">
-      <div class="page-header">
-        <h1>新增胶卷</h1>
+      <PageHeader title="新增胶卷">
         <button class="secondary-btn" @click="backToGrid">返回</button>
-      </div>
+      </PageHeader>
 
       <div class="form-panel">
         <label>
@@ -268,20 +308,19 @@ onMounted(() => {
           <textarea v-model="formNote"></textarea>
         </label>
         <div class="form-actions full-width">
-          <button class="primary-btn" @click="handleAddFilm">保存</button>
+          <button class="primary-btn" :disabled="isBusy" @click="handleAddFilm">保存</button>
           <button class="secondary-btn" @click="backToGrid">取消</button>
         </div>
       </div>
     </div>
 
     <div v-else-if="currentView === 'detail' && selectedFilm" class="stack">
-      <div class="page-header">
-        <h1>胶卷详情</h1>
+      <PageHeader title="胶卷详情">
         <div class="actions">
-          <button v-if="!isEditing" class="secondary-btn" @click="isEditing = true">编辑</button>
+          <button v-if="!isEditing" class="secondary-btn" @click="startEditing">编辑</button>
           <button class="secondary-btn" @click="backToGrid">返回</button>
         </div>
-      </div>
+      </PageHeader>
 
       <div class="detail-layout">
         <div class="detail-image">
@@ -294,7 +333,7 @@ onMounted(() => {
           <div class="detail-grid">
             <span>ISO</span><strong>{{ selectedFilm.iso }}</strong>
             <span>类型</span><strong>{{ selectedFilm.type }}</strong>
-            <span>状态</span><strong>{{ selectedFilm.target_status || 'untested' }}</strong>
+            <span>状态</span><strong>{{ selectedFilm.targetStatus || 'untested' }}</strong>
             <span>备注</span><strong>{{ selectedFilm.note || '暂无备注' }}</strong>
           </div>
         </div>
@@ -320,7 +359,7 @@ onMounted(() => {
           </label>
           <label>
             <span>状态</span>
-            <select v-model="selectedFilm.target_status">
+            <select v-model="selectedFilm.targetStatus">
               <option value="untested">未测试</option>
               <option value="unshot">未拍摄</option>
               <option value="shot">已拍摄</option>
@@ -331,8 +370,8 @@ onMounted(() => {
             <textarea v-model="selectedFilm.note"></textarea>
           </label>
           <div class="form-actions full-width">
-            <button class="primary-btn" @click="handleUpdateFilm">保存</button>
-            <button class="secondary-btn" @click="isEditing = false">取消</button>
+            <button class="primary-btn" :disabled="isBusy" @click="handleUpdateFilm">保存</button>
+            <button class="secondary-btn" @click="cancelEditing">取消</button>
           </div>
         </div>
       </div>
@@ -347,8 +386,8 @@ onMounted(() => {
           class="related-roll"
           @click="emit('jump-to-roll', roll.id)"
         >
-          <span class="related-title">{{ roll.film_info || selectedFilm.name }}</span>
-          <span class="related-meta">{{ roll.shot_month || '未记录日期' }} · {{ roll.city || '未记录地点' }}</span>
+          <span class="related-title">{{ roll.filmInfo || selectedFilm.name }}</span>
+          <span class="related-meta">{{ roll.shotMonth || '未记录日期' }} · {{ roll.city || '未记录地点' }}</span>
         </button>
       </section>
     </div>
@@ -367,22 +406,10 @@ onMounted(() => {
   gap: 18px;
 }
 
-.page-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-h1,
 h2 {
   margin: 0;
   color: #f9fafb;
   letter-spacing: 0;
-}
-
-h1 {
-  font-size: 24px;
 }
 
 h2 {
@@ -405,12 +432,30 @@ h2 {
 .filter-panel {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 10px;
-  flex-wrap: wrap;
+  font-size: 12px;
 }
 
-.filter-panel select {
-  min-width: 180px;
+.filter-fields,
+.filter-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filter-fields {
+  min-width: 0;
+  flex: 1;
+}
+
+.filter-fields select {
+  min-width: 0;
+  max-width: 190px;
+}
+
+.filter-actions {
+  flex: none;
 }
 
 select,
@@ -465,10 +510,6 @@ textarea {
   color: #f9fafb;
 }
 
-.fixed-action {
-  min-width: 96px;
-}
-
 .cards-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
@@ -487,6 +528,11 @@ textarea {
   cursor: pointer;
   overflow: hidden;
   transition: border-color 0.16s ease, background 0.16s ease, transform 0.16s ease;
+}
+
+.film-card {
+  padding: 0;
+  text-align: left;
 }
 
 .film-card:hover,
@@ -644,6 +690,20 @@ label {
   .detail-layout,
   .form-panel {
     grid-template-columns: 1fr;
+  }
+
+  .filter-panel,
+  .filter-fields {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .filter-fields select {
+    max-width: none;
+  }
+
+  .filter-actions {
+    justify-content: flex-end;
   }
 }
 </style>

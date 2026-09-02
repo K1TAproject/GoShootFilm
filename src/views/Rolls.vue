@@ -3,59 +3,25 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { convertFileSrc, invoke } from '@tauri-apps/api/core'
 import { open } from '@tauri-apps/plugin-dialog'
 import { getCurrentWebview } from '@tauri-apps/api/webview'
+import { useRoute, useRouter } from 'vue-router'
+import PageHeader from '../components/PageHeader.vue'
+import type { Camera, Film, Photo, RollDetail, RollSummary } from '../types'
+import { errorMessage as formatError } from '../utils/errors'
 
-interface Photo {
-  id: number
-  frame_number?: number
-  lab_scan_path?: string
-  edit_scan_path?: string
-  is_favorite?: number | boolean
-}
+const route = useRoute()
+const router = useRouter()
 
-interface Camera {
-  id: number
-  brand: string
-  model: string
-  status: string
-}
-
-interface FilmStock {
-  id: number
-  brand: string
-  name: string
-  iso: number
-  type: string
-}
-
-interface RollItem {
-  id: number
-  cameraId: number
-  filmId: number
-  index: number
-  shot_month?: string
-  city?: string
-  note?: string
-  camera_brand?: string
-  camera_model?: string
-  film_brand?: string
-  film_name?: string
-  film_iso?: number
-  camera_info: string
-  film_info: string
-  photos: Photo[]
-}
-
-const props = defineProps<{
-  initialRollId?: number | null
-}>()
-
-const rolls = ref<RollItem[]>([])
+const rolls = ref<RollSummary[]>([])
 const cameras = ref<Camera[]>([])
-const films = ref<FilmStock[]>([])
+const films = ref<Film[]>([])
 const currentView = ref<'grid' | 'add' | 'detail'>('grid')
-const selectedRoll = ref<RollItem | null>(null)
+const selectedRoll = ref<RollDetail | null>(null)
 const isEditing = ref(false)
 const isDraggingFiles = ref(false)
+const isLoading = ref(false)
+const isBusy = ref(false)
+const visibleError = ref('')
+const visibleInfo = ref('')
 let unlistenDragDrop: (() => void) | null = null
 
 const draftFilmBrand = ref('')
@@ -95,17 +61,17 @@ function closeLightbox() {
   lightboxImageSrc.value = null
 }
 
+function handleWindowKeydown(event: KeyboardEvent) {
+  if (event.key === 'Escape' && isLightboxOpen.value) closeLightbox()
+}
+
 function getImageUrl(rawPath?: string) {
   if (!rawPath) return ''
+  if (rawPath.startsWith('/')) return rawPath
   return convertFileSrc(rawPath)
 }
 
-function handleRollImageError(event: Event) {
-  const image = event.target as HTMLImageElement
-  image.src = '/film-stocks/placeholder.svg'
-}
-
-function handlePhotoImageError(event: Event) {
+function handleImageError(event: Event) {
   const image = event.target as HTMLImageElement
   image.src = '/film-stocks/placeholder.svg'
 }
@@ -118,11 +84,17 @@ function isImagePath(path: string) {
 }
 
 async function fetchRolls() {
+  isLoading.value = true
+  visibleError.value = ''
   try {
-    const data: any = await invoke('get_all_data')
-    rolls.value = data.rolls || []
-    cameras.value = data.cameras || []
-    films.value = data.films || []
+    const [rollData, cameraData, filmData] = await Promise.all([
+      invoke<RollSummary[]>('get_rolls'),
+      invoke<Camera[]>('get_cameras'),
+      invoke<Film[]>('get_films')
+    ])
+    rolls.value = rollData
+    cameras.value = cameraData
+    films.value = filmData
 
     if (!formCameraId.value && cameras.value.length > 0) {
       formCameraId.value = cameras.value[0].id
@@ -134,18 +106,19 @@ async function fetchRolls() {
     if (selectedRoll.value) {
       const updated = rolls.value.find(roll => roll.id === selectedRoll.value?.id)
       if (updated) {
-        selectedRoll.value = { ...updated }
+        selectedRoll.value = { ...selectedRoll.value, ...updated }
       }
     }
 
-    if (props.initialRollId) {
-      const target = rolls.value.find(roll => roll.id === props.initialRollId)
-      if (target) {
-        viewDetail(target)
-      }
+    const routeRollId = Number(route.query.roll)
+    if (Number.isInteger(routeRollId) && routeRollId > 0) {
+      await openRollDetail(routeRollId, false)
     }
   } catch (err) {
     console.error('Failed to fetch rolls:', err)
+    visibleError.value = formatError(err, '无法读取拍摄卷数据')
+  } finally {
+    isLoading.value = false
   }
 }
 
@@ -154,7 +127,11 @@ const availableFilmBrands = computed(() => {
 })
 
 const availableFilmNames = computed(() => {
-  return Array.from(new Set(films.value.map(film => film.name))).sort()
+  return Array.from(new Set(
+    films.value
+      .filter(film => !draftFilmBrand.value || film.brand === draftFilmBrand.value)
+      .map(film => film.name)
+  )).sort()
 })
 
 const availableCameraBrands = computed(() => {
@@ -168,16 +145,16 @@ const availableCameraModels = computed(() => {
 const filteredRolls = computed(() => {
   return [...rolls.value]
     .filter(roll => {
-      const matchFilmBrand = activeFilmBrand.value ? roll.film_brand === activeFilmBrand.value : true
-      const matchFilmName = activeFilmName.value ? roll.film_name === activeFilmName.value : true
-      const matchCameraBrand = activeCameraBrand.value ? roll.camera_brand === activeCameraBrand.value : true
-      const matchCameraModel = activeCameraModel.value ? roll.camera_model === activeCameraModel.value : true
-      const matchShotMonth = activeShotMonth.value ? roll.shot_month === activeShotMonth.value : true
+      const matchFilmBrand = activeFilmBrand.value ? roll.filmBrand === activeFilmBrand.value : true
+      const matchFilmName = activeFilmName.value ? roll.filmName === activeFilmName.value : true
+      const matchCameraBrand = activeCameraBrand.value ? roll.cameraBrand === activeCameraBrand.value : true
+      const matchCameraModel = activeCameraModel.value ? roll.cameraModel === activeCameraModel.value : true
+      const matchShotMonth = activeShotMonth.value ? roll.shotMonth === activeShotMonth.value : true
       return matchFilmBrand && matchFilmName && matchCameraBrand && matchCameraModel && matchShotMonth
     })
     .sort((a, b) => {
-      const aTime = a.shot_month ? new Date(`${a.shot_month}-01`).getTime() : 0
-      const bTime = b.shot_month ? new Date(`${b.shot_month}-01`).getTime() : 0
+      const aTime = a.shotMonth ? new Date(`${a.shotMonth}-01`).getTime() : 0
+      const bTime = b.shotMonth ? new Date(`${b.shotMonth}-01`).getTime() : 0
       if (aTime !== bTime) return bTime - aTime
       return b.id - a.id
     })
@@ -212,36 +189,65 @@ function resetAddForm() {
   formNote.value = ''
 }
 
-function resetEditForm(roll: RollItem) {
+function resetEditForm(roll: RollDetail) {
   editFilmId.value = roll.filmId
   editCameraId.value = roll.cameraId
-  editShotMonth.value = roll.shot_month || ''
+  editShotMonth.value = roll.shotMonth || ''
   editCity.value = roll.city || ''
   editNote.value = roll.note || ''
 }
 
 function openAddForm() {
+  if (cameras.value.length === 0) {
+    visibleError.value = '请先在 Cameras 页面添加至少一台相机'
+    return
+  }
   resetAddForm()
   currentView.value = 'add'
 }
 
-function viewDetail(roll: RollItem) {
-  selectedRoll.value = { ...roll }
-  resetEditForm(roll)
-  isEditing.value = false
-  currentView.value = 'detail'
+async function openRollDetail(rollId: number, syncRoute = true) {
+  isLoading.value = true
+  visibleError.value = ''
+  try {
+    const roll = await invoke<RollDetail>('get_roll_detail', { id: rollId })
+    selectedRoll.value = { ...roll, photos: roll.photos || [] }
+    resetEditForm(selectedRoll.value)
+    isEditing.value = false
+    currentView.value = 'detail'
+    if (syncRoute && String(route.query.roll || '') !== String(rollId)) {
+      await router.replace({ name: 'rolls', query: { roll: String(rollId) } })
+    }
+  } catch (err) {
+    console.error('Failed to fetch roll detail:', err)
+    visibleError.value = formatError(err, '读取拍摄卷详情失败')
+  } finally {
+    isLoading.value = false
+  }
 }
 
-function backToGrid() {
+function viewDetail(roll: RollSummary) {
+  void openRollDetail(roll.id)
+}
+
+function backToGrid(syncRoute = true) {
   currentView.value = 'grid'
   selectedRoll.value = null
   isEditing.value = false
   isDraggingFiles.value = false
+  if (syncRoute && route.query.roll) {
+    void router.replace({ name: 'rolls' })
+  }
 }
 
 async function handleAddRoll() {
-  if (!formCameraId.value || !formFilmId.value) return
+  if (!formCameraId.value || !formFilmId.value) {
+    visibleError.value = '请先添加相机并选择胶片型号'
+    return
+  }
 
+  isBusy.value = true
+  visibleError.value = ''
   try {
     const newRollId = await invoke<number>('add_roll', {
       cameraId: formCameraId.value,
@@ -254,19 +260,28 @@ async function handleAddRoll() {
     await fetchRolls()
     const created = rolls.value.find(roll => roll.id === newRollId)
     if (created) {
-      viewDetail(created)
+      await openRollDetail(created.id)
     } else {
       backToGrid()
     }
   } catch (err) {
     console.error('Failed to add roll:', err)
+    visibleError.value = formatError(err, '新增拍摄卷失败')
+  } finally {
+    isBusy.value = false
   }
 }
 
 async function handleUpdateRoll() {
-  if (!selectedRoll.value || !editFilmId.value || !editCameraId.value) return
+  if (!selectedRoll.value || !editFilmId.value || !editCameraId.value) {
+    visibleError.value = '请选择有效的相机和胶片型号'
+    return
+  }
 
+  isBusy.value = true
+  visibleError.value = ''
   try {
+    const selectedId = selectedRoll.value.id
     await invoke('update_roll', {
       id: selectedRoll.value.id,
       cameraId: editCameraId.value,
@@ -277,17 +292,16 @@ async function handleUpdateRoll() {
     })
     isEditing.value = false
     await fetchRolls()
-    const updated = rolls.value.find(roll => roll.id === selectedRoll.value?.id)
-    if (updated) {
-      selectedRoll.value = { ...updated }
-      resetEditForm(updated)
-    }
+    await openRollDetail(selectedId)
   } catch (err) {
     console.error('Failed to update roll:', err)
+    visibleError.value = formatError(err, '更新拍摄卷失败')
+  } finally {
+    isBusy.value = false
   }
 }
 
-function getFilmOptionLabel(film: FilmStock) {
+function getFilmOptionLabel(film: Film) {
   return `${film.brand} ${film.name} (ISO ${film.iso})`
 }
 
@@ -301,16 +315,22 @@ async function importPhotoPaths(filePaths: string[]) {
   const imagePaths = filePaths.filter(isImagePath)
   if (imagePaths.length === 0) return
 
-  await invoke('import_photos', {
-    rollId: selectedRoll.value.id,
-    filePaths: imagePaths
-  })
-
-  await fetchRolls()
-  const updated = rolls.value.find(roll => roll.id === selectedRoll.value?.id)
-  if (updated) {
-    selectedRoll.value = { ...updated }
-    resetEditForm(updated)
+  isBusy.value = true
+  visibleError.value = ''
+  visibleInfo.value = ''
+  const rollId = selectedRoll.value.id
+  try {
+    const importedCount = await invoke<number>('import_photos', {
+      rollId,
+      filePaths: imagePaths
+    })
+    await fetchRolls()
+    await openRollDetail(rollId)
+    visibleInfo.value = importedCount > 0
+      ? `已复制 ${importedCount} 张照片到应用图库。`
+      : '没有可导入的照片。'
+  } finally {
+    isBusy.value = false
   }
 }
 
@@ -333,6 +353,8 @@ async function selectAndImportPhotos() {
     await importPhotoPaths(filePaths)
   } catch (err) {
     console.error('Failed to import photos:', err)
+    visibleError.value = formatError(err, '导入照片失败，本批次未写入')
+    isBusy.value = false
   }
 }
 
@@ -355,6 +377,8 @@ async function setupNativeDragDrop() {
         isDraggingFiles.value = false
         void importPhotoPaths(event.payload.paths).catch(err => {
           console.error('Failed to import dropped photos:', err)
+          visibleError.value = formatError(err, '拖入照片失败，本批次未写入')
+          isBusy.value = false
         })
       }
     })
@@ -364,19 +388,23 @@ async function setupNativeDragDrop() {
 }
 
 async function toggleFavorite(photo: Photo) {
-  const next = Boolean(photo.is_favorite) ? 0 : 1
+  const next = !photo.isFavorite
   try {
     await invoke('toggle_photo_favorite', {
       photoId: photo.id,
-      isFavorite: next === 1
+      isFavorite: next
     })
-    photo.is_favorite = next
+    photo.isFavorite = next
   } catch (err) {
     console.error('Failed to update favorite status:', err)
+    visibleError.value = formatError(err, '更新收藏状态失败')
   }
 }
 
 async function deletePhoto(photoId: number) {
+  if (!confirm('确定删除应用图库中的这张照片吗？外部原始文件不会被删除。')) return
+  isBusy.value = true
+  visibleError.value = ''
   try {
     await invoke('delete_photo', { photoId })
     if (selectedRoll.value) {
@@ -384,37 +412,45 @@ async function deletePhoto(photoId: number) {
     }
   } catch (err) {
     console.error('Failed to delete photo:', err)
+    visibleError.value = formatError(err, '移除照片记录失败')
+  } finally {
+    isBusy.value = false
   }
 }
 
-function rollCover(roll: RollItem) {
-  return roll.photos.find(photo => photo.edit_scan_path)?.edit_scan_path || '/film-stocks/placeholder.svg'
+function rollCover(roll: RollSummary) {
+  return roll.coverPath || '/film-stocks/placeholder.svg'
 }
 
+watch(draftFilmBrand, () => {
+  if (!availableFilmNames.value.includes(draftFilmName.value)) {
+    draftFilmName.value = ''
+  }
+})
+
 watch(
-  () => props.initialRollId,
-  newId => {
-    if (!newId) {
+  () => route.query.roll,
+  newValue => {
+    const newId = Number(newValue)
+    if (!Number.isInteger(newId) || newId <= 0) {
       if (currentView.value !== 'grid') {
-        backToGrid()
+        backToGrid(false)
       }
       return
     }
-
-    const target = rolls.value.find(roll => roll.id === newId)
-    if (target) {
-      viewDetail(target)
-    }
+    if (selectedRoll.value?.id === newId && currentView.value === 'detail') return
+    void openRollDetail(newId, false)
   },
-  { immediate: true }
 )
 
 onMounted(() => {
   fetchRolls()
   setupNativeDragDrop()
+  window.addEventListener('keydown', handleWindowKeydown)
 })
 
 onUnmounted(() => {
+  window.removeEventListener('keydown', handleWindowKeydown)
   if (unlistenDragDrop) {
     unlistenDragDrop()
     unlistenDragDrop = null
@@ -424,10 +460,11 @@ onUnmounted(() => {
 
 <template>
   <section class="page">
+    <div v-if="visibleError" class="feedback-error" role="alert">{{ visibleError }}</div>
+    <div v-else-if="visibleInfo" class="feedback-info" role="status">{{ visibleInfo }}</div>
+    <div v-else-if="isLoading" class="feedback-info">正在读取拍摄卷数据…</div>
     <div v-if="currentView === 'grid'" class="stack">
-      <div class="page-header">
-        <h1>Rolls</h1>
-      </div>
+      <PageHeader title="Rolls" subtitle="按胶卷、设备和拍摄时间整理全部拍摄卷。" />
 
       <div class="filter-panel">
         <select v-model="draftFilmBrand">
@@ -451,31 +488,32 @@ onUnmounted(() => {
         <button class="secondary-btn fixed-action" @click="resetFilters">重置筛选</button>
       </div>
 
-      <div class="cards-grid">
-        <article
+      <div class="roll-list">
+        <button
           v-for="roll in filteredRolls"
           :key="roll.id"
+          type="button"
           class="roll-card"
           @click="viewDetail(roll)"
         >
           <div class="roll-cover">
             <img
               :src="getImageUrl(rollCover(roll))"
-              :alt="roll.film_info"
-              @click.stop="openLightbox(getImageUrl(rollCover(roll)))"
-              @error="handleRollImageError"
+              :alt="roll.filmInfo"
+              @error="handleImageError"
             />
           </div>
           <div class="card-body">
-            <div class="card-kicker">第 {{ roll.index }} 卷</div>
-            <h2>{{ roll.film_info }}</h2>
-            <div class="meta-row">
-              <span>{{ roll.camera_info }}</span>
-              <span>{{ roll.shot_month || '未记录日期' }}</span>
-              <span>{{ roll.city || '未记录地点' }}</span>
+            <div class="card-kicker">第 {{ roll.index }} 卷 · {{ roll.filmBrand }}</div>
+            <h2>{{ roll.filmName }}</h2>
+            <div class="roll-meta-lines">
+              <span><b>设备</b>{{ roll.cameraInfo }}</span>
+              <span><b>时间</b>{{ roll.shotMonth || '未记录' }}</span>
+              <span><b>地点</b>{{ roll.city || '未记录' }}</span>
             </div>
           </div>
-        </article>
+          <span class="roll-photo-count">{{ roll.photoCount }} 张</span>
+        </button>
 
         <button class="add-card" @click="openAddForm">
           <span class="plus-mark">+</span>
@@ -487,10 +525,9 @@ onUnmounted(() => {
     </div>
 
     <div v-else-if="currentView === 'add'" class="stack">
-      <div class="page-header">
-        <h1>新增拍摄卷</h1>
-        <button class="secondary-btn" @click="backToGrid">返回</button>
-      </div>
+      <PageHeader title="新增拍摄卷">
+        <button class="secondary-btn" @click="backToGrid()">返回</button>
+      </PageHeader>
 
       <div class="form-panel">
         <label>
@@ -518,39 +555,29 @@ onUnmounted(() => {
           <textarea v-model="formNote"></textarea>
         </label>
         <div class="form-actions full-width">
-          <button class="primary-btn" @click="handleAddRoll">保存</button>
-          <button class="secondary-btn" @click="backToGrid">取消</button>
+          <button class="primary-btn" :disabled="isBusy" @click="handleAddRoll">保存</button>
+          <button class="secondary-btn" @click="backToGrid()">取消</button>
         </div>
       </div>
     </div>
 
     <div v-else-if="currentView === 'detail' && selectedRoll" class="stack">
-      <div class="page-header">
-        <h1>卷详情</h1>
+      <PageHeader title="卷详情">
         <div class="actions">
           <button v-if="!isEditing" class="secondary-btn" @click="isEditing = true">编辑</button>
-          <button v-if="!isEditing" class="secondary-btn" @click="selectAndImportPhotos">导入照片</button>
-          <button class="secondary-btn" @click="backToGrid">返回</button>
+          <button v-if="!isEditing" class="secondary-btn" :disabled="isBusy" @click="selectAndImportPhotos">导入照片</button>
+          <button class="secondary-btn" @click="backToGrid()">返回</button>
         </div>
-      </div>
+      </PageHeader>
 
       <div class="detail-layout">
-        <div class="detail-image">
-          <img
-            :src="getImageUrl(rollCover(selectedRoll))"
-            :alt="selectedRoll.film_info"
-            @click.stop="openLightbox(getImageUrl(rollCover(selectedRoll)))"
-            @error="handleRollImageError"
-          />
-        </div>
-
         <div v-if="!isEditing" class="detail-panel">
           <div class="card-kicker">第 {{ selectedRoll.index }} 卷</div>
-          <h2>{{ selectedRoll.film_info }}</h2>
+          <h2>{{ selectedRoll.filmInfo }}</h2>
           <div class="detail-grid">
-            <span>设备</span><strong>{{ selectedRoll.camera_info }}</strong>
-            <span>胶卷</span><strong>{{ selectedRoll.film_info }}</strong>
-            <span>日期</span><strong>{{ selectedRoll.shot_month || '未记录' }}</strong>
+            <span>设备</span><strong>{{ selectedRoll.cameraInfo }}</strong>
+            <span>胶卷</span><strong>{{ selectedRoll.filmInfo }}</strong>
+            <span>日期</span><strong>{{ selectedRoll.shotMonth || '未记录' }}</strong>
             <span>地点</span><strong>{{ selectedRoll.city || '未记录' }}</strong>
             <span>备注</span><strong>{{ selectedRoll.note || '暂无备注' }}</strong>
           </div>
@@ -582,7 +609,7 @@ onUnmounted(() => {
             <textarea v-model="editNote"></textarea>
           </label>
           <div class="form-actions full-width">
-            <button class="primary-btn" @click="handleUpdateRoll">保存</button>
+            <button class="primary-btn" :disabled="isBusy" @click="handleUpdateRoll">保存</button>
             <button class="secondary-btn" @click="isEditing = false">取消</button>
           </div>
         </div>
@@ -590,38 +617,48 @@ onUnmounted(() => {
 
       <section class="related-section">
         <div class="section-title">照片</div>
+        <div class="feedback-info path-notice">
+          导入时会将照片复制到应用图库；外部原始文件移动或删除后，应用内照片仍可正常显示。
+        </div>
         <div
           :class="['drop-zone', isDraggingFiles ? 'drag-active' : '']"
         >
-          <div v-if="selectedRoll.photos.filter(photo => photo.edit_scan_path).length === 0" class="empty-state">
+          <div v-if="selectedRoll.photos.filter(photo => photo.editScanPath).length === 0" class="empty-state">
             暂无照片，拖入文件或点击导入即可添加。
           </div>
 
           <div class="photo-grid">
             <div
-              v-for="photo in selectedRoll.photos.filter(photo => photo.edit_scan_path)"
+              v-for="photo in selectedRoll.photos.filter(photo => photo.editScanPath)"
               :key="photo.id"
               class="photo-card"
             >
               <div class="photo-frame">
                 <img
-                  :src="getImageUrl(photo.edit_scan_path)"
-                  :alt="`Frame ${photo.frame_number || ''}`"
-                  @click.stop="openLightbox(getImageUrl(photo.edit_scan_path))"
-                  @error="handlePhotoImageError"
+                  :src="getImageUrl(photo.editScanPath)"
+                  :alt="`Frame ${photo.frameNumber || ''}`"
+                  role="button"
+                  tabindex="0"
+                  :aria-label="`打开 Frame ${photo.frameNumber || ''} 大图`"
+                  @click.stop="openLightbox(getImageUrl(photo.editScanPath))"
+                  @keydown.enter.stop="openLightbox(getImageUrl(photo.editScanPath))"
+                  @keydown.space.prevent.stop="openLightbox(getImageUrl(photo.editScanPath))"
+                  @error="handleImageError"
                 />
                 <button
                   class="photo-action favorite-action"
-                  :class="{ active: Boolean(photo.is_favorite) }"
+                  :class="{ active: photo.isFavorite }"
+                  :aria-label="photo.isFavorite ? '取消收藏' : '收藏照片'"
+                  :title="photo.isFavorite ? '取消收藏' : '收藏照片'"
                   @click.stop="toggleFavorite(photo)"
                 >
-                  {{ Boolean(photo.is_favorite) ? '★' : '☆' }}
+                  {{ photo.isFavorite ? '★' : '☆' }}
                 </button>
-                <button class="photo-action delete-action" @click.stop="deletePhoto(photo.id)">
+                <button class="photo-action delete-action" aria-label="移除照片记录" title="移除照片记录" :disabled="isBusy" @click.stop="deletePhoto(photo.id)">
                   ×
                 </button>
               </div>
-              <div class="photo-footer">Frame {{ photo.frame_number || '?' }}</div>
+              <div class="photo-footer">Frame {{ photo.frameNumber || '?' }}</div>
             </div>
           </div>
         </div>
@@ -632,7 +669,7 @@ onUnmounted(() => {
       <div class="lightbox-content">
         <img :src="lightboxImageSrc ?? undefined" alt="Enlarged Photo" class="lightbox-img" />
       </div>
-      <button class="close-btn" @click.stop="closeLightbox">×</button>
+      <button class="close-btn" aria-label="关闭大图" title="关闭大图" @click.stop="closeLightbox">×</button>
     </div>
   </section>
 </template>
@@ -649,22 +686,10 @@ onUnmounted(() => {
   gap: 18px;
 }
 
-.page-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-h1,
 h2 {
   margin: 0;
   color: #f9fafb;
   letter-spacing: 0;
-}
-
-h1 {
-  font-size: 24px;
 }
 
 h2 {
@@ -716,8 +741,7 @@ textarea {
 }
 
 .primary-btn,
-.secondary-btn,
-.danger-btn {
+.secondary-btn {
   border: 1px solid #384152;
   border-radius: 6px;
   padding: 9px 14px;
@@ -744,38 +768,38 @@ textarea {
   color: #f9fafb;
 }
 
-.danger-btn {
-  background: #271a1d;
-  border-color: #5f2a33;
-  color: #fca5a5;
-}
-
-.danger-btn:hover {
-  background: #351f25;
-}
-
 .fixed-action {
   min-width: 96px;
 }
 
-.cards-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 16px;
+.roll-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
   min-width: 0;
 }
 
 .roll-card,
 .add-card {
   min-width: 0;
-  min-height: 280px;
   border: 1px solid #262c38;
-  border-radius: 8px;
+  border-radius: 10px;
   background: #151922;
   color: inherit;
   cursor: pointer;
   overflow: hidden;
   transition: border-color 0.16s ease, background 0.16s ease, transform 0.16s ease;
+}
+
+.roll-card {
+  position: relative;
+  width: 100%;
+  min-height: 154px;
+  display: grid;
+  grid-template-columns: 210px minmax(0, 1fr) auto;
+  align-items: stretch;
+  padding: 0 20px 0 0;
+  text-align: left;
 }
 
 .roll-card:hover,
@@ -785,19 +809,17 @@ textarea {
   transform: translateY(-2px);
 }
 
-.roll-cover,
-.detail-image {
+.roll-cover {
   background: #0f131b;
-  border-bottom: 1px solid #262c38;
+  border-right: 1px solid #262c38;
   overflow: hidden;
 }
 
 .roll-cover {
-  height: 132px;
+  min-height: 152px;
 }
 
-.roll-cover img,
-.detail-image img {
+.roll-cover img {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -805,7 +827,8 @@ textarea {
 }
 
 .card-body {
-  padding: 15px;
+  align-self: center;
+  padding: 20px;
 }
 
 .card-kicker {
@@ -814,22 +837,34 @@ textarea {
   font-size: 12px;
 }
 
-.meta-row {
+.roll-meta-lines {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 14px;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 12px;
 }
 
-.meta-row span {
-  border-radius: 999px;
-  background: #202737;
+.roll-meta-lines span {
   color: #cbd5e1;
-  padding: 4px 8px;
+  font-size: 12px;
+}
+
+.roll-meta-lines b {
+  display: inline-block;
+  width: 44px;
+  color: #778394;
+  font-weight: 500;
+}
+
+.roll-photo-count {
+  align-self: center;
+  color: #8591a1;
   font-size: 12px;
 }
 
 .add-card {
+  width: 100%;
+  min-height: 84px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -869,15 +904,7 @@ label {
 }
 
 .detail-layout {
-  display: grid;
-  grid-template-columns: minmax(220px, 340px) minmax(0, 1fr);
-  gap: 16px;
-}
-
-.detail-image {
-  min-height: 260px;
-  border: 1px solid #262c38;
-  border-radius: 8px;
+  display: block;
 }
 
 .detail-grid {
@@ -898,6 +925,10 @@ label {
   margin-bottom: 12px;
   color: #f9fafb;
   font-weight: 600;
+}
+
+.path-notice {
+  margin-bottom: 12px;
 }
 
 .drop-zone {
@@ -930,7 +961,7 @@ label {
 
 .photo-frame {
   position: relative;
-  min-height: 180px;
+  aspect-ratio: 4 / 3;
   background: #0f131b;
   overflow: hidden;
 }
@@ -986,30 +1017,6 @@ label {
   font-size: 13px;
 }
 
-.related-roll {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  border: 1px solid #262c38;
-  border-radius: 7px;
-  background: #10141c;
-  color: #e5e7eb;
-  padding: 12px;
-  cursor: pointer;
-  text-align: left;
-}
-
-.related-roll + .related-roll {
-  margin-top: 8px;
-}
-
-.related-title {
-  font-weight: 600;
-}
-
-.related-meta,
 .empty-state {
   color: #9ca3af;
   font-size: 13px;
@@ -1054,8 +1061,13 @@ label {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .detail-layout {
-    grid-template-columns: 1fr;
+  .roll-card {
+    grid-template-columns: 150px minmax(0, 1fr);
+    padding-right: 0;
+  }
+
+  .roll-photo-count {
+    display: none;
   }
 }
 
@@ -1066,6 +1078,14 @@ label {
 
   .filter-panel {
     grid-template-columns: 1fr;
+  }
+
+  .roll-card {
+    grid-template-columns: 110px minmax(0, 1fr);
+  }
+
+  .roll-cover {
+    min-height: 170px;
   }
 }
 </style>
