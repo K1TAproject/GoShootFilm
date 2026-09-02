@@ -42,7 +42,6 @@ export interface Photo {
   labScanPath?: string
   editScanPath?: string
   isFavorite: boolean
-  labOriginalName?: string
 }
 
 export type PhotoVersion = 'edit' | 'lab'
@@ -78,8 +77,6 @@ export interface ImportResult {
 export interface LabPreview {
   photoId: number
   previewPath: string
-  originalPath: string
-  originalName: string
 }
 
 export interface LabPreviewState {
@@ -90,12 +87,6 @@ export interface LabPreviewState {
 
 export interface LabOriginal {
   photoId: number
-  path: string
-  fileName: string
-}
-
-export interface ExportOriginalResult {
-  status: 'exists' | 'saved'
   path: string
 }
 

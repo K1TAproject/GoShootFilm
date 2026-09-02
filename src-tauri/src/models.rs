@@ -53,7 +53,6 @@ pub struct PhotoResponse {
     pub lab_scan_path: Option<String>,
     pub edit_scan_path: Option<String>,
     pub is_favorite: bool,
-    pub lab_original_name: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -95,22 +94,12 @@ pub struct ImportResultResponse {
 pub struct LabPreviewResponse {
     pub photo_id: i64,
     pub preview_path: String,
-    pub original_path: String,
-    pub original_name: String,
 }
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct LabOriginalResponse {
     pub photo_id: i64,
-    pub path: String,
-    pub file_name: String,
-}
-
-#[derive(Debug, Clone, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ExportOriginalResponse {
-    pub status: String,
     pub path: String,
 }
 

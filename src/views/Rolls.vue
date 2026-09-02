@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { convertFileSrc, invoke } from '@tauri-apps/api/core'
-import { open, save } from '@tauri-apps/plugin-dialog'
-import { openPath, revealItemInDir } from '@tauri-apps/plugin-opener'
+import { open } from '@tauri-apps/plugin-dialog'
+import { revealItemInDir } from '@tauri-apps/plugin-opener'
 import { getCurrentWebview } from '@tauri-apps/api/webview'
 import { useRoute, useRouter } from 'vue-router'
 import PageHeader from '../components/PageHeader.vue'
@@ -12,7 +12,6 @@ import PhotoLightbox from '../components/PhotoLightbox.vue'
 import PhotoVersionTabs from '../components/PhotoVersionTabs.vue'
 import type {
   Camera,
-  ExportOriginalResult,
   Film,
   ImportAnalysisItem,
   ImportConflictAction,
@@ -601,52 +600,18 @@ async function resolveLabOriginal(photo: Photo) {
   return invoke<LabOriginal>('get_lab_original', { photoId: photo.id })
 }
 
-async function openLabOriginal(photo: Photo) {
+async function revealPhotoOriginalLocation() {
   visibleError.value = ''
-  try {
-    const original = await resolveLabOriginal(photo)
-    await openPath(original.path)
-  } catch (error) {
-    visibleError.value = formatError(error, '打开原件失败')
+  const photo = selectedRoll.value?.photos.find(item => item.labScanPath)
+  if (!photo) {
+    visibleError.value = '当前拍摄卷没有可定位的原始扫描文件。'
+    return
   }
-}
-
-async function revealLabOriginal(photo: Photo) {
-  visibleError.value = ''
   try {
     const original = await resolveLabOriginal(photo)
     await revealItemInDir(original.path)
   } catch (error) {
-    visibleError.value = formatError(error, '无法在文件夹中定位原件')
-  }
-}
-
-async function saveLabOriginal(photo: Photo) {
-  visibleError.value = ''
-  try {
-    const original = await resolveLabOriginal(photo)
-    const extension = original.fileName.split('.').pop()?.toLowerCase() || 'tif'
-    const destination = await save({
-      defaultPath: original.fileName,
-      filters: [{ name: '原始扫描文件', extensions: [extension] }],
-    })
-    if (!destination) return
-    let result = await invoke<ExportOriginalResult>('export_lab_original', {
-      photoId: photo.id,
-      destinationPath: destination,
-      overwrite: false,
-    })
-    if (result.status === 'exists') {
-      if (!confirm(`目标位置已存在同名文件：\n${result.path}\n\n是否覆盖？`)) return
-      result = await invoke<ExportOriginalResult>('export_lab_original', {
-        photoId: photo.id,
-        destinationPath: destination,
-        overwrite: true,
-      })
-    }
-    visibleInfo.value = `原始扫描图已另存至：${result.path}`
-  } catch (error) {
-    visibleError.value = formatError(error, '导出原件失败')
+    visibleError.value = formatError(error, '无法打开图片原始位置')
   }
 }
 
@@ -870,8 +835,7 @@ onUnmounted(() => {
       <section class="related-section">
         <div class="gallery-toolbar">
           <div>
-            <div class="section-title">照片</div>
-            <small>同一 Frame 的两个版本共用一条照片记录。</small>
+            <div class="section-title">影像浏览</div>
           </div>
           <PhotoVersionTabs
             :model-value="activePhotoVersion"
@@ -880,6 +844,14 @@ onUnmounted(() => {
             @update:model-value="switchPhotoVersion"
           />
           <div class="gallery-actions">
+            <button
+              v-if="activePhotoVersion === 'lab' && labCount > 0"
+              class="secondary-btn"
+              :disabled="isBusy"
+              @click="revealPhotoOriginalLocation"
+            >
+              打开图片原始位置
+            </button>
             <button class="secondary-btn" :disabled="isBusy" @click="selectAndImportPhotos('edit')">导入调色图</button>
             <button class="secondary-btn" :disabled="isBusy" @click="selectAndImportPhotos('lab')">导入原始扫描</button>
           </div>
@@ -897,13 +869,9 @@ onUnmounted(() => {
             :image-errors="imageErrors"
             :busy="isBusy"
             @view="openLightbox"
-            @switch-version="switchPhotoVersion"
             @favorite="toggleFavorite"
             @delete="deletePhoto"
             @image-error="handleVersionImageError"
-            @open-original="openLabOriginal"
-            @reveal-original="revealLabOriginal"
-            @save-original="saveLabOriginal"
           />
         </div>
       </section>
@@ -916,9 +884,6 @@ onUnmounted(() => {
       :version="lightboxVersion"
       @close="closeLightbox"
       @image-error="handleLightboxImageError"
-      @open-original="lightboxPhoto && openLabOriginal(lightboxPhoto)"
-      @reveal-original="lightboxPhoto && revealLabOriginal(lightboxPhoto)"
-      @save-original="lightboxPhoto && saveLabOriginal(lightboxPhoto)"
     />
 
     <PhotoImportDialog
@@ -1195,15 +1160,10 @@ label {
   margin-bottom: 14px;
 }
 
-.gallery-toolbar small {
-  display: block;
-  margin-top: 5px;
-  color: #7f8a99;
-  font-size: 11px;
-}
-
 .gallery-actions {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 8px;
 }
 

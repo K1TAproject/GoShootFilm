@@ -11,9 +11,6 @@ defineProps<{
 const emit = defineEmits<{
   (event: 'close'): void
   (event: 'image-error'): void
-  (event: 'open-original'): void
-  (event: 'reveal-original'): void
-  (event: 'save-original'): void
 }>()
 </script>
 
@@ -23,11 +20,6 @@ const emit = defineEmits<{
       <div>
         <strong>Frame {{ frameNumber || '?' }}</strong>
         <span>{{ version === 'lab' ? '原始扫描预览（非原 TIFF）' : '调色图' }}</span>
-      </div>
-      <div v-if="version === 'lab'" class="original-actions">
-        <button @click="emit('open-original')">打开原始 TIFF</button>
-        <button @click="emit('reveal-original')">在文件夹中显示</button>
-        <button @click="emit('save-original')">另存原始 TIFF…</button>
       </div>
       <button class="close-btn" aria-label="关闭大图" @click="emit('close')">×</button>
     </header>
@@ -58,14 +50,27 @@ header {
 header > div:first-child { margin-right: auto; }
 header strong { display: block; color: #f8fafc; }
 header span { display: block; margin-top: 3px; color: #929eae; font-size: 11px; }
-.original-actions { display: flex; gap: 7px; }
 button { border: 1px solid #3a4555; border-radius: 6px; background: #1b222c; color: #d6dde6; padding: 7px 10px; cursor: pointer; }
 .close-btn { border: 0; background: transparent; font-size: 24px; }
-.lightbox-content { min-width: 0; min-height: 0; display: grid; place-items: center; padding: 18px; }
-img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.lightbox-content {
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  padding: 18px;
+}
+
+img {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  display: block;
+  object-fit: contain;
+}
 
 @media (max-width: 760px) {
   header { align-items: flex-start; flex-wrap: wrap; }
-  .original-actions { width: 100%; overflow-x: auto; order: 3; }
 }
 </style>

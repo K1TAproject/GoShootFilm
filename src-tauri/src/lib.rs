@@ -2,10 +2,9 @@ mod db;
 mod models;
 
 use models::{
-    CameraDetailResponse, CameraResponse, CameraRollResponse, DashboardStatsResponse,
-    ExportOriginalResponse, FilmResponse, ImportAnalysisItemResponse, ImportDraft,
-    ImportResultResponse, LabOriginalResponse, LabPreviewResponse, PhotoImportEntry, PhotoResponse,
-    RollDetailResponse, RollSummaryResponse,
+    CameraDetailResponse, CameraResponse, CameraRollResponse, DashboardStatsResponse, FilmResponse,
+    ImportAnalysisItemResponse, ImportDraft, ImportResultResponse, LabOriginalResponse,
+    LabPreviewResponse, PhotoImportEntry, PhotoResponse, RollDetailResponse, RollSummaryResponse,
 };
 use sqlx::SqlitePool;
 use std::collections::{HashMap, HashSet};
@@ -223,12 +222,6 @@ fn resolve_stored_path_buf(media_dir: &Path, stored_path: &str) -> Option<PathBu
     }
 }
 
-fn stored_file_name(stored_path: Option<&str>) -> Option<String> {
-    stored_path
-        .and_then(|path| Path::new(path).file_name())
-        .map(|name| name.to_string_lossy().into_owned())
-}
-
 #[tauri::command]
 async fn get_cameras(state: tauri::State<'_, AppState>) -> Result<Vec<CameraResponse>, String> {
     let rows: Vec<CameraRow> = sqlx::query_as(
@@ -429,7 +422,6 @@ async fn get_roll_detail(
             |(id, frame_number, lab_scan_path, edit_scan_path, is_favorite)| PhotoResponse {
                 id,
                 frame_number,
-                lab_original_name: stored_file_name(lab_scan_path.as_deref()),
                 lab_scan_path: resolve_stored_path(&state.media_dir, lab_scan_path),
                 edit_scan_path: resolve_stored_path(&state.media_dir, edit_scan_path),
                 is_favorite: is_favorite.unwrap_or(0) != 0,
@@ -1311,10 +1303,7 @@ async fn import_photo_versions_inner(
     })
 }
 
-async fn lab_original_for_photo(
-    state: &AppState,
-    photo_id: i64,
-) -> Result<(i64, PathBuf, String), String> {
+async fn lab_original_for_photo(state: &AppState, photo_id: i64) -> Result<(i64, PathBuf), String> {
     ensure_positive_id(photo_id, "照片编号")?;
     let row: Option<(i64, Option<String>)> =
         sqlx::query_as("SELECT roll_id, lab_scan_path FROM photos WHERE id = ?")
@@ -1329,11 +1318,7 @@ async fn lab_original_for_photo(
     if !original_path.is_file() {
         return Err(format!("原始扫描文件不存在: {}", original_path.display()));
     }
-    let file_name = original_path
-        .file_name()
-        .map(|name| name.to_string_lossy().into_owned())
-        .ok_or_else(|| "无法识别原始扫描文件名".to_string())?;
-    Ok((roll_id, original_path, file_name))
+    Ok((roll_id, original_path))
 }
 
 #[tauri::command]
@@ -1341,11 +1326,10 @@ async fn get_lab_original(
     state: tauri::State<'_, AppState>,
     photo_id: i64,
 ) -> Result<LabOriginalResponse, String> {
-    let (_, path, file_name) = lab_original_for_photo(&state, photo_id).await?;
+    let (_, path) = lab_original_for_photo(&state, photo_id).await?;
     Ok(LabOriginalResponse {
         photo_id,
         path: path.to_string_lossy().into_owned(),
-        file_name,
     })
 }
 
@@ -1354,7 +1338,7 @@ async fn get_lab_preview(
     state: tauri::State<'_, AppState>,
     photo_id: i64,
 ) -> Result<LabPreviewResponse, String> {
-    let (roll_id, original_path, original_name) = lab_original_for_photo(&state, photo_id).await?;
+    let (roll_id, original_path) = lab_original_for_photo(&state, photo_id).await?;
     let preview_path = preview_file_path(&state.preview_dir, roll_id, photo_id);
     let preview_is_fresh = match (
         tokio::fs::metadata(&original_path).await,
@@ -1400,44 +1384,6 @@ async fn get_lab_preview(
     Ok(LabPreviewResponse {
         photo_id,
         preview_path: preview_path.to_string_lossy().into_owned(),
-        original_path: original_path.to_string_lossy().into_owned(),
-        original_name,
-    })
-}
-
-#[tauri::command]
-async fn export_lab_original(
-    state: tauri::State<'_, AppState>,
-    photo_id: i64,
-    destination_path: String,
-    overwrite: bool,
-) -> Result<ExportOriginalResponse, String> {
-    let (_, original_path, _) = lab_original_for_photo(&state, photo_id).await?;
-    let destination_path = PathBuf::from(destination_path.trim());
-    if destination_path.as_os_str().is_empty() {
-        return Err("没有选择导出位置".into());
-    }
-    if destination_path == original_path {
-        return Err("导出位置就是应用中的原始扫描文件，未执行复制".into());
-    }
-    if destination_path.exists() && !overwrite {
-        return Ok(ExportOriginalResponse {
-            status: "exists".into(),
-            path: destination_path.to_string_lossy().into_owned(),
-        });
-    }
-    let parent = destination_path
-        .parent()
-        .ok_or_else(|| "无法确定导出目录".to_string())?;
-    if !parent.is_dir() {
-        return Err(format!("导出目录不存在: {}", parent.display()));
-    }
-    tokio::fs::copy(&original_path, &destination_path)
-        .await
-        .map_err(|error| format!("导出原件失败: {error}"))?;
-    Ok(ExportOriginalResponse {
-        status: "saved".into(),
-        path: destination_path.to_string_lossy().into_owned(),
     })
 }
 
@@ -1475,8 +1421,7 @@ pub fn run() {
             analyze_photo_import,
             import_photo_versions,
             get_lab_original,
-            get_lab_preview,
-            export_lab_original
+            get_lab_preview
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
