@@ -4,7 +4,7 @@ import { invoke } from '@tauri-apps/api/core'
 import PageHeader from '../components/PageHeader.vue'
 import type { Film, RollSummary } from '../types'
 import { errorMessage as formatError } from '../utils/errors'
-import { compactFilmTypeLabel, FILM_TYPES } from '../utils/films'
+import { compactFilmTypeLabel, FILM_TYPES, filmTargetStatusLabel } from '../utils/films'
 
 const filmTypes = FILM_TYPES
 
@@ -319,7 +319,7 @@ onMounted(() => {
           </select>
         </label>
         <label>
-          <span>状态</span>
+          <span>手动状态</span>
           <select v-model="formTargetStatus">
             <option value="untested">未测试</option>
             <option value="unshot">未拍摄</option>
@@ -357,7 +357,8 @@ onMounted(() => {
           <div class="detail-grid">
             <span>ISO</span><strong>{{ selectedFilm.iso }}</strong>
             <span>类型</span><strong>{{ selectedFilm.type }}</strong>
-            <span>状态</span><strong>{{ selectedFilm.targetStatus || 'untested' }}</strong>
+            <span>拍摄状态</span><strong>{{ isFilmShot(selectedFilm.id) ? '已拍摄' : '未拍摄' }}</strong>
+            <span>手动状态</span><strong>{{ filmTargetStatusLabel(selectedFilm.targetStatus) }}</strong>
             <span>备注</span><strong>{{ selectedFilm.note || '暂无备注' }}</strong>
           </div>
         </div>
@@ -382,7 +383,7 @@ onMounted(() => {
             </select>
           </label>
           <label>
-            <span>状态</span>
+            <span>手动状态</span>
             <select v-model="selectedFilm.targetStatus">
               <option value="untested">未测试</option>
               <option value="unshot">未拍摄</option>

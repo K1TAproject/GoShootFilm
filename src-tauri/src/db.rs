@@ -163,6 +163,15 @@ mod tests {
             .fetch_one(&pool)
             .await
             .expect("count rolls");
+        let photo_count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM photos")
+            .fetch_one(&pool)
+            .await
+            .expect("count photos");
+        let non_unshot_film_count: i64 =
+            sqlx::query_scalar("SELECT COUNT(*) FROM film_stocks WHERE target_status != 'unshot'")
+                .fetch_one(&pool)
+                .await
+                .expect("count films with a non-default status");
         let type_counts: Vec<(String, i64)> =
             sqlx::query_as("SELECT type, COUNT(*) FROM film_stocks GROUP BY type ORDER BY type")
                 .fetch_all(&pool)
@@ -177,6 +186,8 @@ mod tests {
         assert_eq!(film_count, 85);
         assert_eq!(camera_count, 0);
         assert_eq!(roll_count, 0);
+        assert_eq!(photo_count, 0);
+        assert_eq!(non_unshot_film_count, 0);
         assert_eq!(
             type_counts,
             vec![
@@ -195,6 +206,79 @@ mod tests {
                 "Color Negative".into(),
             )
         );
+    }
+
+    #[tokio::test]
+    async fn builtin_status_migration_preserves_user_statuses_notes_and_custom_films() {
+        let pool = memory_pool().await;
+        sqlx::raw_sql(include_str!("../migrations/0001_initial.sql"))
+            .execute(&pool)
+            .await
+            .expect("create legacy database");
+        sqlx::raw_sql(include_str!("../migrations/0002_import_official_films.sql"))
+            .execute(&pool)
+            .await
+            .expect("import legacy official catalog");
+
+        sqlx::query(
+            "UPDATE film_stocks SET target_status = 'untested', note = '用户设置' WHERE id = 3",
+        )
+        .execute(&pool)
+        .await
+        .expect("customize an original seed film");
+        sqlx::query(
+            "UPDATE film_stocks SET target_status = 'shot', note = '用户设置' WHERE brand = 'ADOX' AND name = 'ADOX CHS 100 II Black & White Film'",
+        )
+        .execute(&pool)
+        .await
+        .expect("customize an official catalog film");
+        sqlx::query(
+            "INSERT INTO film_stocks (brand, name, iso, type, target_status, note) VALUES ('Custom', 'Personal Film', 200, 'Color Negative', 'untested', '用户胶卷')",
+        )
+        .execute(&pool)
+        .await
+        .expect("insert a user film");
+
+        sqlx::raw_sql(include_str!(
+            "../migrations/0003_normalize_builtin_film_status.sql"
+        ))
+        .execute(&pool)
+        .await
+        .expect("normalize untouched builtin statuses");
+
+        let corrected_seed: String =
+            sqlx::query_scalar("SELECT target_status FROM film_stocks WHERE id = 1")
+                .fetch_one(&pool)
+                .await
+                .expect("read untouched seed status");
+        let customized_seed: (String, Option<String>) =
+            sqlx::query_as("SELECT target_status, note FROM film_stocks WHERE id = 3")
+                .fetch_one(&pool)
+                .await
+                .expect("read customized seed film");
+        let customized_official: (String, Option<String>) = sqlx::query_as(
+            "SELECT target_status, note FROM film_stocks WHERE brand = 'ADOX' AND name = 'ADOX CHS 100 II Black & White Film'",
+        )
+        .fetch_one(&pool)
+        .await
+        .expect("read customized official film");
+        let custom_film: (String, Option<String>) = sqlx::query_as(
+            "SELECT target_status, note FROM film_stocks WHERE brand = 'Custom' AND name = 'Personal Film'",
+        )
+        .fetch_one(&pool)
+        .await
+        .expect("read custom film");
+
+        assert_eq!(corrected_seed, "unshot");
+        assert_eq!(
+            customized_seed,
+            ("untested".into(), Some("用户设置".into()))
+        );
+        assert_eq!(
+            customized_official,
+            ("shot".into(), Some("用户设置".into()))
+        );
+        assert_eq!(custom_film, ("untested".into(), Some("用户胶卷".into())));
     }
 
     #[tokio::test]
