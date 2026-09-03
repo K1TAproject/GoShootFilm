@@ -2,7 +2,7 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { convertFileSrc, invoke } from '@tauri-apps/api/core'
 import { open } from '@tauri-apps/plugin-dialog'
-import { revealItemInDir } from '@tauri-apps/plugin-opener'
+import { openPath } from '@tauri-apps/plugin-opener'
 import { getCurrentWebview } from '@tauri-apps/api/webview'
 import { useRoute, useRouter } from 'vue-router'
 import PageHeader from '../components/PageHeader.vue'
@@ -17,7 +17,6 @@ import type {
   ImportConflictAction,
   ImportDraft,
   ImportResult,
-  LabOriginal,
   LabPreview,
   LabPreviewState,
   Photo,
@@ -83,6 +82,7 @@ const importBusy = ref(false)
 
 const editCount = computed(() => selectedRoll.value?.photos.filter(photo => photo.editScanPath).length ?? 0)
 const labCount = computed(() => selectedRoll.value?.photos.filter(photo => photo.labScanPath).length ?? 0)
+const activeVersionCount = computed(() => activePhotoVersion.value === 'lab' ? labCount.value : editCount.value)
 
 function openLightbox(photo: Photo, src: string) {
   lightboxPhoto.value = photo
@@ -596,20 +596,18 @@ async function toggleFavorite(photo: Photo) {
   }
 }
 
-async function resolveLabOriginal(photo: Photo) {
-  return invoke<LabOriginal>('get_lab_original', { photoId: photo.id })
-}
-
 async function revealPhotoOriginalLocation() {
   visibleError.value = ''
-  const photo = selectedRoll.value?.photos.find(item => item.labScanPath)
-  if (!photo) {
-    visibleError.value = '当前拍摄卷没有可定位的原始扫描文件。'
+  if (!selectedRoll.value || activeVersionCount.value === 0) {
+    visibleError.value = '当前图片版本还没有可打开的图库目录。'
     return
   }
   try {
-    const original = await resolveLabOriginal(photo)
-    await revealItemInDir(original.path)
+    const directory = await invoke<string>('get_roll_media_directory', {
+      rollId: selectedRoll.value.id,
+      version: activePhotoVersion.value,
+    })
+    await openPath(directory)
   } catch (error) {
     visibleError.value = formatError(error, '无法打开图片原始位置')
   }
@@ -845,7 +843,7 @@ onUnmounted(() => {
           />
           <div class="gallery-actions">
             <button
-              v-if="activePhotoVersion === 'lab' && labCount > 0"
+              v-if="activeVersionCount > 0"
               class="secondary-btn"
               :disabled="isBusy"
               @click="revealPhotoOriginalLocation"

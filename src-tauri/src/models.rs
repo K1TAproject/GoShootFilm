@@ -98,13 +98,6 @@ pub struct LabPreviewResponse {
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct LabOriginalResponse {
-    pub photo_id: i64,
-    pub path: String,
-}
-
-#[derive(Debug, Clone, Serialize)]
-#[serde(rename_all = "camelCase")]
 pub struct RollDetailResponse {
     #[serde(flatten)]
     pub summary: RollSummaryResponse,

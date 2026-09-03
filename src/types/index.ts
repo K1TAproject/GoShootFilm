@@ -85,11 +85,6 @@ export interface LabPreviewState {
   error?: string
 }
 
-export interface LabOriginal {
-  photoId: number
-  path: string
-}
-
 export interface RollDetail extends RollSummary {
   photos: Photo[]
 }

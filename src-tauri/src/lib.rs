@@ -3,12 +3,14 @@ mod models;
 
 use models::{
     CameraDetailResponse, CameraResponse, CameraRollResponse, DashboardStatsResponse, FilmResponse,
-    ImportAnalysisItemResponse, ImportDraft, ImportResultResponse, LabOriginalResponse,
-    LabPreviewResponse, PhotoImportEntry, PhotoResponse, RollDetailResponse, RollSummaryResponse,
+    ImportAnalysisItemResponse, ImportDraft, ImportResultResponse, LabPreviewResponse,
+    PhotoImportEntry, PhotoResponse, RollDetailResponse, RollSummaryResponse,
 };
 use sqlx::SqlitePool;
 use std::collections::{HashMap, HashSet};
+use std::ffi::OsStr;
 use std::path::{Component, Path, PathBuf};
+#[cfg(test)]
 use std::time::{SystemTime, UNIX_EPOCH};
 use tauri::Manager;
 
@@ -192,10 +194,24 @@ fn ensure_changed(rows_affected: u64, entity: &str) -> Result<(), String> {
 }
 
 fn safe_media_path(media_dir: &Path, stored_path: &Path) -> Option<PathBuf> {
-    if stored_path.is_absolute()
-        || stored_path
-            .components()
-            .any(|component| !matches!(component, Component::Normal(_)))
+    if stored_path.is_absolute() {
+        return None;
+    }
+
+    let parts = stored_path
+        .components()
+        .map(|component| match component {
+            Component::Normal(value) => Some(value),
+            _ => None,
+        })
+        .collect::<Option<Vec<_>>>()?;
+    if parts.len() != 4
+        || parts[0] != OsStr::new("rolls")
+        || parts[1]
+            .to_str()
+            .and_then(|value| value.parse::<i64>().ok())
+            .is_none_or(|roll_id| roll_id <= 0)
+        || !matches!(parts[2].to_str(), Some("lab" | "edit"))
     {
         return None;
     }
@@ -205,21 +221,12 @@ fn safe_media_path(media_dir: &Path, stored_path: &Path) -> Option<PathBuf> {
 fn resolve_stored_path(media_dir: &Path, stored_path: Option<String>) -> Option<String> {
     stored_path.and_then(|stored_path| {
         let path = Path::new(&stored_path);
-        if path.is_absolute() {
-            Some(stored_path)
-        } else {
-            safe_media_path(media_dir, path).map(|path| path.to_string_lossy().into_owned())
-        }
+        safe_media_path(media_dir, path).map(|path| path.to_string_lossy().into_owned())
     })
 }
 
 fn resolve_stored_path_buf(media_dir: &Path, stored_path: &str) -> Option<PathBuf> {
-    let path = Path::new(stored_path);
-    if path.is_absolute() {
-        Some(path.to_path_buf())
-    } else {
-        safe_media_path(media_dir, path)
-    }
+    safe_media_path(media_dir, Path::new(stored_path))
 }
 
 #[tauri::command]
@@ -881,6 +888,38 @@ fn validate_photo_version(version: &str) -> Result<(), String> {
     }
 }
 
+fn roll_version_relative_dir(roll_id: i64, version: &str) -> PathBuf {
+    PathBuf::from("rolls")
+        .join(roll_id.to_string())
+        .join(version)
+}
+
+#[tauri::command]
+async fn get_roll_media_directory(
+    state: tauri::State<'_, AppState>,
+    roll_id: i64,
+    version: String,
+) -> Result<String, String> {
+    ensure_positive_id(roll_id, "拍摄卷编号")?;
+    validate_photo_version(&version)?;
+    let roll_exists: Option<i64> = sqlx::query_scalar("SELECT id FROM rolls WHERE id = ?")
+        .bind(roll_id)
+        .fetch_optional(&state.db)
+        .await
+        .map_err(|error| format!("确认拍摄卷失败: {error}"))?;
+    if roll_exists.is_none() {
+        return Err("拍摄卷不存在".into());
+    }
+
+    let directory = state
+        .media_dir
+        .join(roll_version_relative_dir(roll_id, &version));
+    if !directory.is_dir() {
+        return Err("当前图片版本还没有图库目录".into());
+    }
+    Ok(directory.to_string_lossy().into_owned())
+}
+
 fn extension_allowed(version: &str, extension: &str) -> bool {
     match version {
         "lab" => matches!(
@@ -1091,6 +1130,64 @@ async fn cleanup_copied_files(paths: &[PathBuf]) {
     }
 }
 
+fn numbered_copy_name(file_name: &str, copy_number: usize) -> String {
+    let path = Path::new(file_name);
+    let stem = path
+        .file_stem()
+        .and_then(OsStr::to_str)
+        .unwrap_or(file_name);
+    match path.extension().and_then(OsStr::to_str) {
+        Some(extension) if !extension.is_empty() => {
+            format!("{stem} ({copy_number}).{extension}")
+        }
+        _ => format!("{stem} ({copy_number})"),
+    }
+}
+
+async fn copy_to_unique_gallery_path(
+    source_path: &Path,
+    destination_dir: &Path,
+    file_name: &str,
+) -> Result<PathBuf, String> {
+    let mut copy_number = 1_usize;
+    loop {
+        let destination_name = if copy_number == 1 {
+            file_name.to_string()
+        } else {
+            numbered_copy_name(file_name, copy_number)
+        };
+        let destination_path = destination_dir.join(destination_name);
+        let mut destination = match tokio::fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&destination_path)
+            .await
+        {
+            Ok(file) => file,
+            Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => {
+                copy_number = copy_number
+                    .checked_add(1)
+                    .ok_or_else(|| "无法生成唯一的图库文件名".to_string())?;
+                continue;
+            }
+            Err(error) => return Err(format!("无法创建图库文件: {error}")),
+        };
+
+        let copy_result = async {
+            let mut source = tokio::fs::File::open(source_path).await?;
+            tokio::io::copy(&mut source, &mut destination).await?;
+            destination.sync_all().await
+        }
+        .await;
+        if let Err(error) = copy_result {
+            drop(destination);
+            let _ = tokio::fs::remove_file(&destination_path).await;
+            return Err(format!("复制图片失败: {error}"));
+        }
+        return Ok(destination_path);
+    }
+}
+
 #[tauri::command]
 async fn import_photo_versions(
     state: tauri::State<'_, AppState>,
@@ -1199,50 +1296,48 @@ async fn import_photo_versions_inner(
         }
     }
 
-    let relative_dir = PathBuf::from("rolls")
-        .join(roll_id.to_string())
-        .join(&version);
+    let relative_dir = roll_version_relative_dir(roll_id, &version);
     let absolute_dir = state.media_dir.join(&relative_dir);
     tokio::fs::create_dir_all(&absolute_dir)
         .await
         .map_err(|e| format!("无法创建照片存储目录: {e}"))?;
 
-    let batch_id = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map_err(|error| format!("无法生成导入批次编号: {error}"))?
-        .as_nanos();
     let mut imported_count = 0_usize;
     let mut updated_count = 0_usize;
     let mut skipped_count = 0_usize;
     let mut copied_files = Vec::new();
     let mut preview_invalidations = Vec::new();
-    for (index, (entry, source)) in normalized.into_iter().enumerate() {
+    for (entry, source) in normalized {
         if entry.conflict_action == "skip" {
             skipped_count += 1;
             continue;
         }
-        let relative_path = relative_dir
-            .join(format!("{:02}", entry.frame_number))
-            .join(format!("{batch_id}_{index}"))
-            .join(&source.file_name);
-        let absolute_path = state.media_dir.join(&relative_path);
-        if let Some(parent) = absolute_path.parent() {
-            if let Err(error) = tokio::fs::create_dir_all(parent).await {
+        let absolute_path = match copy_to_unique_gallery_path(
+            &source.source_path,
+            &absolute_dir,
+            &source.file_name,
+        )
+        .await
+        {
+            Ok(path) => path,
+            Err(error) => {
                 cleanup_copied_files(&copied_files).await;
                 let _ = transaction.rollback().await;
-                return Err(format!("无法创建正式图库目录: {error}"));
+                return Err(format!(
+                    "复制照片到正式图库失败（{}）: {error}",
+                    source.source_display
+                ));
             }
-        }
-        if let Err(error) = tokio::fs::copy(&source.source_path, &absolute_path).await {
-            cleanup_copied_files(&copied_files).await;
-            let _ = transaction.rollback().await;
-            return Err(format!(
-                "复制照片到正式图库失败（{}）: {error}",
-                source.source_display
-            ));
-        }
+        };
         copied_files.push(absolute_path.clone());
-        let stored_path = relative_path.to_string_lossy().replace('\\', "/");
+        let stored_path = match absolute_path.strip_prefix(&state.media_dir) {
+            Ok(path) => path.to_string_lossy().replace('\\', "/"),
+            Err(_) => {
+                cleanup_copied_files(&copied_files).await;
+                let _ = transaction.rollback().await;
+                return Err("图库文件路径超出应用数据目录，已取消本批次导入".into());
+            }
+        };
         let existing_row = existing
             .get(&entry.frame_number)
             .and_then(|rows| rows.first());
@@ -1319,18 +1414,6 @@ async fn lab_original_for_photo(state: &AppState, photo_id: i64) -> Result<(i64,
         return Err(format!("原始扫描文件不存在: {}", original_path.display()));
     }
     Ok((roll_id, original_path))
-}
-
-#[tauri::command]
-async fn get_lab_original(
-    state: tauri::State<'_, AppState>,
-    photo_id: i64,
-) -> Result<LabOriginalResponse, String> {
-    let (_, path) = lab_original_for_photo(&state, photo_id).await?;
-    Ok(LabOriginalResponse {
-        photo_id,
-        path: path.to_string_lossy().into_owned(),
-    })
 }
 
 #[tauri::command]
@@ -1420,7 +1503,7 @@ pub fn run() {
             delete_photo,
             analyze_photo_import,
             import_photo_versions,
-            get_lab_original,
+            get_roll_media_directory,
             get_lab_preview
         ])
         .run(tauri::generate_context!())
@@ -1453,9 +1536,11 @@ mod validation_tests {
     #[test]
     fn media_paths_cannot_escape_the_application_gallery() {
         let media_dir = Path::new("C:/app/media");
-        assert!(safe_media_path(media_dir, Path::new("rolls/1/photo.jpg")).is_some());
+        assert!(safe_media_path(media_dir, Path::new("rolls/1/edit/photo.jpg")).is_some());
         assert!(safe_media_path(media_dir, Path::new("../private.jpg")).is_none());
         assert!(safe_media_path(media_dir, Path::new("C:/outside.jpg")).is_none());
+        assert!(safe_media_path(media_dir, Path::new("rolls/1/edit/08/batch/photo.jpg")).is_none());
+        assert!(safe_media_path(media_dir, Path::new("legacy/photo.jpg")).is_none());
     }
 
     #[test]
@@ -1591,8 +1676,80 @@ mod validation_tests {
         .await
         .expect("read paired photo");
         assert_eq!(row.0, 1);
-        assert!(row.1.as_deref().is_some_and(|path| path.contains("/lab/")));
-        assert!(row.2.as_deref().is_some_and(|path| path.contains("/edit/")));
+        assert_eq!(row.1.as_deref(), Some("rolls/1/lab/260203000031430008.tif"));
+        assert_eq!(row.2.as_deref(), Some("rolls/1/edit/edit_08.png"));
+        assert!(state
+            .media_dir
+            .join("rolls/1/lab/260203000031430008.tif")
+            .is_file());
+        assert!(state.media_dir.join("rolls/1/edit/edit_08.png").is_file());
+
+        let duplicate_source_dir = test_dir.join("duplicate-source");
+        std::fs::create_dir_all(&duplicate_source_dir).expect("create duplicate source directory");
+        let duplicate_name_source = duplicate_source_dir.join("260203000031430008.tif");
+        image
+            .save_with_format(&duplicate_name_source, image::ImageFormat::Tiff)
+            .expect("create same-name TIFF source");
+        import_photo_versions_inner(
+            &state,
+            1,
+            "lab".into(),
+            vec![PhotoImportEntry {
+                source_path: duplicate_name_source.to_string_lossy().into_owned(),
+                frame_number: 9,
+                conflict_action: "add".into(),
+            }],
+        )
+        .await
+        .expect("import readable unique copy name");
+        let duplicate_path: String =
+            sqlx::query_scalar("SELECT lab_scan_path FROM photos WHERE frame_number = 9")
+                .fetch_one(&pool)
+                .await
+                .expect("read unique copy path");
+        assert_eq!(duplicate_path, "rolls/1/lab/260203000031430008 (2).tif");
+
+        sqlx::query(
+            "CREATE TRIGGER fail_frame_11 BEFORE INSERT ON photos WHEN NEW.frame_number = 11 BEGIN SELECT RAISE(ABORT, 'forced failure'); END",
+        )
+        .execute(&pool)
+        .await
+        .expect("create failure trigger");
+        let first_batch_source = test_dir.join("atomic_10.png");
+        let second_batch_source = test_dir.join("atomic_11.png");
+        image
+            .save_with_format(&first_batch_source, image::ImageFormat::Png)
+            .expect("create first atomic source");
+        image
+            .save_with_format(&second_batch_source, image::ImageFormat::Png)
+            .expect("create second atomic source");
+        let failed_batch = import_photo_versions_inner(
+            &state,
+            1,
+            "edit".into(),
+            vec![
+                PhotoImportEntry {
+                    source_path: first_batch_source.to_string_lossy().into_owned(),
+                    frame_number: 10,
+                    conflict_action: "add".into(),
+                },
+                PhotoImportEntry {
+                    source_path: second_batch_source.to_string_lossy().into_owned(),
+                    frame_number: 11,
+                    conflict_action: "add".into(),
+                },
+            ],
+        )
+        .await;
+        assert!(failed_batch.is_err());
+        let failed_rows: i64 =
+            sqlx::query_scalar("SELECT COUNT(*) FROM photos WHERE frame_number IN (10, 11)")
+                .fetch_one(&pool)
+                .await
+                .expect("count rolled-back rows");
+        assert_eq!(failed_rows, 0);
+        assert!(!state.media_dir.join("rolls/1/edit/atomic_10.png").exists());
+        assert!(!state.media_dir.join("rolls/1/edit/atomic_11.png").exists());
 
         let conflict = import_photo_versions_inner(
             &state,
@@ -1610,7 +1767,7 @@ mod validation_tests {
             .fetch_one(&pool)
             .await
             .expect("count photos");
-        assert_eq!(count, 1);
+        assert_eq!(count, 2);
 
         pool.close().await;
         std::fs::remove_dir_all(&test_dir).expect("clean import test directory");
