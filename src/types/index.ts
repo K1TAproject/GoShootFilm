@@ -30,6 +30,7 @@ export interface RollSummary {
   cameraModel: string
   filmBrand: string
   filmName: string
+  filmType: string
   cameraInfo: string
   filmInfo: string
   coverPath?: string

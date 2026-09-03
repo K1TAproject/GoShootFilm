@@ -39,6 +39,7 @@ pub struct RollSummaryResponse {
     pub camera_model: String,
     pub film_brand: String,
     pub film_name: String,
+    pub film_type: String,
     pub camera_info: String,
     pub film_info: String,
     pub cover_path: Option<String>,

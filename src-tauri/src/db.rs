@@ -136,9 +136,17 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn new_database_contains_only_seed_films() {
+    async fn official_film_catalog_is_imported_once_with_canonical_values() {
         let pool = memory_pool().await;
         MIGRATOR.run(&pool).await.expect("run migrations");
+        MIGRATOR
+            .run(&pool)
+            .await
+            .expect("rerun migrations without duplicates");
+        sqlx::raw_sql(include_str!("../migrations/0002_import_official_films.sql"))
+            .execute(&pool)
+            .await
+            .expect("rerun official catalog import without duplicates");
         repair_legacy_camera_schema(&pool)
             .await
             .expect("repair schema");
@@ -155,10 +163,38 @@ mod tests {
             .fetch_one(&pool)
             .await
             .expect("count rolls");
+        let type_counts: Vec<(String, i64)> =
+            sqlx::query_as("SELECT type, COUNT(*) FROM film_stocks GROUP BY type ORDER BY type")
+                .fetch_all(&pool)
+                .await
+                .expect("count films by type");
+        let sample: (i64, String, String, i64, String) =
+            sqlx::query_as("SELECT id, brand, name, iso, type FROM film_stocks WHERE id = 5")
+                .fetch_one(&pool)
+                .await
+                .expect("read canonicalized sample film");
 
-        assert_eq!(film_count, 6);
+        assert_eq!(film_count, 85);
         assert_eq!(camera_count, 0);
         assert_eq!(roll_count, 0);
+        assert_eq!(
+            type_counts,
+            vec![
+                ("B&W".into(), 42),
+                ("Color Negative".into(), 37),
+                ("Slide".into(), 6),
+            ]
+        );
+        assert_eq!(
+            sample,
+            (
+                5,
+                "ORWO".into(),
+                "ORIGINAL WOLFEN NC500 Color Negative Film".into(),
+                400,
+                "Color Negative".into(),
+            )
+        );
     }
 
     #[tokio::test]

@@ -51,6 +51,7 @@ type RollListRow = (
     String,
     String,
     String,
+    String,
     Option<String>,
     i64,
 );
@@ -62,6 +63,7 @@ type RollDetailRow = (
     Option<String>,
     Option<String>,
     Option<String>,
+    String,
     String,
     String,
     String,
@@ -321,7 +323,7 @@ async fn get_rolls(state: tauri::State<'_, AppState>) -> Result<Vec<RollSummaryR
         r#"
         SELECT
             r.id, r.camera_id, r.film_stock_id, r.roll_index, r.shot_month, r.city, r.note,
-            c.brand, c.model, f.brand, f.name,
+            c.brand, c.model, f.brand, f.name, f.type,
             (
                 SELECT p.edit_scan_path
                 FROM photos p
@@ -355,6 +357,7 @@ async fn get_rolls(state: tauri::State<'_, AppState>) -> Result<Vec<RollSummaryR
                 camera_model,
                 film_brand,
                 film_name,
+                film_type,
                 cover_path,
                 photo_count,
             )| {
@@ -372,6 +375,7 @@ async fn get_rolls(state: tauri::State<'_, AppState>) -> Result<Vec<RollSummaryR
                     camera_model,
                     film_brand,
                     film_name,
+                    film_type,
                     cover_path: resolve_stored_path(&state.media_dir, cover_path),
                     photo_count,
                 }
@@ -389,7 +393,7 @@ async fn get_roll_detail(
     let roll: Option<RollDetailRow> = sqlx::query_as(
         r#"
         SELECT r.id, r.camera_id, r.film_stock_id, r.roll_index, r.shot_month, r.city, r.note,
-               c.brand, c.model, f.brand, f.name
+               c.brand, c.model, f.brand, f.name, f.type
         FROM rolls r
         JOIN cameras c ON c.id = r.camera_id
         JOIN film_stocks f ON f.id = r.film_stock_id
@@ -412,6 +416,7 @@ async fn get_roll_detail(
         camera_model,
         film_brand,
         film_name,
+        film_type,
     ) = roll.ok_or_else(|| "未找到拍摄卷".to_string())?;
 
     let photos: Vec<PhotoRow> = sqlx::query_as(
@@ -451,6 +456,7 @@ async fn get_roll_detail(
             camera_model,
             film_brand,
             film_name,
+            film_type,
             cover_path: None,
             photo_count,
         },

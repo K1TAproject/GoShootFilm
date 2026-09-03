@@ -4,8 +4,9 @@ import { invoke } from '@tauri-apps/api/core'
 import PageHeader from '../components/PageHeader.vue'
 import type { Film, RollSummary } from '../types'
 import { errorMessage as formatError } from '../utils/errors'
+import { compactFilmTypeLabel, FILM_TYPES } from '../utils/films'
 
-const filmTypes = ['Color Negative', 'B&W', 'Slide']
+const filmTypes = FILM_TYPES
 
 const films = ref<Film[]>([])
 const rolls = ref<RollSummary[]>([])
@@ -101,10 +102,6 @@ function resetFilters() {
 
 function isFilmShot(filmId: number) {
   return rolls.value.some(roll => roll.filmId === filmId)
-}
-
-function filmTypeLabel(type: string) {
-  return type === 'Color Negative' ? 'Color' : type
 }
 
 function filmImageSrc(film: Film) {
@@ -252,7 +249,7 @@ onMounted(() => {
           </select>
           <select v-model="draftType">
             <option value="">全部类型</option>
-            <option v-for="type in availableTypes" :key="type" :value="type">{{ filmTypeLabel(type) }}</option>
+            <option v-for="type in availableTypes" :key="type" :value="type">{{ compactFilmTypeLabel(type) }}</option>
           </select>
           <select v-model="draftShotStatus">
             <option value="">全部拍摄状态</option>
@@ -283,7 +280,7 @@ onMounted(() => {
             <div class="meta-row">
               <span>ISO {{ film.iso }}</span>
               <span>{{ isFilmShot(film.id) ? '已拍摄' : '未拍摄' }}</span>
-              <span>{{ filmTypeLabel(film.type) }}</span>
+              <span>{{ compactFilmTypeLabel(film.type) }}</span>
             </div>
           </div>
         </button>
@@ -318,7 +315,7 @@ onMounted(() => {
         <label>
           <span>类型 *</span>
           <select v-model="formType">
-            <option v-for="type in filmTypes" :key="type" :value="type">{{ filmTypeLabel(type) }}</option>
+            <option v-for="type in filmTypes" :key="type" :value="type">{{ type }}</option>
           </select>
         </label>
         <label>
@@ -359,7 +356,7 @@ onMounted(() => {
           <h2>{{ selectedFilm.name }}</h2>
           <div class="detail-grid">
             <span>ISO</span><strong>{{ selectedFilm.iso }}</strong>
-            <span>类型</span><strong>{{ filmTypeLabel(selectedFilm.type) }}</strong>
+            <span>类型</span><strong>{{ selectedFilm.type }}</strong>
             <span>状态</span><strong>{{ selectedFilm.targetStatus || 'untested' }}</strong>
             <span>备注</span><strong>{{ selectedFilm.note || '暂无备注' }}</strong>
           </div>
@@ -381,7 +378,7 @@ onMounted(() => {
           <label>
             <span>类型</span>
             <select v-model="selectedFilm.type">
-              <option v-for="type in filmTypes" :key="type" :value="type">{{ filmTypeLabel(type) }}</option>
+              <option v-for="type in filmTypes" :key="type" :value="type">{{ type }}</option>
             </select>
           </label>
           <label>
@@ -560,7 +557,7 @@ textarea {
 .film-card,
 .add-card {
   min-width: 0;
-  height: 268px;
+  height: 320px;
   min-height: 0;
   border: 1px solid #262c38;
   border-radius: 8px;
@@ -632,16 +629,16 @@ textarea {
 }
 
 .film-name {
-  min-height: calc(2 * 1.35em);
-  max-height: calc(2 * 1.35em);
+  min-height: calc(4 * 1.35em);
+  max-height: calc(4 * 1.35em);
   display: -webkit-box;
   overflow: hidden;
   overflow-wrap: anywhere;
   white-space: normal;
   word-break: break-word;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
 }
 
 .meta-row {

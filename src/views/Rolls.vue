@@ -26,6 +26,7 @@ import type {
   RollSummary,
 } from '../types'
 import { errorMessage as formatError } from '../utils/errors'
+import { compactFilmTypeLabel, FILM_TYPES } from '../utils/films'
 
 const route = useRoute()
 const router = useRouter()
@@ -48,6 +49,7 @@ let unlistenDragDrop: (() => void) | null = null
 
 const draftFilmBrand = ref('')
 const draftFilmName = ref('')
+const draftFilmType = ref('')
 const draftCameraBrand = ref('')
 const draftCameraModel = ref('')
 const draftShotYear = ref('')
@@ -55,6 +57,7 @@ const draftShotMonth = ref('')
 
 const activeFilmBrand = ref('')
 const activeFilmName = ref('')
+const activeFilmType = ref('')
 const activeCameraBrand = ref('')
 const activeCameraModel = ref('')
 const activeShotYear = ref('')
@@ -253,13 +256,14 @@ const filteredRolls = computed(() => {
     .filter(roll => {
       const matchFilmBrand = activeFilmBrand.value ? roll.filmBrand === activeFilmBrand.value : true
       const matchFilmName = activeFilmName.value ? roll.filmName === activeFilmName.value : true
+      const matchFilmType = activeFilmType.value ? roll.filmType === activeFilmType.value : true
       const matchCameraBrand = activeCameraBrand.value ? roll.cameraBrand === activeCameraBrand.value : true
       const matchCameraModel = activeCameraModel.value ? roll.cameraModel === activeCameraModel.value : true
       const matchShotYear = activeShotYear.value ? roll.shotMonth?.startsWith(`${activeShotYear.value}-`) : true
       const matchShotMonth = activeShotYear.value && activeShotMonth.value
         ? roll.shotMonth === `${activeShotYear.value}-${activeShotMonth.value}`
         : true
-      return matchFilmBrand && matchFilmName && matchCameraBrand && matchCameraModel && matchShotYear && matchShotMonth
+      return matchFilmBrand && matchFilmName && matchFilmType && matchCameraBrand && matchCameraModel && matchShotYear && matchShotMonth
     })
     .sort((a, b) => {
       const aTime = a.shotMonth ? new Date(`${a.shotMonth}-01`).getTime() : 0
@@ -272,6 +276,7 @@ const filteredRolls = computed(() => {
 function applyFilters() {
   activeFilmBrand.value = draftFilmBrand.value
   activeFilmName.value = draftFilmName.value
+  activeFilmType.value = draftFilmType.value
   activeCameraBrand.value = draftCameraBrand.value
   activeCameraModel.value = draftCameraModel.value
   activeShotYear.value = draftShotYear.value
@@ -281,12 +286,14 @@ function applyFilters() {
 function resetFilters() {
   draftFilmBrand.value = ''
   draftFilmName.value = ''
+  draftFilmType.value = ''
   draftCameraBrand.value = ''
   draftCameraModel.value = ''
   draftShotYear.value = ''
   draftShotMonth.value = ''
   activeFilmBrand.value = ''
   activeFilmName.value = ''
+  activeFilmType.value = ''
   activeCameraBrand.value = ''
   activeCameraModel.value = ''
   activeShotYear.value = ''
@@ -737,6 +744,10 @@ onUnmounted(() => {
           <option value="">全部胶卷型号</option>
           <option v-for="name in availableFilmNames" :key="name" :value="name">{{ name }}</option>
         </select>
+        <select v-model="draftFilmType">
+          <option value="">全部类型</option>
+          <option v-for="type in FILM_TYPES" :key="type" :value="type">{{ compactFilmTypeLabel(type) }}</option>
+        </select>
         <select v-model="draftCameraBrand">
           <option value="">全部设备品牌</option>
           <option v-for="brand in availableCameraBrands" :key="brand" :value="brand">{{ brand }}</option>
@@ -989,9 +1000,10 @@ h2 {
 
 .filter-panel {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr)) auto auto;
+  grid-template-columns: repeat(7, minmax(0, 1fr)) auto auto;
   gap: 10px;
   align-items: center;
+  font-size: 12px;
 }
 
 select,

@@ -1,0 +1,85 @@
+Foma;FOMAPAN 100 Classic Black & White Negative Film;100;B&W
+Foma;FOMAPAN 200 Creative Black & White Negative Film;200;B&W
+Foma;FOMAPAN 400 Action Black & White Negative Film;400;B&W
+Foma;FOMAPAN R 100 Black & White Reversal Film;100;B&W
+Foma;RETROPAN 320 soft Black & White Negative Film;320;B&W
+Foma;FOMA Ortho 400 Black & White Negative Film;400;B&W
+Fujifilm;FUJICOLOR 100 Color Negative Film;100;Color
+Fujifilm;FUJIFILM 200 Color Negative Film;200;Color
+Fujifilm;FUJIFILM 400 Color Negative Film;400;Color
+Fujifilm;FUJICOLOR PRO 400H Professional Color Negative Film;400;Color
+Fujifilm;FUJICOLOR SUPERIA X-TRA 400 Color Negative Film;400;Color
+Fujifilm;FUJICOLOR SUPERIA PREMIUM 400 Color Negative Film;400;Color
+Fujifilm;NEOPAN 100 ACROS II Black & White Negative Film;100;B&W
+Fujifilm;FUJICHROME PROVIA 100F Professional Color Reversal Film;100;Slide
+Fujifilm;FUJICHROME Velvia 50 Professional Color Reversal Film;50;Slide
+Fujifilm;FUJICHROME Velvia 100 Professional Color Reversal Film;100;Slide
+Kodak;KODAK PROFESSIONAL EKTACHROME E100 Color Reversal Film;100;Slide
+Kodak;EASTMAN DOUBLE-X Black & White Negative Film 5222;250;B&W
+Kodak;KODAK EKTACHROME 100D Color Reversal Film 5294;100;Slide
+Kodak;KODAK VISION3 50D Color Negative Film 5203;50;Color
+Kodak;KODAK VISION3 250D Color Negative Film 5207;250;Color
+Kodak;KODAK VISION3 200T Color Negative Film 5213;200;Color
+Kodak;KODAK VISION3 500T Color Negative Film 5219;500;Color
+Kodak;KODAK AEROCOLOR IV Negative Film 2460;125;Color
+Kodak;KODAK PROFESSIONAL EKTAR 100 Color Negative Film;100;Color
+Kodak;KODAK PROFESSIONAL PRO IMAGE 100 Color Negative Film;100;Color
+Kodak;KODAK ColorPlus 200 Color Negative Film;200;Color
+Kodak;KODAK GOLD 200 Color Negative Film;200;Color
+Kodak;KODAK UltraMax 400 Color Negative Film;400;Color
+Kodak;KODAK PROFESSIONAL PORTRA 160 Color Negative Film;160;Color
+Kodak;KODAK PROFESSIONAL PORTRA 400 Color Negative Film;400;Color
+Kodak;KODAK PROFESSIONAL PORTRA 800 Color Negative Film;800;Color
+Kodak;KODAK PROFESSIONAL TRI-X 400 Black & White Film;400;B&W
+Kodak;KODAK PROFESSIONAL T-MAX 100 Black & White Film;100;B&W
+Kodak;KODAK PROFESSIONAL T-MAX 400 Black & White Film;400;B&W
+Kodak;KODAK PROFESSIONAL T-MAX P3200 Black & White Film;3200;B&W
+Kodak;KODAK GOLD 800 Color Negative Film;800;Color
+ORWO;ORIGINAL WOLFEN NC400 Color Negative Film;400;Color
+ORWO;ORIGINAL WOLFEN NC500 Color Negative Film;400;Color
+CineStill;CineStill 50D Daylight Fine Grain Color Negative Film;50;Color
+CineStill;CineStill 400Dynamic Versatile Color Negative Film;400;Color
+CineStill;CineStill 800Tungsten High Speed Color Negative Film;800;Color
+HARMAN;HARMAN Phoenix 200 Colour Film;200;Color
+HARMAN;HARMAN Phoenix II 200 Colour Film;200;Color
+HARMAN;HARMAN RED 125 Redscale Film;125;Color
+HARMAN;HARMAN SWITCH Azure 125 Colour Film;125;Color
+ILFORD;ILFORD PAN 100 Black & White Film;100;B&W
+ILFORD;ILFORD PAN 400 Black & White Film;400;B&W
+ILFORD;ILFORD PAN F PLUS 50 Black & White Film;50;B&W
+ILFORD;ILFORD ORTHO PLUS 80 Black & White Film;80;B&W
+ILFORD;ILFORD FP4 PLUS 125 Black & White Film;125;B&W
+ILFORD;ILFORD HP5 PLUS 400 Black & White Film;400;B&W
+ILFORD;ILFORD XP2 SUPER 400 Black & White Film;400;B&W
+ILFORD;ILFORD SFX 200 Black & White Film;200;B&W
+ILFORD;ILFORD DELTA 100 PROFESSIONAL Black & White Film;100;B&W
+ILFORD;ILFORD DELTA 400 PROFESSIONAL Black & White Film;400;B&W
+ILFORD;ILFORD DELTA 3200 PROFESSIONAL Black & White Film;3200;B&W
+Kentmere;Kentmere PAN 100 Black & White Film;100;B&W
+Kentmere;Kentmere PAN 200 Black & White Film;200;B&W
+Kentmere;Kentmere PAN 400 Black & White Film;400;B&W
+Lomography;Lomography Color Negative 100;100;Color
+Lomography;Lomography Color Negative 400;400;Color
+Lomography;Lomography Color Negative 800;800;Color
+Lomography;LomoChrome Metropolis ISO 100-400;100-400;Color
+Lomography;LomoChrome Purple ISO 100-400;100-400;Color
+Lomography;LomoChrome Turquoise ISO 100-400;100-400;Color
+Lomography;LomoChrome Color '92;400;Color
+ADOX;ADOX CMS 20 II Professional Black & White Film;20;B&W
+ADOX;ADOX SCALA 50 Black & White Reversal Film;50;B&W
+ADOX;ADOX CHS 100 II Black & White Film;100;B&W
+Rollei;Rollei RPX 25 Black & White Negative Film;25;B&W
+Rollei;Rollei RPX 100 Black & White Negative Film;100;B&W
+Rollei;Rollei RPX 400 Black & White Negative Film;400;B&W
+Rollei;Rollei Superpan 200 Black & White Film;200;B&W
+Rollei;Rollei Paul & Reinhold 100 Black & White Film;100;B&W
+Rollei;Rollei Infrared 400 Black & White Film;400;B&W
+Rollei;Rollei Blackbird 100 Black & White Film;100;B&W
+Rollei;Rollei CR200 Color Reversal Film;200;Slide
+Rollei;Rollei Retro 400S Black & White Film;400;B&W
+Rollei;Rollei Retro 80S Black & White Film;80;B&W
+Lucky;Lucky New Generation SHD100 Black & White Photographic Film;100;B&W
+Lucky;Lucky New Generation SHD400 Black & White Photographic Film;400;B&W
+Lucky;Lucky Color 200 Color Negative Film;200;Color
+Shanghai;Shanghai GP3 100 Black & White Film;100;B&W
+Shanghai;Shanghai GP3 400 Black & White Film;400;B&W
