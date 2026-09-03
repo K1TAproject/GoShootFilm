@@ -316,7 +316,7 @@ onMounted(() => {
           class="related-roll"
           @click="emit('jump-to-roll', roll.id)"
         >
-          <span class="related-title">{{ roll.filmInfo }}</span>
+          <span class="related-title">第 {{ roll.rollIndex }} 卷 · {{ roll.filmInfo }}</span>
           <span class="related-meta">{{ roll.shotMonth || '未记录日期' }} · {{ roll.city || '未记录地点' }}</span>
         </button>
       </section>

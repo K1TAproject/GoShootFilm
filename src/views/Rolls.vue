@@ -50,12 +50,14 @@ const draftFilmBrand = ref('')
 const draftFilmName = ref('')
 const draftCameraBrand = ref('')
 const draftCameraModel = ref('')
+const draftShotYear = ref('')
 const draftShotMonth = ref('')
 
 const activeFilmBrand = ref('')
 const activeFilmName = ref('')
 const activeCameraBrand = ref('')
 const activeCameraModel = ref('')
+const activeShotYear = ref('')
 const activeShotMonth = ref('')
 
 const formFilmId = ref<number | null>(null)
@@ -214,16 +216,29 @@ async function fetchRolls() {
 }
 
 const availableFilmBrands = computed(() => {
-  return Array.from(new Set(films.value.map(film => film.brand))).sort()
+  return Array.from(new Set(rolls.value.map(roll => roll.filmBrand))).sort()
 })
 
 const availableFilmNames = computed(() => {
   return Array.from(new Set(
-    films.value
-      .filter(film => !draftFilmBrand.value || film.brand === draftFilmBrand.value)
-      .map(film => film.name)
+    rolls.value
+      .filter(roll => roll.filmBrand === draftFilmBrand.value)
+      .map(roll => roll.filmName)
   )).sort()
 })
+
+const availableShotYears = computed(() => Array.from(new Set(
+  rolls.value
+    .map(roll => roll.shotMonth?.match(/^(\d{4})-(\d{2})$/)?.[1])
+    .filter((year): year is string => Boolean(year))
+)).sort((a, b) => b.localeCompare(a)))
+
+const availableShotMonths = computed(() => Array.from(new Set(
+  rolls.value
+    .map(roll => roll.shotMonth?.match(/^(\d{4})-(\d{2})$/))
+    .filter(match => match?.[1] === draftShotYear.value)
+    .map(match => match![2])
+)).sort())
 
 const availableCameraBrands = computed(() => {
   return Array.from(new Set(cameras.value.map(camera => camera.brand))).sort()
@@ -240,14 +255,17 @@ const filteredRolls = computed(() => {
       const matchFilmName = activeFilmName.value ? roll.filmName === activeFilmName.value : true
       const matchCameraBrand = activeCameraBrand.value ? roll.cameraBrand === activeCameraBrand.value : true
       const matchCameraModel = activeCameraModel.value ? roll.cameraModel === activeCameraModel.value : true
-      const matchShotMonth = activeShotMonth.value ? roll.shotMonth === activeShotMonth.value : true
-      return matchFilmBrand && matchFilmName && matchCameraBrand && matchCameraModel && matchShotMonth
+      const matchShotYear = activeShotYear.value ? roll.shotMonth?.startsWith(`${activeShotYear.value}-`) : true
+      const matchShotMonth = activeShotYear.value && activeShotMonth.value
+        ? roll.shotMonth === `${activeShotYear.value}-${activeShotMonth.value}`
+        : true
+      return matchFilmBrand && matchFilmName && matchCameraBrand && matchCameraModel && matchShotYear && matchShotMonth
     })
     .sort((a, b) => {
       const aTime = a.shotMonth ? new Date(`${a.shotMonth}-01`).getTime() : 0
       const bTime = b.shotMonth ? new Date(`${b.shotMonth}-01`).getTime() : 0
       if (aTime !== bTime) return bTime - aTime
-      return b.id - a.id
+      return b.index - a.index
     })
 })
 
@@ -256,6 +274,7 @@ function applyFilters() {
   activeFilmName.value = draftFilmName.value
   activeCameraBrand.value = draftCameraBrand.value
   activeCameraModel.value = draftCameraModel.value
+  activeShotYear.value = draftShotYear.value
   activeShotMonth.value = draftShotMonth.value
 }
 
@@ -264,11 +283,13 @@ function resetFilters() {
   draftFilmName.value = ''
   draftCameraBrand.value = ''
   draftCameraModel.value = ''
+  draftShotYear.value = ''
   draftShotMonth.value = ''
   activeFilmBrand.value = ''
   activeFilmName.value = ''
   activeCameraBrand.value = ''
   activeCameraModel.value = ''
+  activeShotYear.value = ''
   activeShotMonth.value = ''
 }
 
@@ -391,6 +412,25 @@ async function handleUpdateRoll() {
   } catch (err) {
     console.error('Failed to update roll:', err)
     visibleError.value = formatError(err, '更新拍摄卷失败')
+  } finally {
+    isBusy.value = false
+  }
+}
+
+async function handleDeleteRoll() {
+  if (!selectedRoll.value) return
+  if (!confirm(`确定删除第 ${selectedRoll.value.index} 卷吗？关联照片记录会一并删除，正式图库文件仍会保留。`)) return
+
+  isBusy.value = true
+  visibleError.value = ''
+  try {
+    await invoke('delete_roll', { id: selectedRoll.value.id })
+    backToGrid()
+    await fetchRolls()
+    visibleInfo.value = '拍摄卷已删除，其余拍摄卷已按全局顺序重新编号。'
+  } catch (err) {
+    console.error('Failed to delete roll:', err)
+    visibleError.value = formatError(err, '删除拍摄卷失败')
   } finally {
     isBusy.value = false
   }
@@ -644,6 +684,12 @@ watch(draftFilmBrand, () => {
   }
 })
 
+watch(draftShotYear, () => {
+  if (!availableShotMonths.value.includes(draftShotMonth.value)) {
+    draftShotMonth.value = ''
+  }
+})
+
 watch(
   () => route.query.roll,
   newValue => {
@@ -687,7 +733,7 @@ onUnmounted(() => {
           <option value="">全部胶卷品牌</option>
           <option v-for="brand in availableFilmBrands" :key="brand" :value="brand">{{ brand }}</option>
         </select>
-        <select v-model="draftFilmName">
+        <select v-model="draftFilmName" :disabled="!draftFilmBrand">
           <option value="">全部胶卷型号</option>
           <option v-for="name in availableFilmNames" :key="name" :value="name">{{ name }}</option>
         </select>
@@ -699,7 +745,14 @@ onUnmounted(() => {
           <option value="">全部设备型号</option>
           <option v-for="model in availableCameraModels" :key="model" :value="model">{{ model }}</option>
         </select>
-        <input v-model="draftShotMonth" type="month" />
+        <select v-model="draftShotYear">
+          <option value="">全部年份</option>
+          <option v-for="year in availableShotYears" :key="year" :value="year">{{ year }} 年</option>
+        </select>
+        <select v-model="draftShotMonth" :disabled="!draftShotYear">
+          <option value="">全部月份</option>
+          <option v-for="month in availableShotMonths" :key="month" :value="month">{{ Number(month) }} 月</option>
+        </select>
         <button class="primary-btn" @click="applyFilters">确定</button>
         <button class="secondary-btn fixed-action" @click="resetFilters">重置筛选</button>
       </div>
@@ -781,6 +834,7 @@ onUnmounted(() => {
       <PageHeader title="卷详情">
         <div class="actions">
           <button v-if="!isEditing" class="secondary-btn" @click="isEditing = true">编辑</button>
+          <button v-if="!isEditing" class="danger-btn" :disabled="isBusy" @click="handleDeleteRoll">删除</button>
           <button class="secondary-btn" @click="backToGrid()">返回</button>
         </div>
       </PageHeader>
@@ -935,7 +989,7 @@ h2 {
 
 .filter-panel {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr)) auto auto;
+  grid-template-columns: repeat(6, minmax(0, 1fr)) auto auto;
   gap: 10px;
   align-items: center;
 }
@@ -959,13 +1013,21 @@ textarea:focus {
   border-color: #6b7280;
 }
 
+select:disabled {
+  border-color: #252c37;
+  background: #11151c;
+  color: #626d7b;
+  cursor: not-allowed;
+}
+
 textarea {
   min-height: 90px;
   resize: vertical;
 }
 
 .primary-btn,
-.secondary-btn {
+.secondary-btn,
+.danger-btn {
   border: 1px solid #384152;
   border-radius: 6px;
   padding: 9px 14px;
@@ -990,6 +1052,18 @@ textarea {
 .secondary-btn:hover {
   background: #252d3a;
   color: #f9fafb;
+}
+
+.danger-btn {
+  border-color: #56363d;
+  background: #261a1e;
+  color: #e7a6ae;
+}
+
+.danger-btn:hover {
+  border-color: #76444d;
+  background: #352127;
+  color: #fecdd3;
 }
 
 .fixed-action {
@@ -1018,9 +1092,10 @@ textarea {
 .roll-card {
   position: relative;
   width: 100%;
-  min-height: 154px;
+  height: 166px;
+  min-height: 0;
   display: grid;
-  grid-template-columns: 210px minmax(0, 1fr) auto;
+  grid-template-columns: 220px minmax(0, 1fr) auto;
   align-items: stretch;
   padding: 0 20px 0 0;
   text-align: left;
@@ -1034,25 +1109,35 @@ textarea {
 }
 
 .roll-cover {
+  width: 100%;
+  height: 166px;
+  min-height: 0;
   background: #0f131b;
   border-right: 1px solid #262c38;
   overflow: hidden;
 }
 
-.roll-cover {
-  min-height: 152px;
-}
-
 .roll-cover img {
   width: 100%;
   height: 100%;
+  max-width: 100%;
+  max-height: 100%;
   object-fit: cover;
   display: block;
 }
 
 .card-body {
+  min-width: 0;
   align-self: center;
   padding: 20px;
+}
+
+.roll-card h2 {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
 .card-kicker {
@@ -1219,10 +1304,20 @@ label {
 
   .roll-card {
     grid-template-columns: 110px minmax(0, 1fr);
+    height: 156px;
   }
 
   .roll-cover {
-    min-height: 170px;
+    height: 156px;
+  }
+
+  .card-body {
+    padding: 14px;
+  }
+
+  .roll-meta-lines {
+    gap: 4px;
+    margin-top: 8px;
   }
 }
 </style>

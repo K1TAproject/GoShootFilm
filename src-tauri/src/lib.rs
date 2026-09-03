@@ -557,15 +557,17 @@ async fn add_roll(
         return Err("所选胶片型号不存在".into());
     }
 
-    let next_roll_index: i32 = sqlx::query_scalar::<_, Option<i32>>(
-        "SELECT MAX(roll_index) FROM rolls WHERE camera_id = ?",
-    )
-    .bind(camera_id)
-    .fetch_one(&state.db)
-    .await
-    .map_err(|e| format!("计算拍摄卷序号失败: {e}"))?
-    .unwrap_or(0)
-        + 1;
+    let mut transaction = state
+        .db
+        .begin()
+        .await
+        .map_err(|e| format!("无法开始新增拍摄卷事务: {e}"))?;
+    db::reindex_rolls(&mut transaction)
+        .await
+        .map_err(|e| format!("整理全局拍摄卷序号失败: {e}"))?;
+    let next_roll_index = db::next_roll_index(&mut transaction)
+        .await
+        .map_err(|e| format!("计算全局拍摄卷序号失败: {e}"))?;
 
     let result = sqlx::query(
         "INSERT INTO rolls (camera_id, film_stock_id, roll_index, shot_month, city, note) VALUES (?, ?, ?, ?, ?, ?)"
@@ -576,9 +578,14 @@ async fn add_roll(
         .bind(shot_month)
         .bind(city)
         .bind(note)
-        .execute(&state.db)
+        .execute(&mut *transaction)
         .await
         .map_err(|e| database_error("新增拍摄卷", e))?;
+
+    transaction
+        .commit()
+        .await
+        .map_err(|e| format!("提交新增拍摄卷失败: {e}"))?;
 
     Ok(result.last_insert_rowid())
 }
@@ -627,6 +634,57 @@ async fn update_film_stock(
     Ok("Film stock updated successfully!".into())
 }
 
+async fn cleanup_preview_records(
+    preview_dir: &Path,
+    preview_records: &[(i64, i64)],
+    deleted_entity: &str,
+) -> Result<(), String> {
+    for (photo_id, roll_id) in preview_records {
+        let preview_path = preview_file_path(preview_dir, *roll_id, *photo_id);
+        if let Err(error) = tokio::fs::remove_file(preview_path).await {
+            if error.kind() != std::io::ErrorKind::NotFound {
+                return Err(format!(
+                    "{deleted_entity}已删除，但关联预览资源清理失败: {error}"
+                ));
+            }
+        }
+    }
+    Ok(())
+}
+
+#[tauri::command]
+async fn delete_film_stock(id: i64, state: tauri::State<'_, AppState>) -> Result<String, String> {
+    ensure_positive_id(id, "胶片编号")?;
+    let mut transaction = state
+        .db
+        .begin()
+        .await
+        .map_err(|e| format!("无法开始删除胶片型号事务: {e}"))?;
+    let preview_records: Vec<(i64, i64)> = sqlx::query_as(
+        "SELECT p.id, p.roll_id FROM photos p JOIN rolls r ON r.id = p.roll_id WHERE r.film_stock_id = ?",
+    )
+    .bind(id)
+    .fetch_all(&mut *transaction)
+    .await
+    .map_err(|error| format!("读取关联照片预览失败: {error}"))?;
+    let result = sqlx::query("DELETE FROM film_stocks WHERE id = ?")
+        .bind(id)
+        .execute(&mut *transaction)
+        .await
+        .map_err(|e| database_error("删除胶片型号", e))?;
+    ensure_changed(result.rows_affected(), "胶片型号")?;
+    db::reindex_rolls(&mut transaction)
+        .await
+        .map_err(|e| format!("重排全局拍摄卷序号失败: {e}"))?;
+    transaction
+        .commit()
+        .await
+        .map_err(|e| format!("提交删除胶片型号失败: {e}"))?;
+
+    cleanup_preview_records(&state.preview_dir, &preview_records, "胶片型号").await?;
+    Ok("Film stock deleted successfully!".into())
+}
+
 #[tauri::command]
 async fn update_roll(
     id: i64,
@@ -643,16 +701,15 @@ async fn update_roll(
     let shot_month = validate_shot_month(shot_month)?;
     let city = clean_optional(city, "地点", 120)?;
     let note = clean_optional(note, "备注", 2000)?;
-    let roll_row: Option<(i64, i64, i64)> =
-        sqlx::query_as("SELECT id, camera_id, film_stock_id FROM rolls WHERE id = ?")
-            .bind(id)
-            .fetch_optional(&state.db)
-            .await
-            .map_err(|e| format!("读取拍摄卷失败: {e}"))?;
+    let roll_exists: Option<i64> = sqlx::query_scalar("SELECT id FROM rolls WHERE id = ?")
+        .bind(id)
+        .fetch_optional(&state.db)
+        .await
+        .map_err(|e| format!("读取拍摄卷失败: {e}"))?;
 
-    let Some((_roll_id, old_camera_id, _old_film_stock_id)) = roll_row else {
+    if roll_exists.is_none() {
         return Err("拍摄卷不存在".into());
-    };
+    }
 
     let camera_exists: Option<i64> = sqlx::query_scalar("SELECT id FROM cameras WHERE id = ?")
         .bind(camera_id)
@@ -672,31 +729,11 @@ async fn update_roll(
         return Err("所选胶片型号不存在".into());
     }
 
-    let next_roll_index = if camera_id != old_camera_id {
-        sqlx::query_scalar::<_, Option<i32>>(
-            "SELECT MAX(roll_index) FROM rolls WHERE camera_id = ?",
-        )
-        .bind(camera_id)
-        .fetch_one(&state.db)
-        .await
-        .map_err(|e| e.to_string())?
-        .unwrap_or(0)
-            + 1
-    } else {
-        sqlx::query_scalar::<_, Option<i32>>("SELECT roll_index FROM rolls WHERE id = ?")
-            .bind(id)
-            .fetch_one(&state.db)
-            .await
-            .map_err(|e| e.to_string())?
-            .unwrap_or(1)
-    };
-
     let result = sqlx::query(
-        "UPDATE rolls SET camera_id = ?, film_stock_id = ?, roll_index = ?, shot_month = ?, city = ?, note = ? WHERE id = ?",
+        "UPDATE rolls SET camera_id = ?, film_stock_id = ?, shot_month = ?, city = ?, note = ? WHERE id = ?",
     )
     .bind(camera_id)
     .bind(film_stock_id)
-    .bind(next_roll_index)
     .bind(shot_month)
     .bind(city)
     .bind(note)
@@ -708,6 +745,38 @@ async fn update_roll(
     ensure_changed(result.rows_affected(), "拍摄卷")?;
 
     Ok("Roll updated successfully!".into())
+}
+
+#[tauri::command]
+async fn delete_roll(id: i64, state: tauri::State<'_, AppState>) -> Result<String, String> {
+    ensure_positive_id(id, "拍摄卷编号")?;
+    let mut transaction = state
+        .db
+        .begin()
+        .await
+        .map_err(|e| format!("无法开始删除拍摄卷事务: {e}"))?;
+    let preview_records: Vec<(i64, i64)> =
+        sqlx::query_as("SELECT id, roll_id FROM photos WHERE roll_id = ?")
+            .bind(id)
+            .fetch_all(&mut *transaction)
+            .await
+            .map_err(|error| format!("读取关联照片预览失败: {error}"))?;
+    let result = sqlx::query("DELETE FROM rolls WHERE id = ?")
+        .bind(id)
+        .execute(&mut *transaction)
+        .await
+        .map_err(|e| database_error("删除拍摄卷", e))?;
+    ensure_changed(result.rows_affected(), "拍摄卷")?;
+    db::reindex_rolls(&mut transaction)
+        .await
+        .map_err(|e| format!("重排全局拍摄卷序号失败: {e}"))?;
+    transaction
+        .commit()
+        .await
+        .map_err(|e| format!("提交删除拍摄卷失败: {e}"))?;
+
+    cleanup_preview_records(&state.preview_dir, &preview_records, "拍摄卷").await?;
+    Ok("Roll deleted successfully!".into())
 }
 
 // 3. 更新相机信息
@@ -755,29 +824,34 @@ async fn update_camera(
 #[tauri::command]
 async fn delete_camera(id: i64, state: tauri::State<'_, AppState>) -> Result<String, String> {
     ensure_positive_id(id, "相机编号")?;
+    let mut transaction = state
+        .db
+        .begin()
+        .await
+        .map_err(|e| format!("无法开始删除相机事务: {e}"))?;
     let preview_records: Vec<(i64, i64)> = sqlx::query_as(
         "SELECT p.id, p.roll_id FROM photos p JOIN rolls r ON r.id = p.roll_id WHERE r.camera_id = ?",
     )
     .bind(id)
-    .fetch_all(&state.db)
+    .fetch_all(&mut *transaction)
     .await
     .map_err(|error| format!("读取关联照片预览失败: {error}"))?;
     let result = sqlx::query("DELETE FROM cameras WHERE id = ?")
         .bind(id)
-        .execute(&state.db)
+        .execute(&mut *transaction)
         .await
         .map_err(|e| database_error("删除相机", e))?;
 
     ensure_changed(result.rows_affected(), "相机")?;
+    db::reindex_rolls(&mut transaction)
+        .await
+        .map_err(|e| format!("重排全局拍摄卷序号失败: {e}"))?;
+    transaction
+        .commit()
+        .await
+        .map_err(|e| format!("提交删除相机失败: {e}"))?;
 
-    for (photo_id, roll_id) in preview_records {
-        let preview_path = preview_file_path(&state.preview_dir, roll_id, photo_id);
-        if let Err(error) = tokio::fs::remove_file(preview_path).await {
-            if error.kind() != std::io::ErrorKind::NotFound {
-                return Err(format!("相机已删除，但关联预览资源清理失败: {error}"));
-            }
-        }
-    }
+    cleanup_preview_records(&state.preview_dir, &preview_records, "相机").await?;
 
     Ok("Camera deleted successfully!".into())
 }
@@ -816,6 +890,7 @@ async fn get_camera_detail(
         FROM rolls r
         JOIN film_stocks f ON r.film_stock_id = f.id
         WHERE r.camera_id = ?
+        ORDER BY r.roll_index
         "#
     )
         .bind(id)
@@ -1495,7 +1570,9 @@ pub fn run() {
             add_film_stock,
             add_roll,
             update_film_stock,
+            delete_film_stock,
             update_roll,
+            delete_roll,
             update_camera,
             delete_camera,
             get_camera_detail,

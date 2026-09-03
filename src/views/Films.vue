@@ -103,6 +103,10 @@ function isFilmShot(filmId: number) {
   return rolls.value.some(roll => roll.filmId === filmId)
 }
 
+function filmTypeLabel(type: string) {
+  return type === 'Color Negative' ? 'Color' : type
+}
+
 function filmImageSrc(film: Film) {
   return `/film-stocks/${film.id}.jpg`
 }
@@ -187,6 +191,28 @@ async function handleUpdateFilm() {
   }
 }
 
+async function handleDeleteFilm() {
+  if (!selectedFilm.value) return
+  const relatedCount = relatedRolls.value.length
+  const message = relatedCount > 0
+    ? `确定删除 ${selectedFilm.value.brand} ${selectedFilm.value.name}，并级联删除关联的 ${relatedCount} 个拍摄卷及照片记录吗？正式图库文件仍会保留。`
+    : `确定删除 ${selectedFilm.value.brand} ${selectedFilm.value.name} 吗？`
+  if (!confirm(message)) return
+
+  isBusy.value = true
+  visibleError.value = ''
+  try {
+    await invoke('delete_film_stock', { id: selectedFilm.value.id })
+    backToGrid()
+    await fetchData()
+  } catch (err) {
+    console.error('Failed to delete film stock:', err)
+    visibleError.value = formatError(err, '删除胶片型号失败')
+  } finally {
+    isBusy.value = false
+  }
+}
+
 function startEditing() {
   if (!selectedFilm.value) return
   editSnapshot.value = { ...selectedFilm.value }
@@ -226,7 +252,7 @@ onMounted(() => {
           </select>
           <select v-model="draftType">
             <option value="">全部类型</option>
-            <option v-for="type in availableTypes" :key="type" :value="type">{{ type }}</option>
+            <option v-for="type in availableTypes" :key="type" :value="type">{{ filmTypeLabel(type) }}</option>
           </select>
           <select v-model="draftShotStatus">
             <option value="">全部拍摄状态</option>
@@ -245,7 +271,7 @@ onMounted(() => {
           type="button"
           v-for="film in filteredFilms"
           :key="film.id"
-          class="film-card"
+          :class="['film-card', isFilmShot(film.id) ? 'is-shot' : 'is-unshot']"
           @click="viewFilmDetail(film)"
         >
           <div class="film-image">
@@ -253,11 +279,11 @@ onMounted(() => {
           </div>
           <div class="card-body">
             <div class="card-kicker">{{ film.brand }}</div>
-            <h2>{{ film.name }}</h2>
+            <h2 class="film-name" :title="film.name">{{ film.name }}</h2>
             <div class="meta-row">
               <span>ISO {{ film.iso }}</span>
               <span>{{ isFilmShot(film.id) ? '已拍摄' : '未拍摄' }}</span>
-              <span>{{ film.type }}</span>
+              <span>{{ filmTypeLabel(film.type) }}</span>
             </div>
           </div>
         </button>
@@ -292,7 +318,7 @@ onMounted(() => {
         <label>
           <span>类型 *</span>
           <select v-model="formType">
-            <option v-for="type in filmTypes" :key="type" :value="type">{{ type }}</option>
+            <option v-for="type in filmTypes" :key="type" :value="type">{{ filmTypeLabel(type) }}</option>
           </select>
         </label>
         <label>
@@ -318,6 +344,7 @@ onMounted(() => {
       <PageHeader title="胶卷详情">
         <div class="actions">
           <button v-if="!isEditing" class="secondary-btn" @click="startEditing">编辑</button>
+          <button v-if="!isEditing" class="danger-btn" :disabled="isBusy" @click="handleDeleteFilm">删除</button>
           <button class="secondary-btn" @click="backToGrid">返回</button>
         </div>
       </PageHeader>
@@ -332,7 +359,7 @@ onMounted(() => {
           <h2>{{ selectedFilm.name }}</h2>
           <div class="detail-grid">
             <span>ISO</span><strong>{{ selectedFilm.iso }}</strong>
-            <span>类型</span><strong>{{ selectedFilm.type }}</strong>
+            <span>类型</span><strong>{{ filmTypeLabel(selectedFilm.type) }}</strong>
             <span>状态</span><strong>{{ selectedFilm.targetStatus || 'untested' }}</strong>
             <span>备注</span><strong>{{ selectedFilm.note || '暂无备注' }}</strong>
           </div>
@@ -354,7 +381,7 @@ onMounted(() => {
           <label>
             <span>类型</span>
             <select v-model="selectedFilm.type">
-              <option v-for="type in filmTypes" :key="type" :value="type">{{ type }}</option>
+              <option v-for="type in filmTypes" :key="type" :value="type">{{ filmTypeLabel(type) }}</option>
             </select>
           </label>
           <label>
@@ -386,7 +413,7 @@ onMounted(() => {
           class="related-roll"
           @click="emit('jump-to-roll', roll.id)"
         >
-          <span class="related-title">{{ roll.filmInfo || selectedFilm.name }}</span>
+          <span class="related-title">第 {{ roll.index }} 卷 · {{ roll.filmInfo || selectedFilm.name }}</span>
           <span class="related-meta">{{ roll.shotMonth || '未记录日期' }} · {{ roll.city || '未记录地点' }}</span>
         </button>
       </section>
@@ -483,7 +510,8 @@ textarea {
 }
 
 .primary-btn,
-.secondary-btn {
+.secondary-btn,
+.danger-btn {
   border: 1px solid #384152;
   border-radius: 6px;
   padding: 9px 14px;
@@ -510,6 +538,18 @@ textarea {
   color: #f9fafb;
 }
 
+.danger-btn {
+  border-color: #56363d;
+  background: #261a1e;
+  color: #e7a6ae;
+}
+
+.danger-btn:hover {
+  border-color: #76444d;
+  background: #352127;
+  color: #fecdd3;
+}
+
 .cards-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
@@ -520,7 +560,8 @@ textarea {
 .film-card,
 .add-card {
   min-width: 0;
-  min-height: 230px;
+  height: 268px;
+  min-height: 0;
   border: 1px solid #262c38;
   border-radius: 8px;
   background: #151922;
@@ -531,8 +572,25 @@ textarea {
 }
 
 .film-card {
+  display: grid;
+  grid-template-rows: 118px minmax(0, 1fr);
   padding: 0;
   text-align: left;
+  white-space: normal;
+}
+
+.film-card.is-shot {
+  border-color: #303947;
+  background: #171c25;
+}
+
+.film-card.is-unshot {
+  border-color: #222a35;
+  background: #12161d;
+}
+
+.film-card.is-unshot .film-image img {
+  filter: brightness(0.88) saturate(0.9);
 }
 
 .film-card:hover,
@@ -561,6 +619,9 @@ textarea {
 }
 
 .card-body {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
   padding: 15px;
 }
 
@@ -570,11 +631,25 @@ textarea {
   font-size: 12px;
 }
 
+.film-name {
+  min-height: calc(2 * 1.35em);
+  max-height: calc(2 * 1.35em);
+  display: -webkit-box;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  word-break: break-word;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
 .meta-row {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 8px;
-  margin-top: 14px;
+  margin-top: auto;
+  padding-top: 12px;
 }
 
 .meta-row span {
@@ -582,7 +657,8 @@ textarea {
   background: #202737;
   color: #cbd5e1;
   padding: 4px 8px;
-  font-size: 12px;
+  font-size: 11px;
+  white-space: nowrap;
 }
 
 .add-card {
