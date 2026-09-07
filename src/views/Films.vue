@@ -43,6 +43,7 @@ const isLoading = ref(false)
 const isBusy = ref(false)
 const visibleError = ref('')
 const pageRoot = ref<HTMLElement | null>(null)
+const listScrollPosition = ref(0)
 
 const emit = defineEmits<{
   (e: 'jump-to-roll', rollId: number): void
@@ -122,17 +123,33 @@ function displayName(film: Pick<Film, 'brand' | 'name'>) {
   return filmDisplayName(film.brand, film.name)
 }
 
-async function scrollContentToTop() {
-  await nextTick()
+function scrollContainer(): HTMLElement | Window {
   const main = pageRoot.value?.closest('.main-content')
-  if (main instanceof HTMLElement) main.scrollTo({ top: 0, behavior: 'auto' })
-  else window.scrollTo({ top: 0, behavior: 'auto' })
+  if (main instanceof HTMLElement && ['auto', 'scroll'].includes(getComputedStyle(main).overflowY)) {
+    return main
+  }
+  return window
+}
+
+function currentScrollPosition() {
+  const container = scrollContainer()
+  return container === window ? window.scrollY : (container as HTMLElement).scrollTop
+}
+
+async function scrollContentTo(position: number) {
+  await nextTick()
+  scrollContainer().scrollTo({ top: position, behavior: 'auto' })
+}
+
+function openSubview(view: 'add' | 'detail') {
+  listScrollPosition.value = currentScrollPosition()
+  currentView.value = view
+  void scrollContentTo(0)
 }
 
 function openAddForm() {
   resetFilmForm()
-  currentView.value = 'add'
-  void scrollContentToTop()
+  openSubview('add')
 }
 
 function resetFilmForm() {
@@ -162,9 +179,8 @@ async function handleAddFilm() {
       note: formNote.value || null
     })
     resetFilmForm()
-    currentView.value = 'grid'
     await fetchData()
-    void scrollContentToTop()
+    await backToGrid()
   } catch (err) {
     console.error('Failed to add film:', err)
     visibleError.value = formatError(err, '新增胶片型号失败')
@@ -177,8 +193,7 @@ function viewFilmDetail(film: Film) {
   selectedFilm.value = { ...film }
   relatedRolls.value = rolls.value.filter(roll => roll.filmId === film.id)
   isEditing.value = false
-  currentView.value = 'detail'
-  void scrollContentToTop()
+  openSubview('detail')
 }
 
 async function handleUpdateFilm() {
@@ -219,7 +234,7 @@ async function handleDeleteFilm() {
   visibleError.value = ''
   try {
     await invoke('delete_film_stock', { id: selectedFilm.value.id })
-    backToGrid()
+    await backToGrid()
     await fetchData()
   } catch (err) {
     console.error('Failed to delete film stock:', err)
@@ -241,16 +256,16 @@ function cancelEditing() {
   isEditing.value = false
 }
 
-function backToGrid() {
+async function backToGrid() {
   currentView.value = 'grid'
   selectedFilm.value = null
   relatedRolls.value = []
   isEditing.value = false
-  void scrollContentToTop()
+  await scrollContentTo(listScrollPosition.value)
 }
 
 onMounted(() => {
-  void scrollContentToTop()
+  void scrollContentTo(0)
   fetchData()
 })
 </script>
@@ -296,7 +311,8 @@ onMounted(() => {
             <img :src="filmImageSrc(film)" :alt="displayName(film)" @error="useFilmImageFallback" />
           </div>
           <div class="card-body">
-            <h2 class="film-name" :title="displayName(film)">{{ displayName(film) }}</h2>
+            <div class="card-kicker">{{ film.brand }}</div>
+            <h2 class="film-name" :title="displayName(film)">{{ film.name }}</h2>
             <div class="meta-row">
               <span>ISO {{ film.iso }}</span>
               <span>{{ isFilmShot(film.id) ? '已拍摄' : '未拍摄' }}</span>
@@ -447,7 +463,7 @@ onMounted(() => {
 .stack {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 16px;
 }
 
 h2 {
@@ -570,14 +586,14 @@ textarea {
 .cards-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-  gap: 16px;
+  gap: 14px;
   min-width: 0;
 }
 
 .film-card,
 .add-card {
   min-width: 0;
-  height: 320px;
+  height: auto;
   min-height: 0;
   border: 1px solid #262c38;
   border-radius: 8px;
@@ -590,7 +606,7 @@ textarea {
 
 .film-card {
   display: grid;
-  grid-template-rows: 118px minmax(0, 1fr);
+  grid-template-rows: auto 130px;
   padding: 0;
   text-align: left;
   white-space: normal;
@@ -624,35 +640,54 @@ textarea {
 }
 
 .film-image {
-  height: 118px;
+  height: auto;
+  aspect-ratio: 2.05 / 1;
+  overflow: hidden;
 }
 
 .film-image img,
 .detail-image img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-position: center;
   display: block;
+}
+
+.film-image img {
+  object-fit: cover;
+}
+
+.detail-image img {
+  object-fit: contain;
 }
 
 .card-body {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  padding: 15px;
+  padding: 12px 14px 11px;
+}
+
+.card-kicker {
+  margin-bottom: 5px;
+  color: #8d98a8;
+  font-size: 11px;
+  line-height: 1.25;
 }
 
 .film-name {
-  min-height: calc(4 * 1.35em);
-  max-height: calc(4 * 1.35em);
+  min-height: calc(2 * 1.25em);
+  max-height: calc(2 * 1.25em);
+  font-size: 18px;
+  line-height: 1.25;
   display: -webkit-box;
   overflow: hidden;
   overflow-wrap: anywhere;
   white-space: normal;
   word-break: break-word;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 4;
-  line-clamp: 4;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
 .meta-row {
@@ -660,7 +695,7 @@ textarea {
   flex-wrap: nowrap;
   gap: 8px;
   margin-top: auto;
-  padding-top: 12px;
+  padding-top: 6px;
 }
 
 .meta-row span {
@@ -673,6 +708,7 @@ textarea {
 }
 
 .add-card {
+  min-height: 242px;
   display: flex;
   flex-direction: column;
   align-items: center;

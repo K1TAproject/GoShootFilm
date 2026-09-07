@@ -1,0 +1,1892 @@
+{
+  "images": {
+    "adox-chs-100-ii.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "ffc642773e241d524ce2d5f3f86130be1da06a8d0411f8048a14da543b940d44",
+      "original_sha256": "214cececa494ae10eb34287416c7eba41acec665b57d4022ebc7c902a0bb3ba3",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "ffb069b156a597be3c727cbe776ccf727c2ead129121421836b84850f62956bf",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "adox-cms-20-ii-pro-ultra-high-resolution.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "decab4c9dbe149a8f5fd85ffc695b33d1e76a4cc9893bb89162a24c7e74b2b89",
+      "original_sha256": "ae457f2e4aba5b48efaf87e2e954214bd59bd2ba1393fcaabad8864cba243b98",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "c2e373c0e875f780f78f974f890685c6e0d9e10674f76ab75c3fbda106b08513",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "adox-scala-160.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "cf53bbe64e500a698befaffa6b21078c22f87d9d472aa23e4b82779de2f6840e",
+      "original_sha256": "6911690f167bb189771606ca580df43b715ad1790075e8cc095e9970f3ccf6e6",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "0e92814f4d6e580f393b1c1e3f3b7be439d932ee50f9943a1d71ef86f4922234",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "adox-scala-50.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "42e18b445d6b3046c0b3d798372087807e175450e8c09d937c5e451ac60ec462",
+      "original_sha256": "41f2c6c514b61bd2b2b5e9c69af16abecc999d8ab2193f4cc83f18b352d14303",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "b87ec3ebd21a0e978dd5a9c964751e46eb26296c817644842ec5b99b714a9a09",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "cinestill-400dynamic-versatile.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "7f5291eed7924d95ffe9da83b0075c37655ffc958f794cd9b6b8f2c6cf82576b",
+      "original_sha256": "ff24bcc8ebf365aeb0a622c625501deed2e4615a6bb21bdddb07fd01f92374fd",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "31be30fc3259412014e451fbbec1e30efeb82f318bb27001c2d5e645412d86ae",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "cinestill-50daylight-fine-grain.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "5af24e66912f5650adf21b28f00e0232a11cf078d487acebe4a413e23ef86197",
+      "original_sha256": "a7f75a725070c96ac86562647fd22d0a14884fe8299fdec3f70bf6cad91d33c4",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "3a1440cce31256acc83e54acf6dddfc5bdbeefaf2fc1c19b47f97b0143c3def5",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "cinestill-800tungsten-high-speed.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "81075d0babcbb7f439c880c8ba12c32f0b4080d0ee0d762754adbc8c12764a79",
+      "original_sha256": "d6fffe260a8f2583b8d1b88edecd8bcc3e4f8204aa5bff7d56792c01ce5d463d",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "2364bae151f993ddfdddab4a68b9c6075754e0e6e102c92416e6d9e1827ed222",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "cinestill-bwxx.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "263f5d29d96f8fb67d3a4132623f3b04d99d0948ddda48f2e098affff1bd0ba1",
+      "original_sha256": "b622723cc065abfdc15e2da85f9101ac657f9d699916b6ee8a517a641c924d2a",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "eefec72a4ef88a6be2a42fdabaafa39122e5dbdc644f3ce1328768dc7ee597c0",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "dubblefilm-apollo-200.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "66aaffaa744e42fce8eef885d0e642ecbff28ae9987b4ce5ec7356c88806ffc4",
+      "original_sha256": "3bd491b52c16d55b66c2f8d491b7f466be439a17f858b026dc9d929a4946d655",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "9960f9adf9ab0cd0f2d236fc77f75fed348d7e6955e9af324f369e28c9526385",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "dubblefilm-apollo-400.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "ff32e1f4c1132fe732df3708c2fc44e4071b91be941a947bccb416919d415f3a",
+      "original_sha256": "671bbe6e6fab4ae47d80b07f215bef903f67a97ad89f909b50195701fdaa3f83",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "b671fc9c2b43929d0576bbc8205808500ab483de2f5f5ffc00c26a7f9e3b1b25",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "dubblefilm-bubblegum-200.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "36a9fa184da25ca6cdecf65c49759d3e0c6cf909544306ca15461a240f4d46bf",
+      "original_sha256": "eb007c0c3c02703053ef68406564ce7c195864088f50cf93fcbcf3206a8c1132",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "4fc24f9a7b1b811f7a1f6ae1b7acee10f662208964aeb77b309fc973f665dcc8",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "dubblefilm-bubblegum-400.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "05c4a4e01bcb32cc49de30d6854b11f3509ad98823d3b4826d15e6d5df7ca268",
+      "original_sha256": "965fd0f161281cbcbe74b35741403402a2ca87950b6dffcaab7e26b703310d38",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "0adc24cf2ef8bfa8508260af6fb704e104174608f017f7282964886f73c58a2c",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "dubblefilm-film-bits-500t.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "f69e8a2b1e8d9f14a0d46844a39c8eafca725bcf8eda5784d13884e8055109de",
+      "original_sha256": "ae1c733b6a5d0675bf22e6e2bbc62988461bb73a188aaf32b43956cb3e4f5d64",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "865189deb1ee157e0a9dbb348ea16cf35e8f6a3dfbd885f6e0e7de723a4fe6b5",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "dubblefilm-glitch-200.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "cf6f658bf1d721372331cb25971bf8ee4543f001b7803f5f13ec195b5e67bc18",
+      "original_sha256": "36d691f916ac50760daeac46e4ccec811176362d7281b1b790a27fe516744661",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "95b25a3de144b12ff550bfafda60beff7db44f6779e1dc520fac46bea71bb86a",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "dubblefilm-jelly-200.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "c1ac871b451c34406dd906a72bd9dbbb6794fab7f141b2b054355f433aae0305",
+      "original_sha256": "91f86ec07eab88b8e42e286e3eaa353f6a49d685b943ad1b6bdc91c99e315570",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "ec8c73bbf8690e0de83b95d48dd405ef0bff52d9a0c3f11b9d1404ff825032fc",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "dubblefilm-jelly-400.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "fe3ceaba4a2ba6b24821d158f19e8f4c7300a99a0428d6f4c278c13ec074f757",
+      "original_sha256": "41edcd3e0ef54ee18346d7e67b6e01f815d0f189e2779c8be4de0f063729a354",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "f7698bbf122b4cf26dab4f44e5af670b70c84fa6f9050fff29cf92a23c997a2b",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "dubblefilm-pacific-200.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "8bbfa25e8898ec8af0338509c4d5a1836203eace1a3cc6d074bb6864e856701b",
+      "original_sha256": "8d42938c2a87ed2dbbf058ff9ff4e79c42829f5921676801d13db97e6873ca00",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "dbbf8a75b2b5d289051b3a548b62265dee9b4838833a620eca25c452fc9496f1",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "dubblefilm-pacific-400.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "d8b92367e334550338f72f7d87bc99e96518c321fa21703939855614fae4876b",
+      "original_sha256": "65001f8a5d67c058d796b8661efefc50b83acf01f7793fe4bd9bc1e5142f5b1f",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "090c6bbafa89f959edf1abe0cfb8d1ab4ed38d15eb0d7410cf82532daecb7d45",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "dubblefilm-solar-200.png": {
+      "edge_complexity": 5.252,
+      "left_padding": 220,
+      "original_pixel_sha256": "ae3f7f6cdd1422ff0ecb9ac731b123d610fde2614ca879ab2a886372ede9629c",
+      "original_sha256": "f4342f857a62b99ff49dd82e9c52df6bce753eb4d47fe1c750bb31f47d43c6e2",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "ec1a02d558ed5640a4e7a82a83255778b37ddfe1699555c7a371d065b6265e66",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "dubblefilm-solar-400.png": {
+      "edge_complexity": 5.2498,
+      "left_padding": 220,
+      "original_pixel_sha256": "f625a32065a7eab477c60c7c4253104d09a8d6b30cefbec26967202442e90765",
+      "original_sha256": "e5c61a80c520e6ece38a22d8884cfdc45449d0db803c6fd4b3996cb234b8b6c1",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "946d4c95f4b95ea7cc775e41ff99ed9107768fc6e4844f7bff9c635100ff5b9e",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "dubblefilm-stereo-400.png": {
+      "edge_complexity": 5.2484,
+      "left_padding": 220,
+      "original_pixel_sha256": "a406df3231a93213cd9f5dcf41e7ed57a1dbff37961adc934a5cde20a903a2e6",
+      "original_sha256": "e92fc3fd314cd7419664adfdb52cf502128f27020d0497a4949b05891aa3739c",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "1b1df022383c186829c06998575f1c32ea5345db2379119271766666f7e78880",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "dubblefilm-treat-400.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "e4b1aa41969e7672bed64d3f2574e62fb440a9e623a42143ea3919ac73aa7a8f",
+      "original_sha256": "e54df73d8fed7b083a6f51ecf2ee5e0390a660b8b8886cdad39590e64ae74cec",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "f2d8a1f104d2909af0103bd2b22846c11b0a940ed26a854d381b6504cf6b3bd4",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "ferrania-orto-50.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "a83df7a375a0ee72b7d1eb452d6131bb9cf998e6bda1050e977e736894276585",
+      "original_sha256": "f74ce699ea1a25a5dfe7089893ad0cbe7341d20983efb6f248e460749633bb87",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "60184e523b83a4b4c8a44f293ce83e9c0bac44a7a95577cad35404ce09e7e4e6",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "ferrania-p30.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "168f851ac6d5a73cb9cc9d5950e70f414a6f0a25aa9a3669065ee40a212652d2",
+      "original_sha256": "4709d21d0bb5756567cd94e5c5264201fcffd4c3fdc2c3a958594aa0c35b634f",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "870f9ba5ddf6524659f2e3ed2d1c3f7e1c792feb478d075021bf68978055762a",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "ferrania-p33.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "d9a18c139bcfea4e6cb4134831c2bed1880093c9c9509cfa1b65eff23d6748a5",
+      "original_sha256": "fbd3b9f18a325fd33343a6086005e57c766b91bafd503d0dcc6c55ff9d64ed88",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "7e7619a2dbabb3a5748f1fde4512fd581a3bf6d88809de71d6696c90e430c36f",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "foma-ortho-400.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "fd49e11c5fa5072683312a0ddc346de0a7b0409a286cb2c4444607b6ba932b20",
+      "original_sha256": "edb239e64de111e63786ff2b1eda5ebef6b8581fe596ef047322ff8dc8a7ee43",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "b0e62ff16bccf685697adabcdfa4db47752266e2f1d02d4970fe4b6bc09247b2",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "foma-pan-100-classic.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "f205c8fc8b29ebec334d807cbd4a41d07a4bf1966599fcfb311bfef202b242e7",
+      "original_sha256": "9ad5a3e8e53667ad1cd17a9f369b291902108c0f418ac4df5fda7e138e3b99c1",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "bb29a35836b798bf53e4decfe90fe18e1dc709263d88454a8b5eb314d8e8c155",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "foma-pan-200-creative.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "411eecb82808bf6c86e90978bfdebcb693bc91f67b2f06170131a2424e4b7a70",
+      "original_sha256": "b2e5176b23b52b2942790fc04e6d697943df9468caec06a82480eff355aeb52f",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "5a68f6d4e32e5122af2dd4b92971d3a312aede8ef351c62376a7bd0248262c3b",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "foma-pan-400-action.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "56527e1e2b10beca76db90fbb0adb80de9cda286822f6d5d74d267a7dd0e7f71",
+      "original_sha256": "cf0398842730ca8878c0afcdb01c4c4da353dc2d80339b899c624437bfe51b07",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "181896e35c5eb02a29ad3cc4b5705e672f0992b51cffb64651632846c8c9f41a",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "foma-pan-r-100.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "88dd6395132631497f814382de522a5dd3ee5f7db85ab0e24b202c749f47e50d",
+      "original_sha256": "915fe5a59db8c5fe78141f72320e4b9dd5a9874889bf01ab94546d696a57ff7f",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "d1d40ef2114795f1157ba541dca0a5ddeef72683df706a1c25f873cc80ef0db7",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "foma-retropan-320-soft.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "abe90896e4ca191a0c6f36149292eeaa81b763e658a166fbcb138c5916c1544d",
+      "original_sha256": "f2f85dd386c1347158a37f164fd679466228e7a3d1f8bcc500bb11fcd9b41b1b",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "4c2565f54bc832825f8f72a03ebd0543972eac8a2fd54df7454252e414801f46",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "fujifilm-100.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "7bebb61ae3d01361dfca2c44e72910ffb44364112fa312fb29d041261798d654",
+      "original_sha256": "5e92a834593933a49eca3812d9721bb072ef7bdcfb6e5c86dcf8df812b936650",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "d6a679f584bb94a919402effb5ea8a1ceabc88432b48ed090653df8ae2534b26",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "fujifilm-200.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "68ed82eec95d543f5abd085372247091e7bede72ad5297d07ca0dae171ff947a",
+      "original_sha256": "7293a42f949dc8caef3f5f21f4d9f19756b6a6a167f3663b5bfb30ebff677384",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "515f2b5314086e3477c7c4542c89eb332b9a450d519903d6ff3bae8bad971c6f",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "fujifilm-400.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "e2edde17d69f3e0b18001d844e2ca51e12a60da171e54201dc19ca3ee2b1e195",
+      "original_sha256": "f55676c9e15b2a64443298f0413d5faf777634826a78b564c6f3d978c2c71002",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "d57023978bb203ea3735364a7e7d78c67f6967d34a6c62989f9f377699dfc219",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "fujifilm-fujichrome-provia-100f.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "b6e79e0e00a7b32f5ba46a022bd99a6dfbf2e655177544e886f79eaab97bf9de",
+      "original_sha256": "91d9f900c2b966d2fb7ae5e85d936322a957532c43b7cdcc7f4d5bcdc51ac270",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "6f57be8658eed0d9276ffc4b514dd49a192163585b3b3bf7ae72c38ad72aedfd",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "fujifilm-fujichrome-velvia-100.png": {
+      "edge_complexity": 5.2454,
+      "left_padding": 220,
+      "original_pixel_sha256": "0163c32d0a7a277670045e8a2506b5866267ea55affc41a1346e92c73c1ea054",
+      "original_sha256": "f06b837bae7fb211a0d9bfeaaa9c12e4779f4486cebf3e99c51bf1247cfdd9ed",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "941c5d472907fefe4cbbb62d2ab5b7b4f553a6c7545d84ac3b8f734e5854d247",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "fujifilm-fujichrome-velvia-50.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "620d56b679a7d69f9d2a29068054a76f1e61c94707ac0c5b416e7252a3bd1ae1",
+      "original_sha256": "1277e37420ef69928dde2de87f72db379a049f63bd5e94c6ea4a6dc92f87ce5c",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "fffb65f5741ea16d19c03e12c80daf7c8a40a6b6144000e200e3f17062d7385a",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "fujifilm-fujicolor-pro-400h.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "856b2588616881c6da458d3b9be91e407256852525c92367a3a12879599d9ac2",
+      "original_sha256": "aa766d2098a9276eb9df8f76adc1da2b9202b30b9a4bb31fb4988f47d3fefd59",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "07dae1f7f8b8839cd22b66248a2dfedaaafbb3ea2a9c8eafcdabb798e1c46e96",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "fujifilm-fujicolor-superia-premium-400.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "0cc67f106a70bb2f97390ec98171cbc2e0ee31f353946ad9e9965201f6841cbd",
+      "original_sha256": "3f4fa5302ea8970ab6c998b13128791ba720657ae6229351b8278874ccb4f705",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "ee72c6fbc41b9a80cc00aba56d8e53790d3d70e99bb286079671c021eec87508",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "fujifilm-fujicolor-superia-x-tra-400.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "18a5b65aab4f5b84da0b47ae46933e26aad18aa1e7e91725282716266fad18e1",
+      "original_sha256": "276c33080fbd1494fa848c7b8f6eac69a8bd9dc283aeff363f1c918f79a13a68",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "118627c67befc7ddec51b61c309582728973c5ed77a552d8197817c2914982bd",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "fujifilm-neopan-100-acros-ii.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "dafa50614929e803239b73a2bf5838e69651b27f39b8acd8576da27d98193313",
+      "original_sha256": "b88cf717750aa549734fcb3ecefff6c91f53495621c0d5489d2cf94d4190eaff",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "98726fae063de5e9d54583fe02ef295f44f1465705479593e15d555c98730455",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "harman-phoenix-125.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "814c31b00493f7eaa3a3f843d08d49ce5c4ae4b62fe71893c62d68b47f291ed5",
+      "original_sha256": "44d2dcfe3bf8dc27384145da6d45c2908ef44b2cfacc8d18dff417e2703578ce",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "176bad5c9b79ac6b0f11ec9f7d9f86b585a92b42ef92a0e02a348a98c3a46e35",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "harman-phoenix-200.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "bc497f1a9df997c535d0729945d1ff93eba86b9fdfaa4333abe7a1437137b623",
+      "original_sha256": "64b5501943a6d7bf9db06e24219fc6c9db6e5e54208396c96986e04a72984899",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "595a74b56ba592045bfcd58957b503b6ce20e086ec22c001fac90736f30147f8",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "harman-phoenix-ii-200.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "718d706160e27dca47eab674216f94758cbe99aa61101b3ab2da9e9e1dcf9525",
+      "original_sha256": "eb7c73a33752434e2d69d7e9f757290e58f516df6976d547060d023fb74c24c8",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "9c3a2d71f08c9792c95b32dd4ff423ba13d27ec9dd48aa78b0b534433376ca4d",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "harman-red-125.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "d8bbb85d5f9c3cc605dcefeff1f31a5f6f229e4c45411aabf4dcc86e0d75445b",
+      "original_sha256": "50a2fe7a7df50d4d5f592e265c50fb1f7b8fe3a459fbece11431bd89d03f3276",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "170efb0bb78d063baac758d692ce5eb963d98c9a738f04af04e20d1d851b1fb7",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "harman-switch-azure-125.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "10248ee2b2ac78552d3f6ecac1c1875f7cc0f31d848686023b33b5484e708c9c",
+      "original_sha256": "11b23289ef48000b988d1b1ef91825bfc232cbcf755afbbcc45b260f3ee59b09",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "ac595041f122ecc01c5e4b23345f584bc13bd6b7528a2ab330d3fde3b97760e1",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "ilford-delta-100.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "bcda78ceec9a36e1970d354b20cdada3008cc3b8ed0a9bd3f278d06fd0dcd457",
+      "original_sha256": "453abbfc76c64c86ad34122c657f906f963711497019881fede4691ee9d2d86d",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "407b7509ffbfebae7ca3d5be3c9474ed6a88d15abbb2d6a38ceb6f1373e26135",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "ilford-delta-3200.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "a745423f078b8c4353a6e824d8185b0fa5043efc496a8e28f067f76dbc1f05d7",
+      "original_sha256": "68e282808d27ff582866b96a219b91ef382432816596218b76d518b841673574",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "9daf0fea1446159c4e1ef5e3f92a7350173ab6674f9810a3c3096ea1ef8dea89",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "ilford-delta-400.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "ee38876fc29b1e215aa3d4bb0b28aa803d25900cad91f2aa513a4426d64c3ca6",
+      "original_sha256": "996b39d4105f1278ad4624cd702a91d568268f1cede08de779219546f0157670",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "890eb5b6c7834e7b780d3a2edccbd6c08bc8bfb9b45230cec54c5801b5c7e7a7",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "ilford-fp4-plus-125.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "53a85b5fdfe18a624a4ea9c9c0d039ad28c246a677bce88e345ca710a71561bd",
+      "original_sha256": "73fea9dd254f102c4834213a9f1131e589ae369d13f9a5cc04473a1917ce83b5",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "9d0da139bc6c132ad1afd5eedfa33513f4758e86c502bdbb60670e7b0fd23926",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "ilford-hp5-plus-400.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "d2cc0623118dc1d566aff70ea9316c54160531cb3108463a61273f23d50288c2",
+      "original_sha256": "b72f7a97e5c96608fab5e2c3034a432a4b9dbaf391f3fc4eb85e18c9c137bb88",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "c6f55cdfbd39ac1cf5f94f74370ad2164d0b75b2e198d4d0768291ef023077c6",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "ilford-ortho-plus-80.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "30fd7d34164730e8a2bc9bd7e8e4567b572988d74f504270bcfb8e958034587d",
+      "original_sha256": "67d2d6afca307ae620a7441852342169866d245c0b41f68c1943f14b72d11b5c",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "c62380d8851c6598aca4fe83d7a87984ced92acea4f1e3954cbc2207e33cf57c",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "ilford-pan-100.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "f00a8075147da90b60d75ec9b2de2e58844cc7b9dc1a2424314778b3142b75d1",
+      "original_sha256": "bcd9743446d90d20050831f09d674b79f201deb6498270db97722fdd5263ff7b",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "ef96e91869b3a6e2d1a30bd6789dbf81b6ab95225b33018e275801b1c38f14b6",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "ilford-pan-400.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "b63b37898f14c38a82d523bc68a9503804ded954cd1629be5b3427994b8374cd",
+      "original_sha256": "abd701abbb80852180e3536c017c87dc7211f84fbdb7b39dcab41c30e06cac0d",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "43bb7f349d03446b8645b97aaa7179588a56bf2930cd3a7cce2a2b525c184434",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "ilford-panf-plus-50.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "cd253bf8d428ee92c7d4c309c85a5d83fed793414005105758844a915470223d",
+      "original_sha256": "4d72b3900e311853fdd09fa10180d777e24ab5c35b39f5832454f122de1858ae",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "6902230378fe1da9c33eda0990219cb8638ac2219afad889aa719c6546614542",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "ilford-sfx-200.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "2a437832f6f6ee1b952c19085f8499de7da421a7afff902fe23f3cb3fada1d89",
+      "original_sha256": "c964f128aed45f608234c1448849d9594919caa6d866f4389994beed276e65f0",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "0d5e911440eaf2d07dd50931b686c47f648d3ba35457d82e0b49f63b8f5b6efa",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "ilford-xp2-super-400.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "b2c3f9bb7063f087b0b442d9756a69090a4b89a5dc1488309c0b325e55ed39f9",
+      "original_sha256": "2ed0f31139f0807aaa9f8d86d996dee70de4db738f6caae2987531be5260ef75",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "627d4284fe093098805e6e814a2ec2bc218b384fa6634a44806580861a5adf04",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "kentmere-pan-100.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "a449f298ec3b18e7ddca3b26c0c88de0a0a8b2ecd30178fcf1acf982b734b20f",
+      "original_sha256": "33d4029b7b30630e596d03f7eb5b75303cdae1af445f4fa707695b5e361aa797",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "747e1a28d8e751e65c718905baa9acff1f9bb38b6b9be22af9d44dbc71863372",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "kentmere-pan-200.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "d1f467413ee5c54e5b383158c66b52e1ade9f3683efaf5ab95826eb09550eb4d",
+      "original_sha256": "d95499cba43c1824f88b9a90a0985683468ccb4bb836494a6cfe6125be5604dd",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "d1d5b994600affe7508721dfee858ced3018da03022fac0c3d0065ce02070fa4",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "kentmere-pan-400.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "c16531112b48b8f9f4095f97dcf9edbabc3d64dc5bf95668ccc72999cf3e0f31",
+      "original_sha256": "b22e89f882c7419344ff703f5e0f0063f1400b965e99b749050636dcd7901e2d",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "a17c767e9832efdbe60e0074ec2cb9b9945593e2e4b785377a0174b567140057",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "kodak-aerocolor-iv-2460.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "9f44ed489900ca2bb67a787ce199e56f0e76f9fb9db6a5827247e7fd26320908",
+      "original_sha256": "f33b379094adbaf1492ffba3e5d03921e6cf700b064b4a0cb9fd50a6926c60a7",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "ded5f8d935f39022585c5b43c6963688e5da5a36ffbeb02abd6bafe152d3926d",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "kodak-colorplus-200.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "91ea0e4448804668967e804287f1045bf837ae5ee5efd1cd8bf8ec1fc9e76a63",
+      "original_sha256": "e08a1c34ad51b57a903617101afe476b9f591801deac30df005ab11829b4d9d3",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "98ef9a78c1f89dd9e0b1ae178cd741cabe10d04ce2ff3648f94e317a05520194",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "kodak-eastman-double-x-5222.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "4653f72516a2701924efd12beca91cfbc3314fbfad9c3cbea1e5f0859c088340",
+      "original_sha256": "82e72ad8ddb90284cab1a48eb6fb748e12350af48b7c4609f09abec67e3417e0",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "4084cdccab91de1ae97201b161004306ea2692779a264f024fc4a086e716f7a9",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "kodak-ektachrome-100d-5294.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "9b7dc26a471501f8b7daeb584c1ac105c5e68c9315b47fd0188351eb896710fb",
+      "original_sha256": "426fa226be6ec6f0a744350dc5c3d8bf609b8406e62a71f00972844afe7ffce6",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "ff75f4132e7daeae7a392b46d6e279ee19e89092a6ae1c9f642f7b66d0fd3d8e",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "kodak-ektachrome-e100.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "ce97709e0c83104da9f96195e6ee48d288b2e96f537dfa3455e341ac13771f91",
+      "original_sha256": "475d2fbfa550b8c2a21d10fbf6fc55e5652c1af1db01677c89cd7865f2dd6f47",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "338fa7cc5dcaba9048b0f604cbbbd6da4c24ea41710a86daa38a2cd5ae373b87",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "kodak-ektar-100.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "199ed6d2840626bded7e8c01be42e97b98afc1b010bd9f134ff6c7e47d377318",
+      "original_sha256": "0d1e7c7138df232d3e6a9cb90e463fcfcfa7d137e278bd05290f9974dd52501e",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "023e170b444342a3aac93a34bcc025190d053d248a42c1a76dd51665723e33c5",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "kodak-gold-200.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "e73b405e919ca280470489a5ffcad363a4aece8feb73e752aa02465dbcee5ee4",
+      "original_sha256": "0387967aed2ce29a6d0186deb1eb553bf138b7a43564794badd55584093d5534",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "134f5695234f1989d88341daca7eb8969965daeb54af72a8f5697234518208f3",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "kodak-gt-800.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "926986c35ab7680ec2a9fc5b99bfbcec1cda4b074830cd1679354c456efa13df",
+      "original_sha256": "3adcfa3b2bfd323c933647ccdbed3fd18911efa6ac0490e00570b3cc31eef10d",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "02efe4c52e04d706c32a20ba4553b5ccab55651e1cfe60cc99b5eb7042e2f7a3",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "kodak-portra-160.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "41ba8a8d3c212f3183954fa2eb1af32791680609de8324782c0e5abe7060e611",
+      "original_sha256": "9f5fc942c7043541f1f82f15aab1d728e0a405d20d9c1056b9e35c35854561c3",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "5b3fb8db0d28fd5af243ca7d6e7a777dcb49f899822c09b4cf5d82544371b964",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "kodak-portra-400.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "076469b7ecbfb96b8e7ee52541ddb386d1a65ce9c2224a70511ee6774f2d7061",
+      "original_sha256": "05a4aad589196c059fcaaefa0be501431ce3b984e72149e60fbee6adb779b70d",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "339d7472f19cfd6e2bf5c7be552b3a9c5d6788ee7372d30cd2dd30fe1ce8c72b",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "kodak-portra-800.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "6318d401a99e573b63750c0c07de133c48dd9982799ee11769dc9e7d4c618a5b",
+      "original_sha256": "a048d4e8b4a82c28383f7c5d8951f06f9e708b95c601c06e8cc47f9ecb1d1df8",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "9968e68ae08ac7bfb97812e918645f10a5b94682bcd641119055b10fd34a66fe",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "kodak-pro-image-100.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "c8b254b5262347817fe5172b71aab15ea891680086f7879df18ae301ca67e03c",
+      "original_sha256": "2a3c3a4e35cca69ba7968ed05fd077bbc5ab5ce75dbbc435978ddbb9174482a8",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "174210e3ab41619aab37cbda5574578d2d5a9e4e8045b9d8bb8ceaab4e361b14",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "kodak-t-max-100.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "d0eaa7c29fa4afaae52ad13ff760750399d9a11dfc6c547d16187e4585d6da86",
+      "original_sha256": "d9b59497ed8cac493890069543c550685296c0047072169abd6c35f0da59a547",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "02dfffd90e91a36eb6dc141cdbcc23aa868fd233ca63d0b5e1c5facfcc889c65",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "kodak-t-max-400.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "a77c8545fc9e698a9d721c951f365fee08afa82c3bc2fa6dd048fe07789b013f",
+      "original_sha256": "41db0274ada57c1300b5b23e2ca048838ba65259a93a20e4fa881f473c4db0f4",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "cd649720110e992cad458e2dc29e31af9e639af6eed9f9ad8a7ed7e02115a323",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "kodak-t-max-p3200.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "6ef1f819e18176d2616182521163cf2f1b791dfe607d62050c9e525d67911bc7",
+      "original_sha256": "ed28078391f6203083a585ae1857453d5ac1a3824e00ba1d34ed38ed2812d132",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "ceea092cdb59c634a63fe02d2aefe7bf58aad8b175124373348fa8e9c3f0fd8c",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "kodak-tri-x-400.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "fc6977eacfb4ef13d9b7dda8f088fecedacc8ac8ada4011b2c0628dab343f591",
+      "original_sha256": "667b0fd9eb3039b6aea3c4f4067c56db5c01c3c02fc981a715762c896b46b37c",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "366cc20b8bbf372ca4b777682e25fbb1859ab3c096c379b02b04af9984ae390e",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "kodak-ultramax-400.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "a8952b980fbda53be65d10bbdc04023f7cfca4ff1eab80a4f30624305473945b",
+      "original_sha256": "85296da506fa5c15f7f5cf6d5d3d7fd2d2acb04ec01689c771de594565a8d254",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "5efb601531e4dd53bb845c1a01b1cc026d5e0e3c75e474f272970dd21f3abd5f",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "kodak-vision3-200t-5213.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "61e3200acfb49949e1e3e6ec0b806c7a46de180c94204d9dc55cb191be6e5620",
+      "original_sha256": "9ec46d61dfce41f2e70e6f69df033afba4cd8b82c66a6c8395bf452750de58bf",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "90bd367baab0c9247badfa5974045998304d7494ad13b5bdd23e4ab24db6de70",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "kodak-vision3-250d-5207.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "74761717effa5c0dc68585cb36c8578ba4b600d78d7e77b94767929df55e3e8e",
+      "original_sha256": "9776eded8c9f398a6db5646de52a72e338f951e9ea1b200f7ff04b8b3885eada",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "f19aa87cd7c586a030599a66b44c69074437ffca9409cc3e7e84c1ef66f205b5",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "kodak-vision3-500t-5219.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "00be0ab89abd7cc8854b0f5390a29d2aafaff3cb015a641ae472c97cd58af4d5",
+      "original_sha256": "da9cb9644aa157f56292d6543088477c303a258b0d7e39ad4e6470ae994fb5f3",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "0f7d89228ee63233b89b8bc7824eed0b0982807b7482a0474728fd10bbc360da",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "kodak-vision3-50d-5203.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "a998ed7e59973232a54c8509d3cbbba1ed8da543fd599a0b4b66d519b3edb9f6",
+      "original_sha256": "c3e4c033a6f9307fd83a3109ae7f37efa87b2ad4f117fc543e196e64e9661c6c",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "5f52b6eb58718179f181167f17e22e68dc1c132ff6d9d5e372cff5e88ea4f210",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "lomography-100.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "714782ecf601f75ada0e1af82a2fbe2073d5de78b663b9d40efa3fcb8b68a3ee",
+      "original_sha256": "b1a9d4deb42b224e510ac742536c999e03c4debae9d6ae49db50e71e3ddea9b7",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "1d3e5b17a43a79a9cde0c0c6f6135fb75404d591849b593b4346c48dd14a6546",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "lomography-400.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "80d40d40567409c614418c0a90114065490597f66a1216e0058b1148cbb49fea",
+      "original_sha256": "4928e86a49f9b5faaeb21f3a1d95cc53267cc051b918d40249064c35dd5bcae2",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "fc2e491a577f94563b0f5423cd083b120fb2de7b7f774ec7f50d4b9f6208cd7c",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "lomography-800.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "50f055e2dd497c1f4313b23aae4398eef8e506a0933c53ee82ecd119abe0b75b",
+      "original_sha256": "63f7ddd66797a450fe5d3b80f9472f8997c77a30095b8b25bc722985f1a3f532",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "868864fd31181ceda35186e09be998603d48fd061a2a341d933b40123ea79985",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "lomography-lomochrome-color-92.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "6b8d4d77efbb07c1e54e663756caa75ccc14138e0e8d53c5ecccb14f609a4d86",
+      "original_sha256": "f1c676bb1073dbaece0a035b04930c944af6720c87d6ebbd0513674f48c4265a",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "0efa38085dd7548dc2fbd4ff2a41b9699039ce3b0376d45f18374d5fbed32000",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "lomography-lomochrome-metropolis-iso-100-400.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "13e69c3d60d076e333700fb8d52a341362ecf5e74ff30f15ac86a994fa870c1a",
+      "original_sha256": "a48abfe4d37bf792a23ff290d141ed902e3ed59fcf52aa64636eecacab9c0d4c",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "d5bed3e4a52bc2daf5589f842eca242d9f38950651e6fb281110829d19d3cad6",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "lomography-lomochrome-purple-iso-100-400.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "568cf2799523f87c06f59952b741111c2feca4e593a24f6f3506e0187ec3e60e",
+      "original_sha256": "6a7d52c5d815fdf259ba3a2a4d8a967cb868657f47023e8568d566e853991804",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "446d9d1bf538ed6df9d45c6b8eb2966fa802b67b4a37bd6b259e7c27b733e32e",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "lomography-lomochrome-turquoise-iso-100-400.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "263dbc066ed369cf68edf61c88d33b36fafd41d9e4a17489ff4552aa2a710f68",
+      "original_sha256": "3b245d066d494ebc742f1e72cf7ab0949e329c9ee1c0d688db19cd778758da08",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "9b5cd2d20c06e42552b93ea288aac48b382acc83aff2d496c366b2442b2054c1",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "lucky-color-200.png": {
+      "edge_complexity": 5.244,
+      "left_padding": 220,
+      "original_pixel_sha256": "4fa1c618f68c0d47e3f28697900e74f393f06b0b27a2f64e924f49d4c83af918",
+      "original_sha256": "ce283a7dc80760f105ea4fe18464f99054271cafda41a94c1badc1aa2989839c",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "5c6ccc8a31000a8eb915a9f36d53916f3194b9ec6cda410ac7ecbdddcac6a6b3",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "lucky-color-400.png": {
+      "edge_complexity": 5.2513,
+      "left_padding": 220,
+      "original_pixel_sha256": "22835e7d597fb50cb0afe87d779912be7497acb73e975274b8300f3c138bd532",
+      "original_sha256": "3398db73693b153fcbccd3c315959c3f06d4e6f20f1c69678daef5ffa12f8d9c",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "e3d96437cc7d522127ff4cae1a03d8bcc778010c41f7f1b8c4be1b98c09502a2",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "lucky-shd100.png": {
+      "edge_complexity": 5.2396,
+      "left_padding": 220,
+      "original_pixel_sha256": "0be4947267cd70e3b385c8d39f71cce5fc61deecdeb365fe0b7ab11528af8346",
+      "original_sha256": "49604ab98bf9624fd834291f128ffced6385b1ab59a9612f7ad224dfa9eec2cb",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "15f69ed3dddb62e616e65eb2367cb20b261d2c2a0d73b7c6c6b8deef02697c7d",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "lucky-shd400.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "2a7ad18c57c2699f2326309ff785acd07cbe152a458c7405e8bfe7f2b3a4f997",
+      "original_sha256": "58098f3449a6cfcc4f9d0e56ab88b3e87308cfdd32228920623b457eba3e9b55",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "d5b2eeaaa2dd1f4f9826973b4210cc680013c148879431bf9578544dfcfa9233",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "orwo-original-wolfen-nc400.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "57a53c010733d05c62a8ad1043ad4a4a7e961aff0f795e38cbb271e5181c0ef1",
+      "original_sha256": "b0cdc710c23dbfff3af49454dc55a98feaa05fec75e870f769feaf443ec50b18",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "2c96d852d74cf15609412d430b670384bddb631bd4b9ad7d6acbe15d54672f0e",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "orwo-original-wolfen-nc500.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "76e7a89df5f8c9e3fd53d61fa241ca08721040e206f5ef6a232d0b8b1af2416e",
+      "original_sha256": "f5c735417957176136694e35e72084ef3b8d6f9af06f7d895688a36a2abb8e7e",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "f9dad41abf0e4a9525e4aff9fdc5d9785acf99cfa3bb5ce03493a5301f6e371a",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "orwo-original-wolfen-un-54.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "951f148455ec65d5f8e4ae26ddab141fb79b101fa7249685e83be6d88ab6ad2f",
+      "original_sha256": "c8cbf5a33aabef75f855e2f16f7fd57b11ff94eef6f6209287bc448a284c2f12",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "7c7fc98bd42777de0857dcf3b50929035e0ace5bf3b0464d6d9fc1e7a56111bf",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "rollei-blackbird-100.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "87a4af38f14dfebb99d40ff54e890e8efa856ae169c649250fbfcd076abadec8",
+      "original_sha256": "376f7e6afcaa6c74361f9d46c382459450d2f734692bd0a36f5500c69e37b5db",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "e1b3e526bcf46a0083fc036352e65c1714fc7c225d71b93507bea1dccf4777fc",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "rollei-cr-200.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "fec464efef32001b678b808df9f8117deafdffadaafe2888d0c5557c461c669a",
+      "original_sha256": "c5f7e5bcd2d1799d4cb76c1759e6e84b039cfd818d642e941130474bc0707417",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "717b0b01d5c3115835969261b5c9ec44cec1b20f2feb162a77262df3e41260db",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "rollei-infrared-400.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "4b13cc07f52f2f5acac8a51240e6e4cfda5bfac435e5a2fbead4d1bd7ec1aa02",
+      "original_sha256": "de3135c5049aacc21b1fae58823f6709215cd9c769a8ef7a913e946676eb7e19",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "9c4c415d158eab27b45f120e255019fa0caa720afb2203ad27a3acaed8b205ff",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "rollei-paul.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "280c1aa4a432b0bb258afe592e14f8f085a1abd48aa977a672353862d6540d9f",
+      "original_sha256": "17f55c83ee88f802a1f4940b08d52036f22d064c8720483ebe722db16dc65ecd",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "49f6ae50cb10b2c06d692d4545dfec4f146db6f7836dc1aa655813792702ea53",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "rollei-reinhold.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "57738993bf1f46bc01992cd5cfb22e755e5f3527f7833521626136805701beda",
+      "original_sha256": "906e1a6ae0e696e4fb8001e602438bfe8e2c5f3ce003880665d0f652258e9830",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "e33f689e5a719eb1ae4eac6581ff7407166c467faa896571b17ae50f418f156d",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "rollei-retro-400s.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "b878980a694b96c299017414bc9f0c4a68ca14fa45babf028e81f3244563708f",
+      "original_sha256": "47e96b049e9294e8623c81a1f82aedd46e5ec144dce3a79fa3bc63855f6880dd",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "1e32d914101737eaeab3f1063522a4ea29fd65728078099e1baf886fef8f0833",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "rollei-retro-80s.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "409ff49908954740a4c50a34d5a89cd83884c9d00751cc1f894a0aa7d7b4c155",
+      "original_sha256": "c89d1251593f28d93552b0d79e1b060d3f9b7c9c7b0df64b7b7cb1b8d6e95933",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "d60dedfd76f96ee222adb06fbbfdf67c327175efa932265e19022db8f8abb49e",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "rollei-rpx-100.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "529a590678d93090a8a1df348cd395bb7a6789968697d30a1bc01c11920ffab5",
+      "original_sha256": "d06efb1fbadf402838a0b4621f5df586ec1eb95e631286e3af869ec162b80de5",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "d938d30fe3689eb27a70ce1f78ca1cbd17965f701a4965a7f3e1ae7ce0b4ab37",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "rollei-rpx-25.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "e6483454f8d46e6c52c1d9c60ddf06717b0dfe21654b059fd3e7e641395b3bd6",
+      "original_sha256": "dbb18126eb8409d0014cc0efcbd9cfd913486eed5d36b5b0203a610d77f08062",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "00398273296928170e5b7db5e9985670fa4259fe5a190e0bb09530f1a3bf48e4",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "rollei-rpx-400.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "c4564b81b9d55493dd2b6f86b1cebd2abc7d1a24e53a12fc66eb78e2b5fddd6e",
+      "original_sha256": "5011e5b0a0d3915ac01c057c3b955b1a4440acff88e2108e64124b641553bdf5",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "173853e0b41f5e34e9990860299df8689091f16de35f86417d24600e18b94484",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "rollei-superpan-200.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "7229418504517aebdd94e0b12f0392a340870cef2cb7ce4998add93f3025441d",
+      "original_sha256": "0f19a40fde5d40e96950d114fb334a215805b7bc33ce33cbd8049a7a9ab36fc4",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "3c95a9702f7d67cbb2fc8f2711274f10f10127e71012f73d0fe09ea6afd9025f",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "shanghai-gp3-100.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "c2289d85b9dfb03b118ff6c7f9784143cc39b941f4f4f10c34765f82f6a7db6b",
+      "original_sha256": "42746123f39dabce8a266f868293b2bc229720fd4fa63934d73faca28c8b6e3a",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "8c17c4f6bbb94b17dd6d17c5c7fb072c257ed98a1fe642df3e517a06191e634c",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "shanghai-gp3-400.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "b19ec554d52efe3c7b6735d26a575f9de1ec9e16a50abdf73a3debf337a6f2a4",
+      "original_sha256": "341cc355bb2426555e0331fa78df439bda4842fdf367967a2985b04573f74573",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "a419a1ad0d15f70ca07383b0fab9d6d44c41d3766729273c15eddf20611fac48",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "shenguang-100.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "9472d6bc78667759a2eeb358389e26b35166833a8bb4de743d4aeb2a28337980",
+      "original_sha256": "f05d98df86d229c6f0a3198e0591355058a852d495c3ba9d2d5ca58ddd65e1e0",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "3b47e4e5ee409189e03e0174d078e26d64af4f13debf29e100066e1f2d8ac44e",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "shenguang-400.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "68820c6a2091c820ff7deb007ae5757eb156077b6f3b43dd3e3fcfece0d42eeb",
+      "original_sha256": "d0358dda9b82bbede289591a4696dc177cca6b02050d9acd057d0bb8a3070d70",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "27a299e3f002b6da2806d4227ecc3a2ea3cb650518d20dc2d2bb1da0d191e3a6",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    },
+    "silberra-pan-50.png": {
+      "edge_complexity": 0.0,
+      "left_padding": 220,
+      "original_pixel_sha256": "e4c9ae2175f7a3a42cfd936c5e02d689e4c03a76f4e63e58e3f538abe04b91e3",
+      "original_sha256": "b0ace029742e51621ef382dc67c71dfd05a12a7c4644f5f12ddee76e786d6b75",
+      "original_size": [
+        1200,
+        800
+      ],
+      "output_sha256": "68dcec3358db25251b2e64b372166292214f56b3e12cba672199918b010b55a5",
+      "right_padding": 220,
+      "target_ratio": 2.05,
+      "target_size": [
+        1640,
+        800
+      ]
+    }
+  },
+  "version": 1
+}
