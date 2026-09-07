@@ -1,12 +1,21 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, ref } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import PageHeader from '../components/PageHeader.vue'
 import type { Film, RollSummary } from '../types'
 import { errorMessage as formatError } from '../utils/errors'
-import { compactFilmTypeLabel, FILM_TYPES, filmTargetStatusLabel } from '../utils/films'
+import {
+  compactFilmTypeLabel,
+  FILM_TARGET_STATUSES,
+  FILM_TYPES,
+  filmDisplayName,
+  filmImagePath,
+  filmTargetStatusLabel,
+  useFilmImageFallback,
+} from '../utils/films'
 
 const filmTypes = FILM_TYPES
+const targetStatuses = FILM_TARGET_STATUSES
 
 const films = ref<Film[]>([])
 const rolls = ref<RollSummary[]>([])
@@ -23,7 +32,7 @@ const formBrand = ref('')
 const formName = ref('')
 const formIso = ref<number | null>(null)
 const formType = ref('Color Negative')
-const formTargetStatus = ref('untested')
+const formTargetStatus = ref('unshot')
 const formNote = ref('')
 
 const selectedFilm = ref<Film | null>(null)
@@ -33,6 +42,7 @@ const isEditing = ref(false)
 const isLoading = ref(false)
 const isBusy = ref(false)
 const visibleError = ref('')
+const pageRoot = ref<HTMLElement | null>(null)
 
 const emit = defineEmits<{
   (e: 'jump-to-roll', rollId: number): void
@@ -105,17 +115,24 @@ function isFilmShot(filmId: number) {
 }
 
 function filmImageSrc(film: Film) {
-  return `/film-stocks/${film.id}.jpg`
+  return filmImagePath(film.brand, film.name)
 }
 
-function handleFilmImageError(event: Event) {
-  const image = event.target as HTMLImageElement
-  image.src = '/film-stocks/placeholder.svg'
+function displayName(film: Pick<Film, 'brand' | 'name'>) {
+  return filmDisplayName(film.brand, film.name)
+}
+
+async function scrollContentToTop() {
+  await nextTick()
+  const main = pageRoot.value?.closest('.main-content')
+  if (main instanceof HTMLElement) main.scrollTo({ top: 0, behavior: 'auto' })
+  else window.scrollTo({ top: 0, behavior: 'auto' })
 }
 
 function openAddForm() {
   resetFilmForm()
   currentView.value = 'add'
+  void scrollContentToTop()
 }
 
 function resetFilmForm() {
@@ -123,7 +140,7 @@ function resetFilmForm() {
   formName.value = ''
   formIso.value = null
   formType.value = 'Color Negative'
-  formTargetStatus.value = 'untested'
+  formTargetStatus.value = 'unshot'
   formNote.value = ''
 }
 
@@ -141,12 +158,13 @@ async function handleAddFilm() {
       name: formName.value,
       iso: Number(formIso.value),
       filmType: formType.value,
-      targetStatus: formTargetStatus.value || 'untested',
+      targetStatus: formTargetStatus.value || 'unshot',
       note: formNote.value || null
     })
     resetFilmForm()
     currentView.value = 'grid'
     await fetchData()
+    void scrollContentToTop()
   } catch (err) {
     console.error('Failed to add film:', err)
     visibleError.value = formatError(err, '新增胶片型号失败')
@@ -160,6 +178,7 @@ function viewFilmDetail(film: Film) {
   relatedRolls.value = rolls.value.filter(roll => roll.filmId === film.id)
   isEditing.value = false
   currentView.value = 'detail'
+  void scrollContentToTop()
 }
 
 async function handleUpdateFilm() {
@@ -174,7 +193,7 @@ async function handleUpdateFilm() {
       name: selectedFilm.value.name,
       iso: Number(selectedFilm.value.iso),
       filmType: selectedFilm.value.type,
-      targetStatus: selectedFilm.value.targetStatus || 'untested',
+      targetStatus: selectedFilm.value.targetStatus || 'unshot',
       note: selectedFilm.value.note || null
     })
     isEditing.value = false
@@ -192,8 +211,8 @@ async function handleDeleteFilm() {
   if (!selectedFilm.value) return
   const relatedCount = relatedRolls.value.length
   const message = relatedCount > 0
-    ? `确定删除 ${selectedFilm.value.brand} ${selectedFilm.value.name}，并级联删除关联的 ${relatedCount} 个拍摄卷及照片记录吗？正式图库文件仍会保留。`
-    : `确定删除 ${selectedFilm.value.brand} ${selectedFilm.value.name} 吗？`
+    ? `确定删除 ${displayName(selectedFilm.value)}，并级联删除关联的 ${relatedCount} 个拍摄卷及照片记录吗？正式图库文件仍会保留。`
+    : `确定删除 ${displayName(selectedFilm.value)} 吗？`
   if (!confirm(message)) return
 
   isBusy.value = true
@@ -227,15 +246,17 @@ function backToGrid() {
   selectedFilm.value = null
   relatedRolls.value = []
   isEditing.value = false
+  void scrollContentToTop()
 }
 
 onMounted(() => {
+  void scrollContentToTop()
   fetchData()
 })
 </script>
 
 <template>
-  <section class="page">
+  <section ref="pageRoot" class="page">
     <div v-if="visibleError" class="feedback-error" role="alert">{{ visibleError }}</div>
     <div v-else-if="isLoading" class="feedback-info">正在读取胶片数据…</div>
     <div v-if="currentView === 'grid'" class="stack">
@@ -272,11 +293,10 @@ onMounted(() => {
           @click="viewFilmDetail(film)"
         >
           <div class="film-image">
-            <img :src="filmImageSrc(film)" :alt="film.name" @error="handleFilmImageError" />
+            <img :src="filmImageSrc(film)" :alt="displayName(film)" @error="useFilmImageFallback" />
           </div>
           <div class="card-body">
-            <div class="card-kicker">{{ film.brand }}</div>
-            <h2 class="film-name" :title="film.name">{{ film.name }}</h2>
+            <h2 class="film-name" :title="displayName(film)">{{ displayName(film) }}</h2>
             <div class="meta-row">
               <span>ISO {{ film.iso }}</span>
               <span>{{ isFilmShot(film.id) ? '已拍摄' : '未拍摄' }}</span>
@@ -321,9 +341,9 @@ onMounted(() => {
         <label>
           <span>手动状态</span>
           <select v-model="formTargetStatus">
-            <option value="untested">未测试</option>
-            <option value="unshot">未拍摄</option>
-            <option value="shot">已拍摄</option>
+            <option v-for="status in targetStatuses" :key="status" :value="status">
+              {{ filmTargetStatusLabel(status) }}
+            </option>
           </select>
         </label>
         <label class="full-width">
@@ -348,12 +368,11 @@ onMounted(() => {
 
       <div class="detail-layout">
         <div class="detail-image">
-          <img :src="filmImageSrc(selectedFilm)" :alt="selectedFilm.name" @error="handleFilmImageError" />
+          <img :src="filmImageSrc(selectedFilm)" :alt="displayName(selectedFilm)" @error="useFilmImageFallback" />
         </div>
 
         <div v-if="!isEditing" class="detail-panel">
-          <div class="card-kicker">{{ selectedFilm.brand }}</div>
-          <h2>{{ selectedFilm.name }}</h2>
+          <h2>{{ displayName(selectedFilm) }}</h2>
           <div class="detail-grid">
             <span>ISO</span><strong>{{ selectedFilm.iso }}</strong>
             <span>类型</span><strong>{{ selectedFilm.type }}</strong>
@@ -385,9 +404,9 @@ onMounted(() => {
           <label>
             <span>手动状态</span>
             <select v-model="selectedFilm.targetStatus">
-              <option value="untested">未测试</option>
-              <option value="unshot">未拍摄</option>
-              <option value="shot">已拍摄</option>
+              <option v-for="status in targetStatuses" :key="status" :value="status">
+                {{ filmTargetStatusLabel(status) }}
+              </option>
             </select>
           </label>
           <label class="full-width">
@@ -411,7 +430,7 @@ onMounted(() => {
           class="related-roll"
           @click="emit('jump-to-roll', roll.id)"
         >
-          <span class="related-title">第 {{ roll.index }} 卷 · {{ roll.filmInfo || selectedFilm.name }}</span>
+          <span class="related-title">第 {{ roll.index }} 卷 · {{ filmDisplayName(roll.filmBrand, roll.filmName) }}</span>
           <span class="related-meta">{{ roll.shotMonth || '未记录日期' }} · {{ roll.city || '未记录地点' }}</span>
         </button>
       </section>
@@ -621,12 +640,6 @@ textarea {
   display: flex;
   flex-direction: column;
   padding: 15px;
-}
-
-.card-kicker {
-  margin-bottom: 8px;
-  color: #9ca3af;
-  font-size: 12px;
 }
 
 .film-name {

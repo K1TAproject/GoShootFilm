@@ -14,7 +14,7 @@ export interface Film {
   name: string
   iso: number
   type: string
-  targetStatus?: string
+  targetStatus?: 'unshot' | 'shot'
   note?: string
 }
 

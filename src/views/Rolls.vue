@@ -26,7 +26,7 @@ import type {
   RollSummary,
 } from '../types'
 import { errorMessage as formatError } from '../utils/errors'
-import { compactFilmTypeLabel, FILM_TYPES } from '../utils/films'
+import { compactFilmTypeLabel, FILM_TYPES, filmDisplayName } from '../utils/films'
 
 const route = useRoute()
 const router = useRouter()
@@ -444,7 +444,7 @@ async function handleDeleteRoll() {
 }
 
 function getFilmOptionLabel(film: Film) {
-  return `${film.brand} ${film.name} (ISO ${film.iso})`
+  return `${filmDisplayName(film.brand, film.name)} (ISO ${film.iso})`
 }
 
 function getCameraOptionLabel(camera: Camera) {
@@ -742,7 +742,9 @@ onUnmounted(() => {
         </select>
         <select v-model="draftFilmName" :disabled="!draftFilmBrand">
           <option value="">全部胶卷型号</option>
-          <option v-for="name in availableFilmNames" :key="name" :value="name">{{ name }}</option>
+          <option v-for="name in availableFilmNames" :key="name" :value="name">
+            {{ filmDisplayName(draftFilmBrand, name) }}
+          </option>
         </select>
         <select v-model="draftFilmType">
           <option value="">全部类型</option>
@@ -779,13 +781,13 @@ onUnmounted(() => {
           <div class="roll-cover">
             <img
               :src="getImageUrl(rollCover(roll))"
-              :alt="roll.filmInfo"
+              :alt="filmDisplayName(roll.filmBrand, roll.filmName)"
               @error="handleRollImageError"
             />
           </div>
           <div class="card-body">
-            <div class="card-kicker">第 {{ roll.index }} 卷 · {{ roll.filmBrand }}</div>
-            <h2>{{ roll.filmName }}</h2>
+            <div class="card-kicker">第 {{ roll.index }} 卷</div>
+            <h2>{{ filmDisplayName(roll.filmBrand, roll.filmName) }}</h2>
             <div class="roll-meta-lines">
               <span><b>设备</b>{{ roll.cameraInfo }}</span>
               <span><b>时间</b>{{ roll.shotMonth || '未记录' }}</span>
@@ -853,10 +855,10 @@ onUnmounted(() => {
       <div class="detail-layout">
         <div v-if="!isEditing" class="detail-panel">
           <div class="card-kicker">第 {{ selectedRoll.index }} 卷</div>
-          <h2>{{ selectedRoll.filmInfo }}</h2>
+          <h2>{{ filmDisplayName(selectedRoll.filmBrand, selectedRoll.filmName) }}</h2>
           <div class="detail-grid">
             <span>设备</span><strong>{{ selectedRoll.cameraInfo }}</strong>
-            <span>胶卷</span><strong>{{ selectedRoll.filmInfo }}</strong>
+            <span>胶卷</span><strong>{{ filmDisplayName(selectedRoll.filmBrand, selectedRoll.filmName) }}</strong>
             <span>日期</span><strong>{{ selectedRoll.shotMonth || '未记录' }}</strong>
             <span>地点</span><strong>{{ selectedRoll.city || '未记录' }}</strong>
             <span>备注</span><strong>{{ selectedRoll.note || '暂无备注' }}</strong>

@@ -195,6 +195,32 @@ fn ensure_changed(rows_affected: u64, entity: &str) -> Result<(), String> {
     Ok(())
 }
 
+fn validate_film_target_status(target_status: Option<String>) -> Result<String, String> {
+    let target_status = target_status.unwrap_or_else(|| "unshot".to_string());
+    if matches!(target_status.as_str(), "unshot" | "shot") {
+        Ok(target_status)
+    } else {
+        Err("胶片状态无效，仅支持未拍摄或已拍摄".into())
+    }
+}
+
+fn film_display_name(brand: &str, name: &str) -> String {
+    let brand = brand.split_whitespace().collect::<Vec<_>>().join(" ");
+    let name = name.split_whitespace().collect::<Vec<_>>().join(" ");
+    let lower_brand = brand.to_lowercase();
+    let lower_name = name.to_lowercase();
+    if brand.is_empty()
+        || lower_name == lower_brand
+        || lower_name.starts_with(&format!("{lower_brand} "))
+    {
+        name
+    } else if name.is_empty() {
+        brand
+    } else {
+        format!("{brand} {name}")
+    }
+}
+
 fn safe_media_path(media_dir: &Path, stored_path: &Path) -> Option<PathBuf> {
     if stored_path.is_absolute() {
         return None;
@@ -361,6 +387,7 @@ async fn get_rolls(state: tauri::State<'_, AppState>) -> Result<Vec<RollSummaryR
                 cover_path,
                 photo_count,
             )| {
+                let film_info = film_display_name(&film_brand, &film_name);
                 RollSummaryResponse {
                     id,
                     camera_id,
@@ -370,7 +397,7 @@ async fn get_rolls(state: tauri::State<'_, AppState>) -> Result<Vec<RollSummaryR
                     city,
                     note,
                     camera_info: format!("{} {}", camera_brand, camera_model),
-                    film_info: format!("{} {}", film_brand, film_name),
+                    film_info,
                     camera_brand,
                     camera_model,
                     film_brand,
@@ -441,6 +468,7 @@ async fn get_roll_detail(
         )
         .collect();
 
+    let film_info = film_display_name(&film_brand, &film_name);
     Ok(RollDetailResponse {
         summary: RollSummaryResponse {
             id,
@@ -451,7 +479,7 @@ async fn get_roll_detail(
             city,
             note,
             camera_info: format!("{} {}", camera_brand, camera_model),
-            film_info: format!("{} {}", film_brand, film_name),
+            film_info,
             camera_brand,
             camera_model,
             film_brand,
@@ -510,10 +538,7 @@ async fn add_film_stock(
     if !(1..=12800).contains(&iso) {
         return Err("ISO 必须在 1 到 12800 之间".into());
     }
-    let target_status = target_status.unwrap_or_else(|| "untested".to_string());
-    if !matches!(target_status.as_str(), "untested" | "unshot" | "shot") {
-        return Err("胶片状态无效".into());
-    }
+    let target_status = validate_film_target_status(target_status)?;
     let note = clean_optional(note, "备注", 2000)?;
     let result = sqlx::query(
         "INSERT INTO film_stocks (brand, name, iso, type, target_status, note) VALUES (?, ?, ?, ?, ?, ?)"
@@ -615,10 +640,7 @@ async fn update_film_stock(
     if !(1..=12800).contains(&iso) {
         return Err("ISO 必须在 1 到 12800 之间".into());
     }
-    let target_status = target_status.unwrap_or_else(|| "untested".to_string());
-    if !matches!(target_status.as_str(), "untested" | "unshot" | "shot") {
-        return Err("胶片状态无效".into());
-    }
+    let target_status = validate_film_target_status(target_status)?;
     let note = clean_optional(note, "备注", 2000)?;
     let result = sqlx::query(
         "UPDATE film_stocks SET brand = ?, name = ?, iso = ?, type = ?, target_status = ?, note = ? WHERE id = ?",
@@ -912,7 +934,7 @@ async fn get_camera_detail(
                 roll_index: idx,
                 shot_month: month,
                 city,
-                film_info: format!("{} {} (ISO {})", f_brand, f_name, f_iso),
+                film_info: format!("{} (ISO {})", film_display_name(&f_brand, &f_name), f_iso),
                 film_brand: f_brand,
                 film_name: f_name,
                 film_iso: f_iso,
@@ -1604,6 +1626,25 @@ mod validation_tests {
             "Nikon"
         );
         assert!(clean_required("   ".into(), "品牌", 80).is_err());
+    }
+
+    #[test]
+    fn film_status_rejects_removed_untested_value() {
+        assert_eq!(validate_film_target_status(None).unwrap(), "unshot");
+        assert_eq!(
+            validate_film_target_status(Some("shot".into())).unwrap(),
+            "shot"
+        );
+        assert!(validate_film_target_status(Some("untested".into())).is_err());
+    }
+
+    #[test]
+    fn film_display_name_adds_brand_only_once() {
+        assert_eq!(film_display_name("Kodak", "Ektar 100"), "Kodak Ektar 100");
+        assert_eq!(
+            film_display_name("Kodak", "Kodak Gold 200"),
+            "Kodak Gold 200"
+        );
     }
 
     #[test]

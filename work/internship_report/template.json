@@ -1,0 +1,3779 @@
+{
+  "source": "C:\\Users\\86159\\Desktop\\新建文件夹\\2023级实习报告模板.docx",
+  "sections": 2,
+  "paragraphs": [
+    {
+      "location": "body/p[0]",
+      "style": "Normal",
+      "text": "",
+      "runs": [
+        {
+          "text": "",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[1]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[2]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[3]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[4]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[5]",
+      "style": "Normal",
+      "text": "实习报告",
+      "runs": [
+        {
+          "text": "实",
+          "bold": true,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 36.0
+        },
+        {
+          "text": "习",
+          "bold": true,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 36.0
+        },
+        {
+          "text": "报告",
+          "bold": true,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 36.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[6]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[7]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[8]",
+      "style": "Normal",
+      "text": "实习名称：   构建基于深度学习的满文识别数据集   ",
+      "runs": [
+        {
+          "text": "实",
+          "bold": true,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 22.0
+        },
+        {
+          "text": "习",
+          "bold": true,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 22.0
+        },
+        {
+          "text": "名称：",
+          "bold": true,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 22.0
+        },
+        {
+          "text": " ",
+          "bold": true,
+          "italic": null,
+          "underline": true,
+          "font": null,
+          "size_pt": 16.0
+        },
+        {
+          "text": "  构建基于深度学习的满文识别数据集   ",
+          "bold": true,
+          "italic": null,
+          "underline": true,
+          "font": null,
+          "size_pt": 16.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[9]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[10]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[11]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[12]",
+      "style": "Normal",
+      "text": "",
+      "runs": [
+        {
+          "text": "",
+          "bold": null,
+          "italic": null,
+          "underline": true,
+          "font": null,
+          "size_pt": 10.5
+        }
+      ]
+    },
+    {
+      "location": "body/p[13]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[14]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[15]",
+      "style": "Normal",
+      "text": "日期：2026年9月8日",
+      "runs": [
+        {
+          "text": "日期：",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "仿宋",
+          "size_pt": null
+        },
+        {
+          "text": "2026年9月8日",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "仿宋",
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[16]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[17]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    }
+  ],
+  "tables": [
+    [
+      [
+        [
+          {
+            "location": "table[0]/row[0]/cell[0]/p[0]",
+            "style": "Normal",
+            "text": "姓名",
+            "runs": [
+              {
+                "text": "姓名",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": "仿宋",
+                "size_pt": null
+              }
+            ]
+          }
+        ],
+        [
+          {
+            "location": "table[0]/row[0]/cell[1]/p[0]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          }
+        ],
+        [
+          {
+            "location": "table[0]/row[0]/cell[2]/p[0]",
+            "style": "Normal",
+            "text": "班级",
+            "runs": [
+              {
+                "text": "班级",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": "仿宋",
+                "size_pt": null
+              }
+            ]
+          }
+        ],
+        [
+          {
+            "location": "table[0]/row[0]/cell[3]/p[0]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          }
+        ]
+      ],
+      [
+        [
+          {
+            "location": "table[0]/row[1]/cell[0]/p[0]",
+            "style": "Normal",
+            "text": "专业",
+            "runs": [
+              {
+                "text": "专业",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": "仿宋",
+                "size_pt": null
+              }
+            ]
+          }
+        ],
+        [
+          {
+            "location": "table[0]/row[1]/cell[1]/p[0]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          }
+        ],
+        [
+          {
+            "location": "table[0]/row[1]/cell[2]/p[0]",
+            "style": "Normal",
+            "text": "实习日期",
+            "runs": [
+              {
+                "text": "实",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": "仿宋",
+                "size_pt": null
+              },
+              {
+                "text": "习",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": "仿宋",
+                "size_pt": null
+              },
+              {
+                "text": "日期",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": "仿宋",
+                "size_pt": null
+              }
+            ]
+          }
+        ],
+        [
+          {
+            "location": "table[0]/row[1]/cell[3]/p[0]",
+            "style": "Normal",
+            "text": "2026.8.3-2026.8.16",
+            "runs": [
+              {
+                "text": "2026.8.3-2026.8.16",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": "仿宋",
+                "size_pt": null
+              }
+            ]
+          }
+        ]
+      ],
+      [
+        [
+          {
+            "location": "table[0]/row[2]/cell[0]/p[0]",
+            "style": "Normal",
+            "text": "行业认知",
+            "runs": [
+              {
+                "text": "行业认知",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": "仿宋",
+                "size_pt": null
+              }
+            ]
+          }
+        ],
+        [
+          {
+            "location": "table[0]/row[2]/cell[1]/p[0]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[2]/cell[1]/p[1]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[2]/cell[1]/p[2]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[2]/cell[1]/p[3]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[2]/cell[1]/p[4]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[2]/cell[1]/p[5]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[2]/cell[1]/p[6]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          }
+        ],
+        [
+          {
+            "location": "table[0]/row[2]/cell[2]/p[0]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[2]/cell[2]/p[1]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[2]/cell[2]/p[2]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[2]/cell[2]/p[3]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[2]/cell[2]/p[4]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[2]/cell[2]/p[5]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[2]/cell[2]/p[6]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          }
+        ],
+        [
+          {
+            "location": "table[0]/row[2]/cell[3]/p[0]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[2]/cell[3]/p[1]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[2]/cell[3]/p[2]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[2]/cell[3]/p[3]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[2]/cell[3]/p[4]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[2]/cell[3]/p[5]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[2]/cell[3]/p[6]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          }
+        ]
+      ],
+      [
+        [
+          {
+            "location": "table[0]/row[3]/cell[0]/p[0]",
+            "style": "Normal",
+            "text": "实训成果",
+            "runs": [
+              {
+                "text": "实训成果",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": "仿宋",
+                "size_pt": null
+              }
+            ]
+          }
+        ],
+        [
+          {
+            "location": "table[0]/row[3]/cell[1]/p[0]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[3]/cell[1]/p[1]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[3]/cell[1]/p[2]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[3]/cell[1]/p[3]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[3]/cell[1]/p[4]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[3]/cell[1]/p[5]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[3]/cell[1]/p[6]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          }
+        ],
+        [
+          {
+            "location": "table[0]/row[3]/cell[2]/p[0]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[3]/cell[2]/p[1]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[3]/cell[2]/p[2]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[3]/cell[2]/p[3]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[3]/cell[2]/p[4]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[3]/cell[2]/p[5]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[3]/cell[2]/p[6]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          }
+        ],
+        [
+          {
+            "location": "table[0]/row[3]/cell[3]/p[0]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[3]/cell[3]/p[1]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[3]/cell[3]/p[2]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[3]/cell[3]/p[3]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[3]/cell[3]/p[4]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[3]/cell[3]/p[5]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[3]/cell[3]/p[6]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          }
+        ]
+      ],
+      [
+        [
+          {
+            "location": "table[0]/row[4]/cell[0]/p[0]",
+            "style": "Normal",
+            "text": "实训心得",
+            "runs": [
+              {
+                "text": "实训心得",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": "仿宋",
+                "size_pt": null
+              }
+            ]
+          }
+        ],
+        [
+          {
+            "location": "table[0]/row[4]/cell[1]/p[0]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[4]/cell[1]/p[1]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[4]/cell[1]/p[2]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[4]/cell[1]/p[3]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[4]/cell[1]/p[4]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[4]/cell[1]/p[5]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[4]/cell[1]/p[6]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[4]/cell[1]/p[7]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          }
+        ],
+        [
+          {
+            "location": "table[0]/row[4]/cell[2]/p[0]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[4]/cell[2]/p[1]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[4]/cell[2]/p[2]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[4]/cell[2]/p[3]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[4]/cell[2]/p[4]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[4]/cell[2]/p[5]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[4]/cell[2]/p[6]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[4]/cell[2]/p[7]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          }
+        ],
+        [
+          {
+            "location": "table[0]/row[4]/cell[3]/p[0]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[4]/cell[3]/p[1]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[4]/cell[3]/p[2]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[4]/cell[3]/p[3]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[4]/cell[3]/p[4]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[4]/cell[3]/p[5]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[4]/cell[3]/p[6]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[4]/cell[3]/p[7]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          }
+        ]
+      ],
+      [
+        [
+          {
+            "location": "table[0]/row[5]/cell[0]/p[0]",
+            "style": "Normal",
+            "text": "自我评价",
+            "runs": [
+              {
+                "text": "自我评价",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": "仿宋",
+                "size_pt": null
+              }
+            ]
+          }
+        ],
+        [
+          {
+            "location": "table[0]/row[5]/cell[1]/p[0]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[5]/cell[1]/p[1]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[5]/cell[1]/p[2]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[5]/cell[1]/p[3]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[5]/cell[1]/p[4]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[5]/cell[1]/p[5]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[5]/cell[1]/p[6]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[5]/cell[1]/p[7]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          }
+        ],
+        [
+          {
+            "location": "table[0]/row[5]/cell[2]/p[0]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[5]/cell[2]/p[1]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[5]/cell[2]/p[2]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[5]/cell[2]/p[3]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[5]/cell[2]/p[4]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[5]/cell[2]/p[5]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[5]/cell[2]/p[6]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[5]/cell[2]/p[7]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          }
+        ],
+        [
+          {
+            "location": "table[0]/row[5]/cell[3]/p[0]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[5]/cell[3]/p[1]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[5]/cell[3]/p[2]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[5]/cell[3]/p[3]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[5]/cell[3]/p[4]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[5]/cell[3]/p[5]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[5]/cell[3]/p[6]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[0]/row[5]/cell[3]/p[7]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          }
+        ]
+      ]
+    ],
+    [
+      [
+        [
+          {
+            "location": "table[1]/row[0]/cell[0]/p[0]",
+            "style": "Normal",
+            "text": "实习名称",
+            "runs": [
+              {
+                "text": "实",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": "黑体",
+                "size_pt": null
+              },
+              {
+                "text": "习",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": "黑体",
+                "size_pt": null
+              },
+              {
+                "text": "名称",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": "黑体",
+                "size_pt": null
+              }
+            ]
+          }
+        ],
+        [
+          {
+            "location": "table[1]/row[0]/cell[1]/p[0]",
+            "style": "Normal",
+            "text": "实习名称",
+            "runs": [
+              {
+                "text": "实",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": "黑体",
+                "size_pt": null
+              },
+              {
+                "text": "习",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": "黑体",
+                "size_pt": null
+              },
+              {
+                "text": "名称",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": "黑体",
+                "size_pt": null
+              }
+            ]
+          }
+        ],
+        [
+          {
+            "location": "table[1]/row[0]/cell[2]/p[0]",
+            "style": "Normal",
+            "text": "实习名称",
+            "runs": [
+              {
+                "text": "实",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": "黑体",
+                "size_pt": null
+              },
+              {
+                "text": "习",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": "黑体",
+                "size_pt": null
+              },
+              {
+                "text": "名称",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": "黑体",
+                "size_pt": null
+              }
+            ]
+          }
+        ],
+        [
+          {
+            "location": "table[1]/row[0]/cell[3]/p[0]",
+            "style": "List Paragraph",
+            "text": "构建基于深度学习的满文识别数据集",
+            "runs": [
+              {
+                "text": "构建基于深度学习的满文识别数据集",
+                "bold": false,
+                "italic": null,
+                "underline": null,
+                "font": "黑体",
+                "size_pt": null
+              }
+            ]
+          }
+        ],
+        [
+          {
+            "location": "table[1]/row[0]/cell[4]/p[0]",
+            "style": "Normal",
+            "text": "成绩评定",
+            "runs": [
+              {
+                "text": "成绩评定",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": "黑体",
+                "size_pt": null
+              }
+            ]
+          }
+        ],
+        [
+          {
+            "location": "table[1]/row[0]/cell[5]/p[0]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          }
+        ]
+      ],
+      [
+        [
+          {
+            "location": "table[1]/row[1]/cell[0]/p[0]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[1]/row[1]/cell[0]/p[1]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[1]/row[1]/cell[0]/p[2]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[1]/row[1]/cell[0]/p[3]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[1]/row[1]/cell[0]/p[4]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[1]/row[1]/cell[0]/p[5]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[1]/row[1]/cell[0]/p[6]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[1]/row[1]/cell[0]/p[7]",
+            "style": "Normal",
+            "text": "实",
+            "runs": [
+              {
+                "text": "实",
+                "bold": true,
+                "italic": null,
+                "underline": null,
+                "font": "仿宋",
+                "size_pt": null
+              }
+            ]
+          },
+          {
+            "location": "table[1]/row[1]/cell[0]/p[8]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[1]/row[1]/cell[0]/p[9]",
+            "style": "Normal",
+            "text": "验",
+            "runs": [
+              {
+                "text": "验",
+                "bold": true,
+                "italic": null,
+                "underline": null,
+                "font": "仿宋",
+                "size_pt": null
+              }
+            ]
+          },
+          {
+            "location": "table[1]/row[1]/cell[0]/p[10]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[1]/row[1]/cell[0]/p[11]",
+            "style": "Normal",
+            "text": "内",
+            "runs": [
+              {
+                "text": "内",
+                "bold": true,
+                "italic": null,
+                "underline": null,
+                "font": "仿宋",
+                "size_pt": null
+              }
+            ]
+          },
+          {
+            "location": "table[1]/row[1]/cell[0]/p[12]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[1]/row[1]/cell[0]/p[13]",
+            "style": "Normal",
+            "text": "容",
+            "runs": [
+              {
+                "text": "容",
+                "bold": true,
+                "italic": null,
+                "underline": null,
+                "font": "仿宋",
+                "size_pt": null
+              }
+            ]
+          },
+          {
+            "location": "table[1]/row[1]/cell[0]/p[14]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[1]/row[1]/cell[0]/p[15]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[1]/row[1]/cell[0]/p[16]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[1]/row[1]/cell[0]/p[17]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[1]/row[1]/cell[0]/p[18]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[1]/row[1]/cell[0]/p[19]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          }
+        ],
+        [
+          {
+            "location": "table[1]/row[1]/cell[1]/p[0]",
+            "style": "Heading 1",
+            "text": "1. 实习目的及意义",
+            "runs": [
+              {
+                "text": "1.",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": " ",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": "实习",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": "目的",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": "及意义",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              }
+            ]
+          },
+          {
+            "location": "table[1]/row[1]/cell[1]/p[1]",
+            "style": "Normal",
+            "text": "满文作为满族文化的最重要载体，承载着丰富的历史和智慧。满文古籍包含了广泛的内容，涵盖了历史、法律、文学、宗教以及日常生活等各个领域，蕴藏了满族同胞在生产生活中积累的智慧结晶。同时，作为清朝的官方语言，满文古籍中还记载了大量的有关清朝的政治、经济、军事和外交等方面的历史，这对于破译早期的中俄属地划分等重要历史事件具有极其重要的意义。然而，随着时代的变迁，满文出现了传承危机，甚至面临消亡的境地。因此，亟需利用先进的计算机技术来实现对满文古籍的保护和传承。开展满文古籍的语料研究，建立满文文化资源数据库，进一步使用现代科学技术识别满文、翻译满文，不仅可以节省人力和时间，而且还能够提升工作效率和质量，可对满文古籍资料进行及时的更新和完善。近年来，人工智能技术得到突飞猛进的发展，而深度学习模型作为其中先进的智能技术，在图像处理、自然语言处理等方面都取得了突破性的成果。因此，利用深度学习模型识别满文既是最好的方法，也是迫在眉睫的任务。",
+            "runs": [
+              {
+                "text": "满文作为满族文化的最重要载体，承载着丰富的历史和智慧。满文古籍包含了广泛的内容，涵盖了历史、法律、文学、宗教以及日常生活等各个领域，蕴藏了满族同胞在生产生活中积累的智慧结晶。同时，作为清朝的官方语言，满文古籍中还记载了大量的有关清朝的政治、经济、军事和外交等方面的历史，这对于破译早期的中俄属地划分等重要历史事件具有极其重要的意义。然而，随着时代的变迁，满文出现了传承危机，甚至面临消亡的境地。因此，亟需利用先进的计算机技术来实现对满文古籍的保护和传承。开展满文古籍的语料研究，建立满文文化资源数据库，进一步使用现代科学技术识别满文、翻译满文，不仅可以节省人力和时间，而且还能够提升工作效率和质量，可对满文古籍资料进行及时的更新和完善。近年来，人工智能技术得到突飞猛进的发展，而深度学习模型作为其中先进的智能技术，在图像处理、自然语言处理等方面都取得了突破性的成果。因此，利用深度学习模型识别满文既是最好的方法，也是迫在眉睫的任务。",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              }
+            ]
+          },
+          {
+            "location": "table[1]/row[1]/cell[1]/p[2]",
+            "style": "Normal",
+            "text": "深度学习模型为了更好地提取特征信息，需要用大量的数据驱动，通常情况下随着数据规模的增加，尤其在海量数据下，模型能降低过拟合的风险，提高泛化能力，从而识别的精度会越高。但是到目前为止，仍然没有公开的满文数据集。因此我们需要将满文古籍作为研究对象，通过一系列的处理和操作后，来构建基于深度学习的满文数据集。",
+            "runs": [
+              {
+                "text": "深度学习模型为了更好地提取特征信息，需要用大量的数据驱动，通常情况下随着数据规模的增加，尤其在海量数据下，模型能降低过拟合的风险，提高泛化能力，从而识别的精度会越高。但是到目前为止，仍然没有公开的满文数据集。因此我们需要将满文古籍作为研究对象，通过一系列的处理和操作后，来构建基于深度学习的满文数据集",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              },
+              {
+                "text": "。",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              }
+            ]
+          },
+          {
+            "location": "table[1]/row[1]/cell[1]/p[3]",
+            "style": "Heading 1",
+            "text": "2. 设计工具",
+            "runs": [
+              {
+                "text": "2.",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": " ",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": "设计工具",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              }
+            ]
+          },
+          {
+            "location": "table[1]/row[1]/cell[1]/p[4]",
+            "style": "Normal",
+            "text": "（1）编程语言：Python ",
+            "runs": [
+              {
+                "text": "（",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              },
+              {
+                "text": "1",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              },
+              {
+                "text": "）",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              },
+              {
+                "text": "编程语言",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              },
+              {
+                "text": "：P",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              },
+              {
+                "text": "ython",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              },
+              {
+                "text": " ",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              }
+            ]
+          },
+          {
+            "location": "table[1]/row[1]/cell[1]/p[5]",
+            "style": "Normal",
+            "text": "（2）软件工具：OpenCV、Torch、微信小程序“蒙格穿梭”",
+            "runs": [
+              {
+                "text": "（2）软件工具：",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              },
+              {
+                "text": "OpenCV",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              },
+              {
+                "text": "、Torch、微信小程序“蒙格穿梭”",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              }
+            ]
+          },
+          {
+            "location": "table[1]/row[1]/cell[1]/p[6]",
+            "style": "Heading 1",
+            "text": "3. 实习内容与要求",
+            "runs": [
+              {
+                "text": "3.",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": " ",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": "实",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": "习",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": "内容与要求",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              }
+            ]
+          },
+          {
+            "location": "table[1]/row[1]/cell[1]/p[7]",
+            "style": "List Paragraph",
+            "text": "使用Python语言对满文古籍文档进行预处理操作，将古籍文档中的满文列切割出来并做二值化处理。在实习报告中写出切分流程，并将切分过程产生的中间结果展示在报告中。",
+            "runs": [
+              {
+                "text": "使用Python语言对满文古籍文档进行预处理操作，将古籍文档中的满文列切割出来并做二值化处理。在实习报告中写出切分流程，并将切分过程产生的中间结果展示在报告中。",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              }
+            ]
+          },
+          {
+            "location": "table[1]/row[1]/cell[1]/p[8]",
+            "style": "List Paragraph",
+            "text": "使用Python语言对切割出来的满文列进行识别，利用线上满文辞典对识别结果进行校验，根据识别结果创建相应的文件夹，将文字区域截取出来并保存到相应的文件夹中。在报告中选择一列，将该列的识别处理过程展示在报告中。",
+            "runs": [
+              {
+                "text": "使用Python语言对切割出来的满文列进行识别，利用线上满文辞典对识别结果进行校验，根据识别结果创建相应的文件夹，将文字区域截取出来并保存到相应的文件夹中。在报告中选择一列，将该列的识别处理过程展示在报告中。",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              }
+            ]
+          },
+          {
+            "location": "table[1]/row[1]/cell[1]/p[9]",
+            "style": "List Paragraph",
+            "text": "使用“蒙格穿梭”小程序对满文单词进行描写，并将描写过程和其中几个描写结果展示在报告中。",
+            "runs": [
+              {
+                "text": "使用“蒙格穿梭”小程序对满文单词进行描写，并将描写过程和其中几个描写结果",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              },
+              {
+                "text": "展示在报告中。",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              }
+            ]
+          },
+          {
+            "location": "table[1]/row[1]/cell[1]/p[10]",
+            "style": "List Paragraph",
+            "text": "根据上述内容详细填写实习步骤中的每个过程。",
+            "runs": [
+              {
+                "text": "根据上述内容",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              },
+              {
+                "text": "详细填写实",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              },
+              {
+                "text": "习",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              },
+              {
+                "text": "步骤中的每个过程",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              },
+              {
+                "text": "。",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              }
+            ]
+          },
+          {
+            "location": "table[1]/row[1]/cell[1]/p[11]",
+            "style": "Heading 1",
+            "text": "实习步骤",
+            "runs": [
+              {
+                "text": "实",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": "习步骤",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              }
+            ]
+          },
+          {
+            "location": "table[1]/row[1]/cell[1]/p[12]",
+            "style": "Heading 1",
+            "text": "5. 实习总结",
+            "runs": [
+              {
+                "text": "5",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": ".",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": " ",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": "实",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": "习总结",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              }
+            ]
+          },
+          {
+            "location": "table[1]/row[1]/cell[1]/p[13]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[1]/row[1]/cell[1]/p[14]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[1]/row[1]/cell[1]/p[15]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[1]/row[1]/cell[1]/p[16]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[1]/row[1]/cell[1]/p[17]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[1]/row[1]/cell[1]/p[18]",
+            "style": "Normal",
+            "text": "\t",
+            "runs": [
+              {
+                "text": "\t",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": "Arial",
+                "size_pt": null
+              }
+            ]
+          }
+        ],
+        [
+          {
+            "location": "table[1]/row[1]/cell[2]/p[0]",
+            "style": "Heading 1",
+            "text": "1. 实习目的及意义",
+            "runs": [
+              {
+                "text": "1.",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": " ",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": "实习",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": "目的",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": "及意义",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              }
+            ]
+          },
+          {
+            "location": "table[1]/row[1]/cell[2]/p[1]",
+            "style": "Normal",
+            "text": "满文作为满族文化的最重要载体，承载着丰富的历史和智慧。满文古籍包含了广泛的内容，涵盖了历史、法律、文学、宗教以及日常生活等各个领域，蕴藏了满族同胞在生产生活中积累的智慧结晶。同时，作为清朝的官方语言，满文古籍中还记载了大量的有关清朝的政治、经济、军事和外交等方面的历史，这对于破译早期的中俄属地划分等重要历史事件具有极其重要的意义。然而，随着时代的变迁，满文出现了传承危机，甚至面临消亡的境地。因此，亟需利用先进的计算机技术来实现对满文古籍的保护和传承。开展满文古籍的语料研究，建立满文文化资源数据库，进一步使用现代科学技术识别满文、翻译满文，不仅可以节省人力和时间，而且还能够提升工作效率和质量，可对满文古籍资料进行及时的更新和完善。近年来，人工智能技术得到突飞猛进的发展，而深度学习模型作为其中先进的智能技术，在图像处理、自然语言处理等方面都取得了突破性的成果。因此，利用深度学习模型识别满文既是最好的方法，也是迫在眉睫的任务。",
+            "runs": [
+              {
+                "text": "满文作为满族文化的最重要载体，承载着丰富的历史和智慧。满文古籍包含了广泛的内容，涵盖了历史、法律、文学、宗教以及日常生活等各个领域，蕴藏了满族同胞在生产生活中积累的智慧结晶。同时，作为清朝的官方语言，满文古籍中还记载了大量的有关清朝的政治、经济、军事和外交等方面的历史，这对于破译早期的中俄属地划分等重要历史事件具有极其重要的意义。然而，随着时代的变迁，满文出现了传承危机，甚至面临消亡的境地。因此，亟需利用先进的计算机技术来实现对满文古籍的保护和传承。开展满文古籍的语料研究，建立满文文化资源数据库，进一步使用现代科学技术识别满文、翻译满文，不仅可以节省人力和时间，而且还能够提升工作效率和质量，可对满文古籍资料进行及时的更新和完善。近年来，人工智能技术得到突飞猛进的发展，而深度学习模型作为其中先进的智能技术，在图像处理、自然语言处理等方面都取得了突破性的成果。因此，利用深度学习模型识别满文既是最好的方法，也是迫在眉睫的任务。",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              }
+            ]
+          },
+          {
+            "location": "table[1]/row[1]/cell[2]/p[2]",
+            "style": "Normal",
+            "text": "深度学习模型为了更好地提取特征信息，需要用大量的数据驱动，通常情况下随着数据规模的增加，尤其在海量数据下，模型能降低过拟合的风险，提高泛化能力，从而识别的精度会越高。但是到目前为止，仍然没有公开的满文数据集。因此我们需要将满文古籍作为研究对象，通过一系列的处理和操作后，来构建基于深度学习的满文数据集。",
+            "runs": [
+              {
+                "text": "深度学习模型为了更好地提取特征信息，需要用大量的数据驱动，通常情况下随着数据规模的增加，尤其在海量数据下，模型能降低过拟合的风险，提高泛化能力，从而识别的精度会越高。但是到目前为止，仍然没有公开的满文数据集。因此我们需要将满文古籍作为研究对象，通过一系列的处理和操作后，来构建基于深度学习的满文数据集",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              },
+              {
+                "text": "。",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              }
+            ]
+          },
+          {
+            "location": "table[1]/row[1]/cell[2]/p[3]",
+            "style": "Heading 1",
+            "text": "2. 设计工具",
+            "runs": [
+              {
+                "text": "2.",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": " ",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": "设计工具",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              }
+            ]
+          },
+          {
+            "location": "table[1]/row[1]/cell[2]/p[4]",
+            "style": "Normal",
+            "text": "（1）编程语言：Python ",
+            "runs": [
+              {
+                "text": "（",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              },
+              {
+                "text": "1",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              },
+              {
+                "text": "）",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              },
+              {
+                "text": "编程语言",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              },
+              {
+                "text": "：P",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              },
+              {
+                "text": "ython",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              },
+              {
+                "text": " ",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              }
+            ]
+          },
+          {
+            "location": "table[1]/row[1]/cell[2]/p[5]",
+            "style": "Normal",
+            "text": "（2）软件工具：OpenCV、Torch、微信小程序“蒙格穿梭”",
+            "runs": [
+              {
+                "text": "（2）软件工具：",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              },
+              {
+                "text": "OpenCV",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              },
+              {
+                "text": "、Torch、微信小程序“蒙格穿梭”",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              }
+            ]
+          },
+          {
+            "location": "table[1]/row[1]/cell[2]/p[6]",
+            "style": "Heading 1",
+            "text": "3. 实习内容与要求",
+            "runs": [
+              {
+                "text": "3.",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": " ",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": "实",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": "习",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": "内容与要求",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              }
+            ]
+          },
+          {
+            "location": "table[1]/row[1]/cell[2]/p[7]",
+            "style": "List Paragraph",
+            "text": "使用Python语言对满文古籍文档进行预处理操作，将古籍文档中的满文列切割出来并做二值化处理。在实习报告中写出切分流程，并将切分过程产生的中间结果展示在报告中。",
+            "runs": [
+              {
+                "text": "使用Python语言对满文古籍文档进行预处理操作，将古籍文档中的满文列切割出来并做二值化处理。在实习报告中写出切分流程，并将切分过程产生的中间结果展示在报告中。",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              }
+            ]
+          },
+          {
+            "location": "table[1]/row[1]/cell[2]/p[8]",
+            "style": "List Paragraph",
+            "text": "使用Python语言对切割出来的满文列进行识别，利用线上满文辞典对识别结果进行校验，根据识别结果创建相应的文件夹，将文字区域截取出来并保存到相应的文件夹中。在报告中选择一列，将该列的识别处理过程展示在报告中。",
+            "runs": [
+              {
+                "text": "使用Python语言对切割出来的满文列进行识别，利用线上满文辞典对识别结果进行校验，根据识别结果创建相应的文件夹，将文字区域截取出来并保存到相应的文件夹中。在报告中选择一列，将该列的识别处理过程展示在报告中。",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              }
+            ]
+          },
+          {
+            "location": "table[1]/row[1]/cell[2]/p[9]",
+            "style": "List Paragraph",
+            "text": "使用“蒙格穿梭”小程序对满文单词进行描写，并将描写过程和其中几个描写结果展示在报告中。",
+            "runs": [
+              {
+                "text": "使用“蒙格穿梭”小程序对满文单词进行描写，并将描写过程和其中几个描写结果",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              },
+              {
+                "text": "展示在报告中。",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              }
+            ]
+          },
+          {
+            "location": "table[1]/row[1]/cell[2]/p[10]",
+            "style": "List Paragraph",
+            "text": "根据上述内容详细填写实习步骤中的每个过程。",
+            "runs": [
+              {
+                "text": "根据上述内容",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              },
+              {
+                "text": "详细填写实",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              },
+              {
+                "text": "习",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              },
+              {
+                "text": "步骤中的每个过程",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              },
+              {
+                "text": "。",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              }
+            ]
+          },
+          {
+            "location": "table[1]/row[1]/cell[2]/p[11]",
+            "style": "Heading 1",
+            "text": "实习步骤",
+            "runs": [
+              {
+                "text": "实",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": "习步骤",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              }
+            ]
+          },
+          {
+            "location": "table[1]/row[1]/cell[2]/p[12]",
+            "style": "Heading 1",
+            "text": "5. 实习总结",
+            "runs": [
+              {
+                "text": "5",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": ".",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": " ",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": "实",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": "习总结",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              }
+            ]
+          },
+          {
+            "location": "table[1]/row[1]/cell[2]/p[13]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[1]/row[1]/cell[2]/p[14]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[1]/row[1]/cell[2]/p[15]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[1]/row[1]/cell[2]/p[16]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[1]/row[1]/cell[2]/p[17]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[1]/row[1]/cell[2]/p[18]",
+            "style": "Normal",
+            "text": "\t",
+            "runs": [
+              {
+                "text": "\t",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": "Arial",
+                "size_pt": null
+              }
+            ]
+          }
+        ],
+        [
+          {
+            "location": "table[1]/row[1]/cell[3]/p[0]",
+            "style": "Heading 1",
+            "text": "1. 实习目的及意义",
+            "runs": [
+              {
+                "text": "1.",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": " ",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": "实习",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": "目的",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": "及意义",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              }
+            ]
+          },
+          {
+            "location": "table[1]/row[1]/cell[3]/p[1]",
+            "style": "Normal",
+            "text": "满文作为满族文化的最重要载体，承载着丰富的历史和智慧。满文古籍包含了广泛的内容，涵盖了历史、法律、文学、宗教以及日常生活等各个领域，蕴藏了满族同胞在生产生活中积累的智慧结晶。同时，作为清朝的官方语言，满文古籍中还记载了大量的有关清朝的政治、经济、军事和外交等方面的历史，这对于破译早期的中俄属地划分等重要历史事件具有极其重要的意义。然而，随着时代的变迁，满文出现了传承危机，甚至面临消亡的境地。因此，亟需利用先进的计算机技术来实现对满文古籍的保护和传承。开展满文古籍的语料研究，建立满文文化资源数据库，进一步使用现代科学技术识别满文、翻译满文，不仅可以节省人力和时间，而且还能够提升工作效率和质量，可对满文古籍资料进行及时的更新和完善。近年来，人工智能技术得到突飞猛进的发展，而深度学习模型作为其中先进的智能技术，在图像处理、自然语言处理等方面都取得了突破性的成果。因此，利用深度学习模型识别满文既是最好的方法，也是迫在眉睫的任务。",
+            "runs": [
+              {
+                "text": "满文作为满族文化的最重要载体，承载着丰富的历史和智慧。满文古籍包含了广泛的内容，涵盖了历史、法律、文学、宗教以及日常生活等各个领域，蕴藏了满族同胞在生产生活中积累的智慧结晶。同时，作为清朝的官方语言，满文古籍中还记载了大量的有关清朝的政治、经济、军事和外交等方面的历史，这对于破译早期的中俄属地划分等重要历史事件具有极其重要的意义。然而，随着时代的变迁，满文出现了传承危机，甚至面临消亡的境地。因此，亟需利用先进的计算机技术来实现对满文古籍的保护和传承。开展满文古籍的语料研究，建立满文文化资源数据库，进一步使用现代科学技术识别满文、翻译满文，不仅可以节省人力和时间，而且还能够提升工作效率和质量，可对满文古籍资料进行及时的更新和完善。近年来，人工智能技术得到突飞猛进的发展，而深度学习模型作为其中先进的智能技术，在图像处理、自然语言处理等方面都取得了突破性的成果。因此，利用深度学习模型识别满文既是最好的方法，也是迫在眉睫的任务。",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              }
+            ]
+          },
+          {
+            "location": "table[1]/row[1]/cell[3]/p[2]",
+            "style": "Normal",
+            "text": "深度学习模型为了更好地提取特征信息，需要用大量的数据驱动，通常情况下随着数据规模的增加，尤其在海量数据下，模型能降低过拟合的风险，提高泛化能力，从而识别的精度会越高。但是到目前为止，仍然没有公开的满文数据集。因此我们需要将满文古籍作为研究对象，通过一系列的处理和操作后，来构建基于深度学习的满文数据集。",
+            "runs": [
+              {
+                "text": "深度学习模型为了更好地提取特征信息，需要用大量的数据驱动，通常情况下随着数据规模的增加，尤其在海量数据下，模型能降低过拟合的风险，提高泛化能力，从而识别的精度会越高。但是到目前为止，仍然没有公开的满文数据集。因此我们需要将满文古籍作为研究对象，通过一系列的处理和操作后，来构建基于深度学习的满文数据集",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              },
+              {
+                "text": "。",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              }
+            ]
+          },
+          {
+            "location": "table[1]/row[1]/cell[3]/p[3]",
+            "style": "Heading 1",
+            "text": "2. 设计工具",
+            "runs": [
+              {
+                "text": "2.",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": " ",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": "设计工具",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              }
+            ]
+          },
+          {
+            "location": "table[1]/row[1]/cell[3]/p[4]",
+            "style": "Normal",
+            "text": "（1）编程语言：Python ",
+            "runs": [
+              {
+                "text": "（",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              },
+              {
+                "text": "1",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              },
+              {
+                "text": "）",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              },
+              {
+                "text": "编程语言",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              },
+              {
+                "text": "：P",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              },
+              {
+                "text": "ython",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              },
+              {
+                "text": " ",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              }
+            ]
+          },
+          {
+            "location": "table[1]/row[1]/cell[3]/p[5]",
+            "style": "Normal",
+            "text": "（2）软件工具：OpenCV、Torch、微信小程序“蒙格穿梭”",
+            "runs": [
+              {
+                "text": "（2）软件工具：",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              },
+              {
+                "text": "OpenCV",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              },
+              {
+                "text": "、Torch、微信小程序“蒙格穿梭”",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              }
+            ]
+          },
+          {
+            "location": "table[1]/row[1]/cell[3]/p[6]",
+            "style": "Heading 1",
+            "text": "3. 实习内容与要求",
+            "runs": [
+              {
+                "text": "3.",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": " ",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": "实",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": "习",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": "内容与要求",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              }
+            ]
+          },
+          {
+            "location": "table[1]/row[1]/cell[3]/p[7]",
+            "style": "List Paragraph",
+            "text": "使用Python语言对满文古籍文档进行预处理操作，将古籍文档中的满文列切割出来并做二值化处理。在实习报告中写出切分流程，并将切分过程产生的中间结果展示在报告中。",
+            "runs": [
+              {
+                "text": "使用Python语言对满文古籍文档进行预处理操作，将古籍文档中的满文列切割出来并做二值化处理。在实习报告中写出切分流程，并将切分过程产生的中间结果展示在报告中。",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              }
+            ]
+          },
+          {
+            "location": "table[1]/row[1]/cell[3]/p[8]",
+            "style": "List Paragraph",
+            "text": "使用Python语言对切割出来的满文列进行识别，利用线上满文辞典对识别结果进行校验，根据识别结果创建相应的文件夹，将文字区域截取出来并保存到相应的文件夹中。在报告中选择一列，将该列的识别处理过程展示在报告中。",
+            "runs": [
+              {
+                "text": "使用Python语言对切割出来的满文列进行识别，利用线上满文辞典对识别结果进行校验，根据识别结果创建相应的文件夹，将文字区域截取出来并保存到相应的文件夹中。在报告中选择一列，将该列的识别处理过程展示在报告中。",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              }
+            ]
+          },
+          {
+            "location": "table[1]/row[1]/cell[3]/p[9]",
+            "style": "List Paragraph",
+            "text": "使用“蒙格穿梭”小程序对满文单词进行描写，并将描写过程和其中几个描写结果展示在报告中。",
+            "runs": [
+              {
+                "text": "使用“蒙格穿梭”小程序对满文单词进行描写，并将描写过程和其中几个描写结果",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              },
+              {
+                "text": "展示在报告中。",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              }
+            ]
+          },
+          {
+            "location": "table[1]/row[1]/cell[3]/p[10]",
+            "style": "List Paragraph",
+            "text": "根据上述内容详细填写实习步骤中的每个过程。",
+            "runs": [
+              {
+                "text": "根据上述内容",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              },
+              {
+                "text": "详细填写实",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              },
+              {
+                "text": "习",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              },
+              {
+                "text": "步骤中的每个过程",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              },
+              {
+                "text": "。",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              }
+            ]
+          },
+          {
+            "location": "table[1]/row[1]/cell[3]/p[11]",
+            "style": "Heading 1",
+            "text": "实习步骤",
+            "runs": [
+              {
+                "text": "实",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": "习步骤",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              }
+            ]
+          },
+          {
+            "location": "table[1]/row[1]/cell[3]/p[12]",
+            "style": "Heading 1",
+            "text": "5. 实习总结",
+            "runs": [
+              {
+                "text": "5",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": ".",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": " ",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": "实",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": "习总结",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              }
+            ]
+          },
+          {
+            "location": "table[1]/row[1]/cell[3]/p[13]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[1]/row[1]/cell[3]/p[14]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[1]/row[1]/cell[3]/p[15]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[1]/row[1]/cell[3]/p[16]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[1]/row[1]/cell[3]/p[17]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[1]/row[1]/cell[3]/p[18]",
+            "style": "Normal",
+            "text": "\t",
+            "runs": [
+              {
+                "text": "\t",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": "Arial",
+                "size_pt": null
+              }
+            ]
+          }
+        ],
+        [
+          {
+            "location": "table[1]/row[1]/cell[4]/p[0]",
+            "style": "Heading 1",
+            "text": "1. 实习目的及意义",
+            "runs": [
+              {
+                "text": "1.",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": " ",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": "实习",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": "目的",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": "及意义",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              }
+            ]
+          },
+          {
+            "location": "table[1]/row[1]/cell[4]/p[1]",
+            "style": "Normal",
+            "text": "满文作为满族文化的最重要载体，承载着丰富的历史和智慧。满文古籍包含了广泛的内容，涵盖了历史、法律、文学、宗教以及日常生活等各个领域，蕴藏了满族同胞在生产生活中积累的智慧结晶。同时，作为清朝的官方语言，满文古籍中还记载了大量的有关清朝的政治、经济、军事和外交等方面的历史，这对于破译早期的中俄属地划分等重要历史事件具有极其重要的意义。然而，随着时代的变迁，满文出现了传承危机，甚至面临消亡的境地。因此，亟需利用先进的计算机技术来实现对满文古籍的保护和传承。开展满文古籍的语料研究，建立满文文化资源数据库，进一步使用现代科学技术识别满文、翻译满文，不仅可以节省人力和时间，而且还能够提升工作效率和质量，可对满文古籍资料进行及时的更新和完善。近年来，人工智能技术得到突飞猛进的发展，而深度学习模型作为其中先进的智能技术，在图像处理、自然语言处理等方面都取得了突破性的成果。因此，利用深度学习模型识别满文既是最好的方法，也是迫在眉睫的任务。",
+            "runs": [
+              {
+                "text": "满文作为满族文化的最重要载体，承载着丰富的历史和智慧。满文古籍包含了广泛的内容，涵盖了历史、法律、文学、宗教以及日常生活等各个领域，蕴藏了满族同胞在生产生活中积累的智慧结晶。同时，作为清朝的官方语言，满文古籍中还记载了大量的有关清朝的政治、经济、军事和外交等方面的历史，这对于破译早期的中俄属地划分等重要历史事件具有极其重要的意义。然而，随着时代的变迁，满文出现了传承危机，甚至面临消亡的境地。因此，亟需利用先进的计算机技术来实现对满文古籍的保护和传承。开展满文古籍的语料研究，建立满文文化资源数据库，进一步使用现代科学技术识别满文、翻译满文，不仅可以节省人力和时间，而且还能够提升工作效率和质量，可对满文古籍资料进行及时的更新和完善。近年来，人工智能技术得到突飞猛进的发展，而深度学习模型作为其中先进的智能技术，在图像处理、自然语言处理等方面都取得了突破性的成果。因此，利用深度学习模型识别满文既是最好的方法，也是迫在眉睫的任务。",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              }
+            ]
+          },
+          {
+            "location": "table[1]/row[1]/cell[4]/p[2]",
+            "style": "Normal",
+            "text": "深度学习模型为了更好地提取特征信息，需要用大量的数据驱动，通常情况下随着数据规模的增加，尤其在海量数据下，模型能降低过拟合的风险，提高泛化能力，从而识别的精度会越高。但是到目前为止，仍然没有公开的满文数据集。因此我们需要将满文古籍作为研究对象，通过一系列的处理和操作后，来构建基于深度学习的满文数据集。",
+            "runs": [
+              {
+                "text": "深度学习模型为了更好地提取特征信息，需要用大量的数据驱动，通常情况下随着数据规模的增加，尤其在海量数据下，模型能降低过拟合的风险，提高泛化能力，从而识别的精度会越高。但是到目前为止，仍然没有公开的满文数据集。因此我们需要将满文古籍作为研究对象，通过一系列的处理和操作后，来构建基于深度学习的满文数据集",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              },
+              {
+                "text": "。",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              }
+            ]
+          },
+          {
+            "location": "table[1]/row[1]/cell[4]/p[3]",
+            "style": "Heading 1",
+            "text": "2. 设计工具",
+            "runs": [
+              {
+                "text": "2.",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": " ",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": "设计工具",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              }
+            ]
+          },
+          {
+            "location": "table[1]/row[1]/cell[4]/p[4]",
+            "style": "Normal",
+            "text": "（1）编程语言：Python ",
+            "runs": [
+              {
+                "text": "（",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              },
+              {
+                "text": "1",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              },
+              {
+                "text": "）",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              },
+              {
+                "text": "编程语言",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              },
+              {
+                "text": "：P",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              },
+              {
+                "text": "ython",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              },
+              {
+                "text": " ",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              }
+            ]
+          },
+          {
+            "location": "table[1]/row[1]/cell[4]/p[5]",
+            "style": "Normal",
+            "text": "（2）软件工具：OpenCV、Torch、微信小程序“蒙格穿梭”",
+            "runs": [
+              {
+                "text": "（2）软件工具：",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              },
+              {
+                "text": "OpenCV",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              },
+              {
+                "text": "、Torch、微信小程序“蒙格穿梭”",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              }
+            ]
+          },
+          {
+            "location": "table[1]/row[1]/cell[4]/p[6]",
+            "style": "Heading 1",
+            "text": "3. 实习内容与要求",
+            "runs": [
+              {
+                "text": "3.",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": " ",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": "实",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": "习",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": "内容与要求",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              }
+            ]
+          },
+          {
+            "location": "table[1]/row[1]/cell[4]/p[7]",
+            "style": "List Paragraph",
+            "text": "使用Python语言对满文古籍文档进行预处理操作，将古籍文档中的满文列切割出来并做二值化处理。在实习报告中写出切分流程，并将切分过程产生的中间结果展示在报告中。",
+            "runs": [
+              {
+                "text": "使用Python语言对满文古籍文档进行预处理操作，将古籍文档中的满文列切割出来并做二值化处理。在实习报告中写出切分流程，并将切分过程产生的中间结果展示在报告中。",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              }
+            ]
+          },
+          {
+            "location": "table[1]/row[1]/cell[4]/p[8]",
+            "style": "List Paragraph",
+            "text": "使用Python语言对切割出来的满文列进行识别，利用线上满文辞典对识别结果进行校验，根据识别结果创建相应的文件夹，将文字区域截取出来并保存到相应的文件夹中。在报告中选择一列，将该列的识别处理过程展示在报告中。",
+            "runs": [
+              {
+                "text": "使用Python语言对切割出来的满文列进行识别，利用线上满文辞典对识别结果进行校验，根据识别结果创建相应的文件夹，将文字区域截取出来并保存到相应的文件夹中。在报告中选择一列，将该列的识别处理过程展示在报告中。",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              }
+            ]
+          },
+          {
+            "location": "table[1]/row[1]/cell[4]/p[9]",
+            "style": "List Paragraph",
+            "text": "使用“蒙格穿梭”小程序对满文单词进行描写，并将描写过程和其中几个描写结果展示在报告中。",
+            "runs": [
+              {
+                "text": "使用“蒙格穿梭”小程序对满文单词进行描写，并将描写过程和其中几个描写结果",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              },
+              {
+                "text": "展示在报告中。",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              }
+            ]
+          },
+          {
+            "location": "table[1]/row[1]/cell[4]/p[10]",
+            "style": "List Paragraph",
+            "text": "根据上述内容详细填写实习步骤中的每个过程。",
+            "runs": [
+              {
+                "text": "根据上述内容",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              },
+              {
+                "text": "详细填写实",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              },
+              {
+                "text": "习",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              },
+              {
+                "text": "步骤中的每个过程",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              },
+              {
+                "text": "。",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              }
+            ]
+          },
+          {
+            "location": "table[1]/row[1]/cell[4]/p[11]",
+            "style": "Heading 1",
+            "text": "实习步骤",
+            "runs": [
+              {
+                "text": "实",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": "习步骤",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              }
+            ]
+          },
+          {
+            "location": "table[1]/row[1]/cell[4]/p[12]",
+            "style": "Heading 1",
+            "text": "5. 实习总结",
+            "runs": [
+              {
+                "text": "5",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": ".",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": " ",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": "实",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": "习总结",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              }
+            ]
+          },
+          {
+            "location": "table[1]/row[1]/cell[4]/p[13]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[1]/row[1]/cell[4]/p[14]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[1]/row[1]/cell[4]/p[15]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[1]/row[1]/cell[4]/p[16]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[1]/row[1]/cell[4]/p[17]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[1]/row[1]/cell[4]/p[18]",
+            "style": "Normal",
+            "text": "\t",
+            "runs": [
+              {
+                "text": "\t",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": "Arial",
+                "size_pt": null
+              }
+            ]
+          }
+        ],
+        [
+          {
+            "location": "table[1]/row[1]/cell[5]/p[0]",
+            "style": "Heading 1",
+            "text": "1. 实习目的及意义",
+            "runs": [
+              {
+                "text": "1.",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": " ",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": "实习",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": "目的",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": "及意义",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              }
+            ]
+          },
+          {
+            "location": "table[1]/row[1]/cell[5]/p[1]",
+            "style": "Normal",
+            "text": "满文作为满族文化的最重要载体，承载着丰富的历史和智慧。满文古籍包含了广泛的内容，涵盖了历史、法律、文学、宗教以及日常生活等各个领域，蕴藏了满族同胞在生产生活中积累的智慧结晶。同时，作为清朝的官方语言，满文古籍中还记载了大量的有关清朝的政治、经济、军事和外交等方面的历史，这对于破译早期的中俄属地划分等重要历史事件具有极其重要的意义。然而，随着时代的变迁，满文出现了传承危机，甚至面临消亡的境地。因此，亟需利用先进的计算机技术来实现对满文古籍的保护和传承。开展满文古籍的语料研究，建立满文文化资源数据库，进一步使用现代科学技术识别满文、翻译满文，不仅可以节省人力和时间，而且还能够提升工作效率和质量，可对满文古籍资料进行及时的更新和完善。近年来，人工智能技术得到突飞猛进的发展，而深度学习模型作为其中先进的智能技术，在图像处理、自然语言处理等方面都取得了突破性的成果。因此，利用深度学习模型识别满文既是最好的方法，也是迫在眉睫的任务。",
+            "runs": [
+              {
+                "text": "满文作为满族文化的最重要载体，承载着丰富的历史和智慧。满文古籍包含了广泛的内容，涵盖了历史、法律、文学、宗教以及日常生活等各个领域，蕴藏了满族同胞在生产生活中积累的智慧结晶。同时，作为清朝的官方语言，满文古籍中还记载了大量的有关清朝的政治、经济、军事和外交等方面的历史，这对于破译早期的中俄属地划分等重要历史事件具有极其重要的意义。然而，随着时代的变迁，满文出现了传承危机，甚至面临消亡的境地。因此，亟需利用先进的计算机技术来实现对满文古籍的保护和传承。开展满文古籍的语料研究，建立满文文化资源数据库，进一步使用现代科学技术识别满文、翻译满文，不仅可以节省人力和时间，而且还能够提升工作效率和质量，可对满文古籍资料进行及时的更新和完善。近年来，人工智能技术得到突飞猛进的发展，而深度学习模型作为其中先进的智能技术，在图像处理、自然语言处理等方面都取得了突破性的成果。因此，利用深度学习模型识别满文既是最好的方法，也是迫在眉睫的任务。",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              }
+            ]
+          },
+          {
+            "location": "table[1]/row[1]/cell[5]/p[2]",
+            "style": "Normal",
+            "text": "深度学习模型为了更好地提取特征信息，需要用大量的数据驱动，通常情况下随着数据规模的增加，尤其在海量数据下，模型能降低过拟合的风险，提高泛化能力，从而识别的精度会越高。但是到目前为止，仍然没有公开的满文数据集。因此我们需要将满文古籍作为研究对象，通过一系列的处理和操作后，来构建基于深度学习的满文数据集。",
+            "runs": [
+              {
+                "text": "深度学习模型为了更好地提取特征信息，需要用大量的数据驱动，通常情况下随着数据规模的增加，尤其在海量数据下，模型能降低过拟合的风险，提高泛化能力，从而识别的精度会越高。但是到目前为止，仍然没有公开的满文数据集。因此我们需要将满文古籍作为研究对象，通过一系列的处理和操作后，来构建基于深度学习的满文数据集",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              },
+              {
+                "text": "。",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              }
+            ]
+          },
+          {
+            "location": "table[1]/row[1]/cell[5]/p[3]",
+            "style": "Heading 1",
+            "text": "2. 设计工具",
+            "runs": [
+              {
+                "text": "2.",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": " ",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": "设计工具",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              }
+            ]
+          },
+          {
+            "location": "table[1]/row[1]/cell[5]/p[4]",
+            "style": "Normal",
+            "text": "（1）编程语言：Python ",
+            "runs": [
+              {
+                "text": "（",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              },
+              {
+                "text": "1",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              },
+              {
+                "text": "）",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              },
+              {
+                "text": "编程语言",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              },
+              {
+                "text": "：P",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              },
+              {
+                "text": "ython",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              },
+              {
+                "text": " ",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              }
+            ]
+          },
+          {
+            "location": "table[1]/row[1]/cell[5]/p[5]",
+            "style": "Normal",
+            "text": "（2）软件工具：OpenCV、Torch、微信小程序“蒙格穿梭”",
+            "runs": [
+              {
+                "text": "（2）软件工具：",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              },
+              {
+                "text": "OpenCV",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              },
+              {
+                "text": "、Torch、微信小程序“蒙格穿梭”",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              }
+            ]
+          },
+          {
+            "location": "table[1]/row[1]/cell[5]/p[6]",
+            "style": "Heading 1",
+            "text": "3. 实习内容与要求",
+            "runs": [
+              {
+                "text": "3.",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": " ",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": "实",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": "习",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": "内容与要求",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              }
+            ]
+          },
+          {
+            "location": "table[1]/row[1]/cell[5]/p[7]",
+            "style": "List Paragraph",
+            "text": "使用Python语言对满文古籍文档进行预处理操作，将古籍文档中的满文列切割出来并做二值化处理。在实习报告中写出切分流程，并将切分过程产生的中间结果展示在报告中。",
+            "runs": [
+              {
+                "text": "使用Python语言对满文古籍文档进行预处理操作，将古籍文档中的满文列切割出来并做二值化处理。在实习报告中写出切分流程，并将切分过程产生的中间结果展示在报告中。",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              }
+            ]
+          },
+          {
+            "location": "table[1]/row[1]/cell[5]/p[8]",
+            "style": "List Paragraph",
+            "text": "使用Python语言对切割出来的满文列进行识别，利用线上满文辞典对识别结果进行校验，根据识别结果创建相应的文件夹，将文字区域截取出来并保存到相应的文件夹中。在报告中选择一列，将该列的识别处理过程展示在报告中。",
+            "runs": [
+              {
+                "text": "使用Python语言对切割出来的满文列进行识别，利用线上满文辞典对识别结果进行校验，根据识别结果创建相应的文件夹，将文字区域截取出来并保存到相应的文件夹中。在报告中选择一列，将该列的识别处理过程展示在报告中。",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              }
+            ]
+          },
+          {
+            "location": "table[1]/row[1]/cell[5]/p[9]",
+            "style": "List Paragraph",
+            "text": "使用“蒙格穿梭”小程序对满文单词进行描写，并将描写过程和其中几个描写结果展示在报告中。",
+            "runs": [
+              {
+                "text": "使用“蒙格穿梭”小程序对满文单词进行描写，并将描写过程和其中几个描写结果",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              },
+              {
+                "text": "展示在报告中。",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              }
+            ]
+          },
+          {
+            "location": "table[1]/row[1]/cell[5]/p[10]",
+            "style": "List Paragraph",
+            "text": "根据上述内容详细填写实习步骤中的每个过程。",
+            "runs": [
+              {
+                "text": "根据上述内容",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              },
+              {
+                "text": "详细填写实",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              },
+              {
+                "text": "习",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              },
+              {
+                "text": "步骤中的每个过程",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              },
+              {
+                "text": "。",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 10.5
+              }
+            ]
+          },
+          {
+            "location": "table[1]/row[1]/cell[5]/p[11]",
+            "style": "Heading 1",
+            "text": "实习步骤",
+            "runs": [
+              {
+                "text": "实",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": "习步骤",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              }
+            ]
+          },
+          {
+            "location": "table[1]/row[1]/cell[5]/p[12]",
+            "style": "Heading 1",
+            "text": "5. 实习总结",
+            "runs": [
+              {
+                "text": "5",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": ".",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": " ",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": "实",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              },
+              {
+                "text": "习总结",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": null,
+                "size_pt": 16.0
+              }
+            ]
+          },
+          {
+            "location": "table[1]/row[1]/cell[5]/p[13]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[1]/row[1]/cell[5]/p[14]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[1]/row[1]/cell[5]/p[15]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[1]/row[1]/cell[5]/p[16]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[1]/row[1]/cell[5]/p[17]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[1]/row[1]/cell[5]/p[18]",
+            "style": "Normal",
+            "text": "\t",
+            "runs": [
+              {
+                "text": "\t",
+                "bold": null,
+                "italic": null,
+                "underline": null,
+                "font": "Arial",
+                "size_pt": null
+              }
+            ]
+          }
+        ]
+      ],
+      [
+        [
+          {
+            "location": "table[1]/row[2]/cell[0]/p[0]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          }
+        ],
+        [
+          {
+            "location": "table[1]/row[2]/cell[1]/p[0]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          }
+        ],
+        [
+          {
+            "location": "table[1]/row[2]/cell[2]/p[0]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[1]/row[2]/cell[2]/p[1]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          }
+        ],
+        [
+          {
+            "location": "table[1]/row[2]/cell[3]/p[0]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[1]/row[2]/cell[3]/p[1]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          }
+        ],
+        [
+          {
+            "location": "table[1]/row[2]/cell[4]/p[0]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[1]/row[2]/cell[4]/p[1]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          }
+        ],
+        [
+          {
+            "location": "table[1]/row[2]/cell[5]/p[0]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          },
+          {
+            "location": "table[1]/row[2]/cell[5]/p[1]",
+            "style": "Normal",
+            "text": "",
+            "runs": []
+          }
+        ]
+      ]
+    ]
+  ],
+  "headers": [
+    [
+      {
+        "location": "section[0]/header/p[0]",
+        "style": "Normal",
+        "text": "",
+        "runs": []
+      }
+    ],
+    [
+      {
+        "location": "section[1]/header/p[0]",
+        "style": "Normal",
+        "text": "",
+        "runs": []
+      }
+    ]
+  ],
+  "footers": [
+    [
+      {
+        "location": "section[0]/footer/p[0]",
+        "style": "Footer",
+        "text": "",
+        "runs": []
+      },
+      {
+        "location": "section[0]/footer/p[1]",
+        "style": "Footer",
+        "text": "",
+        "runs": []
+      }
+    ],
+    [
+      {
+        "location": "section[1]/footer/p[0]",
+        "style": "Footer",
+        "text": "",
+        "runs": []
+      }
+    ]
+  ]
+}

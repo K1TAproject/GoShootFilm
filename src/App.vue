@@ -37,6 +37,7 @@ function openRollFromRelation(rollId: number) {
 <style scoped>
 .app-layout {
   width: 100%;
+  height: 100vh;
   min-width: 0;
   min-height: 100vh;
   display: grid;
@@ -48,7 +49,7 @@ function openRollFromRelation(rollId: number) {
 
 .sidebar {
   min-width: 0;
-  min-height: 100vh;
+  height: 100vh;
   border-right: 1px solid #242833;
   background: #10141a;
   padding: 22px 16px;
@@ -116,17 +117,21 @@ function openRollFromRelation(rollId: number) {
 
 .main-content {
   width: 100%;
+  height: 100vh;
   min-width: 0;
   padding: clamp(20px, 4vw, 44px);
   overflow-x: hidden;
+  overflow-y: auto;
 }
 
 @media (max-width: 720px) {
   .app-layout {
+    height: auto;
     grid-template-columns: 1fr;
   }
 
   .sidebar {
+    height: auto;
     min-height: auto;
     border-right: 0;
     border-bottom: 1px solid #242833;
@@ -137,6 +142,8 @@ function openRollFromRelation(rollId: number) {
   }
 
   .main-content {
+    height: auto;
+    overflow-y: visible;
     padding: 18px;
   }
 }

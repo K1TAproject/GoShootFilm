@@ -4,6 +4,7 @@ import { invoke } from '@tauri-apps/api/core'
 import PageHeader from '../components/PageHeader.vue'
 import type { Camera, CameraDetail, CameraRoll, RollSummary } from '../types'
 import { errorMessage as formatError } from '../utils/errors'
+import { filmDisplayName } from '../utils/films'
 
 const cameras = ref<Camera[]>([])
 const allRolls = ref<RollSummary[]>([])
@@ -52,12 +53,23 @@ async function fetchCameras() {
   }
 }
 
+const rollCounts = computed(() => {
+  const counts = new Map<number, number>()
+  for (const roll of allRolls.value) counts.set(roll.cameraId, (counts.get(roll.cameraId) ?? 0) + 1)
+  return counts
+})
+
 function rollCount(cameraId: number) {
-  return allRolls.value.filter(roll => roll.cameraId === cameraId).length
+  return rollCounts.value.get(cameraId) ?? 0
 }
 
 const sortedCameras = computed(() => {
-  return [...cameras.value].sort((a, b) => a.brand.localeCompare(b.brand) || a.model.localeCompare(b.model))
+  return [...cameras.value].sort((a, b) =>
+    rollCount(b.id) - rollCount(a.id)
+    || a.brand.localeCompare(b.brand)
+    || a.model.localeCompare(b.model)
+    || a.id - b.id
+  )
 })
 
 function resetCameraForm() {
@@ -316,7 +328,7 @@ onMounted(() => {
           class="related-roll"
           @click="emit('jump-to-roll', roll.id)"
         >
-          <span class="related-title">第 {{ roll.rollIndex }} 卷 · {{ roll.filmInfo }}</span>
+          <span class="related-title">第 {{ roll.rollIndex }} 卷 · {{ filmDisplayName(roll.filmBrand, roll.filmName) }}</span>
           <span class="related-meta">{{ roll.shotMonth || '未记录日期' }} · {{ roll.city || '未记录地点' }}</span>
         </button>
       </section>
