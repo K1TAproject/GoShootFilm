@@ -2,6 +2,20 @@
   box-sizing: border-box;
 }
 
+:root {
+  color-scheme: dark;
+  --app-bg: #080b10;
+  --app-surface: #10151d;
+  --app-surface-hover: #1a2130;
+  --app-border: rgba(148, 163, 184, 0.16);
+  --app-border-strong: rgba(155, 135, 245, 0.42);
+  --app-text: #f3f6fb;
+  --app-text-muted: #8d97aa;
+  --app-purple: #9b87f5;
+  --app-mint: #55d6be;
+  --app-danger: #f0a7af;
+}
+
 html,
 body,
 #app {
@@ -13,9 +27,13 @@ body,
 }
 
 body {
-  background: #0f1115;
-  color: #e5e7eb;
+  background:
+    radial-gradient(circle at 8% 0%, rgba(109, 82, 196, 0.16), transparent 30rem),
+    radial-gradient(circle at 100% 100%, rgba(24, 137, 115, 0.12), transparent 32rem),
+    var(--app-bg);
+  color: var(--app-text);
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
 button,
@@ -35,7 +53,7 @@ a:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
-  outline: 2px solid #60a5fa;
+  outline: 2px solid var(--app-purple);
   outline-offset: 2px;
 }
 
@@ -49,15 +67,15 @@ textarea:focus-visible {
 }
 
 .feedback-error {
-  border: 1px solid #7f1d1d;
-  background: #2a1518;
-  color: #fecaca;
+  border: 1px solid rgba(240, 167, 175, 0.34);
+  background: rgba(73, 28, 36, 0.48);
+  color: #ffd4d9;
 }
 
 .feedback-info {
-  border: 1px solid #374151;
-  background: #171c24;
-  color: #cbd5e1;
+  border: 1px solid rgba(85, 214, 190, 0.25);
+  background: rgba(24, 83, 75, 0.22);
+  color: #c9f7ee;
 }
 
 .page > .feedback-error,
@@ -67,4 +85,285 @@ textarea:focus-visible {
 
 button {
   white-space: nowrap;
+}
+
+::selection {
+  background: rgba(155, 135, 245, 0.38);
+  color: #ffffff;
+}
+
+/* Shared dark theme. Existing page layouts and business states remain unchanged. */
+#app .app-layout {
+  background: transparent;
+  color: var(--app-text);
+}
+
+#app .sidebar {
+  border-color: var(--app-border);
+  background: rgba(9, 13, 19, 0.9);
+  box-shadow: 16px 0 44px rgba(0, 0, 0, 0.16);
+  backdrop-filter: blur(18px);
+}
+
+#app .brand-block {
+  border-color: var(--app-border);
+}
+
+#app .app-mark {
+  background: linear-gradient(135deg, #b6a8ff, var(--app-mint));
+  color: #090c12;
+  box-shadow: 0 8px 26px rgba(91, 207, 185, 0.15);
+}
+
+#app .app-title,
+#app :is(h1, h2, .section-title) {
+  color: var(--app-text);
+}
+
+#app .app-caption,
+#app .page-heading p,
+#app .home-link {
+  color: var(--app-text-muted);
+}
+
+#app .home-link:hover {
+  color: #c9c0ff;
+}
+
+#app .nav-tabs a {
+  color: #8f98aa;
+}
+
+#app .nav-tabs a:hover {
+  border-color: rgba(155, 135, 245, 0.18);
+  background: rgba(155, 135, 245, 0.08);
+  color: #e7e3ff;
+}
+
+#app .nav-tabs a.router-link-exact-active {
+  border-color: rgba(155, 135, 245, 0.28);
+  background: linear-gradient(90deg, rgba(155, 135, 245, 0.17), rgba(85, 214, 190, 0.04));
+  color: #ffffff;
+  box-shadow: inset 2px 0 var(--app-purple);
+}
+
+#app .main-content {
+  background: linear-gradient(135deg, rgba(14, 18, 27, 0.36), transparent 48%);
+  scrollbar-color: #394155 transparent;
+}
+
+#app :is(.filter-panel, .form-panel, .detail-panel, .related-section, .dashboard-panel, .stat-card, .import-dialog) {
+  border-color: var(--app-border);
+  background: linear-gradient(145deg, rgba(21, 27, 37, 0.96), rgba(14, 19, 27, 0.96));
+  box-shadow: 0 16px 42px rgba(0, 0, 0, 0.12);
+}
+
+#app :is(.camera-card, .film-card, .roll-card, .add-card, .photo-card, .camera-list-item, .related-roll, .import-row) {
+  border-color: var(--app-border);
+  background: var(--app-surface);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.11);
+}
+
+#app :is(.camera-card, .film-card, .roll-card, .add-card, .camera-list-item, .related-roll):hover {
+  border-color: var(--app-border-strong);
+  background: var(--app-surface-hover);
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.2), 0 0 24px rgba(155, 135, 245, 0.05);
+}
+
+#app .film-card.is-shot {
+  border-color: rgba(85, 214, 190, 0.23);
+  background: linear-gradient(145deg, rgba(20, 30, 38, 0.98), rgba(15, 21, 29, 0.98));
+}
+
+#app .film-card.is-unshot {
+  border-color: rgba(148, 163, 184, 0.11);
+  background: rgba(14, 18, 25, 0.94);
+}
+
+#app .add-card {
+  color: #aca2e8;
+}
+
+#app :is(.film-image, .detail-image, .roll-cover, .photo-frame) {
+  border-color: var(--app-border);
+  background: #090d13;
+}
+
+#app :is(input, select, textarea) {
+  border-color: rgba(148, 163, 184, 0.2);
+  background: #0a0f16;
+  color: var(--app-text);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
+}
+
+#app :is(input, select, textarea):focus {
+  border-color: rgba(155, 135, 245, 0.72);
+  box-shadow: 0 0 0 3px rgba(155, 135, 245, 0.1);
+}
+
+#app select:disabled {
+  border-color: rgba(148, 163, 184, 0.1);
+  background: #0c1016;
+  color: #586274;
+}
+
+#app :is(label, .card-kicker, .detail-grid, .related-meta, .empty-state, .roll-photo-count) {
+  color: var(--app-text-muted);
+}
+
+#app :is(.detail-grid strong, .related-roll, .roll-meta-lines span, .camera-list-item strong, .photo-footer strong) {
+  color: #e7ebf2;
+}
+
+#app :is(.meta-row span, .camera-footer span, .status-chip) {
+  background: rgba(124, 137, 170, 0.15);
+  color: #c8d0df;
+}
+
+#app .primary-btn {
+  border-color: rgba(185, 174, 255, 0.75);
+  background: linear-gradient(135deg, #ded8ff, #a995fa);
+  color: #0c0e15;
+  box-shadow: 0 8px 22px rgba(128, 105, 224, 0.16);
+}
+
+#app .primary-btn:hover {
+  border-color: #d8d0ff;
+  background: linear-gradient(135deg, #eeeaff, #b8a8ff);
+}
+
+#app .secondary-btn {
+  border-color: rgba(148, 163, 184, 0.2);
+  background: #19202b;
+  color: #d9dee8;
+}
+
+#app .secondary-btn:hover {
+  border-color: rgba(155, 135, 245, 0.36);
+  background: #222a38;
+  color: #ffffff;
+}
+
+#app .danger-btn {
+  border-color: rgba(240, 167, 175, 0.25);
+  background: rgba(78, 29, 38, 0.38);
+  color: var(--app-danger);
+}
+
+#app .danger-btn:hover {
+  border-color: rgba(240, 167, 175, 0.45);
+  background: rgba(103, 37, 48, 0.5);
+  color: #ffd1d6;
+}
+
+#app .feature-card {
+  border-color: var(--app-border);
+  background: var(--app-surface);
+  box-shadow: 0 16px 42px rgba(0, 0, 0, 0.16);
+}
+
+#app .feature-card::before {
+  background: rgba(155, 135, 245, 0.12);
+  filter: blur(2px);
+}
+
+#app .cameras-feature {
+  background: linear-gradient(145deg, rgba(81, 64, 138, 0.32), rgba(15, 20, 28, 0.98) 66%);
+}
+
+#app .films-feature {
+  background: linear-gradient(145deg, rgba(48, 72, 104, 0.34), rgba(15, 20, 28, 0.98) 66%);
+}
+
+#app .rolls-feature {
+  background: linear-gradient(145deg, rgba(26, 103, 91, 0.28), rgba(15, 20, 28, 0.98) 66%);
+}
+
+#app .feature-card:hover {
+  border-color: var(--app-border-strong);
+}
+
+#app .feature-card :is(span, small) {
+  color: #a6b0c1;
+}
+
+#app .stat-card strong,
+#app .panel-heading b {
+  color: #d8d0ff;
+}
+
+#app .panel-heading :is(span, a),
+#app .progress-panel p,
+#app .camera-list-item span {
+  color: var(--app-text-muted);
+}
+
+#app .panel-heading a:hover {
+  color: #c8bfff;
+}
+
+#app .progress-track {
+  background: #242a36;
+}
+
+#app .progress-track span {
+  background: linear-gradient(90deg, var(--app-purple), #7caeea, var(--app-mint));
+  box-shadow: 0 0 14px rgba(85, 214, 190, 0.22);
+}
+
+#app .version-tabs {
+  border-color: var(--app-border);
+  background: #0a0f16;
+}
+
+#app .version-tabs button {
+  color: var(--app-text-muted);
+}
+
+#app .version-tabs button.active {
+  background: linear-gradient(135deg, rgba(155, 135, 245, 0.24), rgba(85, 214, 190, 0.11));
+  color: #ffffff;
+}
+
+#app .drop-zone.drag-active {
+  border-color: var(--app-purple);
+  background: rgba(155, 135, 245, 0.07);
+}
+
+#app .photo-action {
+  border-color: rgba(183, 192, 207, 0.3);
+  background: rgba(7, 10, 15, 0.88);
+}
+
+#app .photo-action.favorite-action.active {
+  color: #c7baff;
+}
+
+#app .dialog-backdrop {
+  background: rgba(3, 5, 9, 0.82);
+  backdrop-filter: blur(8px);
+}
+
+#app .lightbox-overlay {
+  background: rgba(3, 5, 9, 0.96);
+}
+
+#app .lightbox-overlay header,
+#app .import-dialog :is(header, footer) {
+  border-color: var(--app-border);
+}
+
+#app .import-row.invalid {
+  border-color: rgba(240, 167, 175, 0.45);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }
