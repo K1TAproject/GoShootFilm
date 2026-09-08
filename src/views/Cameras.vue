@@ -201,7 +201,7 @@ onMounted(() => {
     <div v-if="visibleError" class="feedback-error" role="alert">{{ visibleError }}</div>
     <div v-else-if="isLoading" class="feedback-info">正在读取相机数据…</div>
     <div v-if="currentView === 'grid'" class="stack">
-      <PageHeader title="Cameras" subtitle="管理相机设备与每台相机的拍摄记录。" />
+      <PageHeader title="Cameras" subtitle="管理相机设备与每台相机的拍摄记录" />
 
       <div class="cards-grid">
         <button
@@ -337,21 +337,8 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.page {
-  width: 100%;
-  min-width: 0;
-}
-
 .stack {
-  display: flex;
-  flex-direction: column;
   gap: 18px;
-}
-
-h2 {
-  margin: 0;
-  color: #f9fafb;
-  letter-spacing: 0;
 }
 
 h2 {
@@ -421,102 +408,16 @@ h2 {
   font-size: 12px;
 }
 
-.add-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  border-style: dashed;
-}
-
-.plus-mark {
-  font-size: 26px;
-  line-height: 1;
-}
-
 .form-panel,
 .detail-panel,
 .related-section {
   padding: 16px;
 }
 
-.form-panel {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
-}
-
-label {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  color: #9ca3af;
-  font-size: 13px;
-}
-
-select,
-input,
-textarea {
-  width: 100%;
-  min-width: 0;
-  border: 1px solid #303846;
-  border-radius: 6px;
-  background: #0f131b;
-  color: #e5e7eb;
-  padding: 9px 10px;
-  outline: none;
-}
-
-select:focus,
-input:focus,
-textarea:focus {
-  border-color: #6b7280;
-}
-
-textarea {
-  min-height: 90px;
-  resize: vertical;
-}
-
-.full-width {
-  grid-column: 1 / -1;
-}
-
-.form-actions,
-.actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
 .primary-btn,
 .secondary-btn,
 .danger-btn {
-  border: 1px solid #384152;
-  border-radius: 6px;
-  padding: 9px 14px;
-  cursor: pointer;
   transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease;
-}
-
-.primary-btn {
-  background: #e5e7eb;
-  color: #111827;
-}
-
-.primary-btn:hover {
-  background: #f9fafb;
-}
-
-.secondary-btn {
-  background: #1d2430;
-  color: #d1d5db;
-}
-
-.secondary-btn:hover {
-  background: #252d3a;
-  color: #f9fafb;
 }
 
 .danger-btn {
@@ -536,57 +437,10 @@ textarea {
 }
 
 .detail-grid {
-  display: grid;
   grid-template-columns: 110px minmax(0, 1fr);
-  gap: 12px;
-  margin-top: 18px;
-  color: #9ca3af;
-}
-
-.detail-grid strong {
-  color: #e5e7eb;
-  font-weight: 500;
-  overflow-wrap: anywhere;
 }
 
 .section-title {
   margin-bottom: 12px;
-  color: #f9fafb;
-  font-weight: 600;
-}
-
-.related-roll {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  border: 1px solid #262c38;
-  border-radius: 7px;
-  background: #10141c;
-  color: #e5e7eb;
-  padding: 12px;
-  cursor: pointer;
-  text-align: left;
-}
-
-.related-roll + .related-roll {
-  margin-top: 8px;
-}
-
-.related-title {
-  font-weight: 600;
-}
-
-.related-meta,
-.empty-state {
-  color: #9ca3af;
-  font-size: 13px;
-}
-
-@media (max-width: 760px) {
-  .form-panel {
-    grid-template-columns: 1fr;
-  }
 }
 </style>

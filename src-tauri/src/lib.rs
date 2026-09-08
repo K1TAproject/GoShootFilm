@@ -1,5 +1,6 @@
 mod db;
 mod models;
+mod validation;
 
 use models::{
     CameraDetailResponse, CameraResponse, CameraRollResponse, DashboardStatsResponse, FilmResponse,
@@ -13,6 +14,10 @@ use std::path::{Component, Path, PathBuf};
 #[cfg(test)]
 use std::time::{SystemTime, UNIX_EPOCH};
 use tauri::Manager;
+use validation::{
+    clean_optional, clean_required, database_error, ensure_changed, ensure_positive_id,
+    validate_date, validate_film_target_status, validate_shot_month,
+};
 
 // 定义一个结构体用来在全局保存数据库连接池
 pub struct AppState {
@@ -86,124 +91,6 @@ type CameraRollRow = (
     i64,
 );
 
-fn clean_required(value: String, field: &str, max_len: usize) -> Result<String, String> {
-    let value = value.trim().to_string();
-    if value.is_empty() {
-        return Err(format!("{field}不能为空"));
-    }
-    if value.chars().count() > max_len {
-        return Err(format!("{field}不能超过{max_len}个字符"));
-    }
-    Ok(value)
-}
-
-fn clean_optional(
-    value: Option<String>,
-    field: &str,
-    max_len: usize,
-) -> Result<Option<String>, String> {
-    let Some(value) = value else {
-        return Ok(None);
-    };
-    let value = value.trim().to_string();
-    if value.is_empty() {
-        return Ok(None);
-    }
-    if value.chars().count() > max_len {
-        return Err(format!("{field}不能超过{max_len}个字符"));
-    }
-    Ok(Some(value))
-}
-
-fn validate_shot_month(value: Option<String>) -> Result<Option<String>, String> {
-    let value = clean_optional(value, "拍摄月份", 7)?;
-    let Some(value) = value else {
-        return Ok(None);
-    };
-    let bytes = value.as_bytes();
-    let valid_shape = bytes.len() == 7
-        && bytes[4] == b'-'
-        && bytes[..4].iter().all(u8::is_ascii_digit)
-        && bytes[5..].iter().all(u8::is_ascii_digit);
-    let valid_month = value[5..]
-        .parse::<u8>()
-        .is_ok_and(|month| (1..=12).contains(&month));
-    if !valid_shape || !valid_month {
-        return Err("拍摄月份必须采用 YYYY-MM 格式".into());
-    }
-    Ok(Some(value))
-}
-
-fn validate_date(value: Option<String>, field: &str) -> Result<Option<String>, String> {
-    let value = clean_optional(value, field, 10)?;
-    let Some(value) = value else {
-        return Ok(None);
-    };
-    let parts: Vec<_> = value.split('-').collect();
-    let valid_shape = parts.len() == 3
-        && parts[0].len() == 4
-        && parts[1].len() == 2
-        && parts[2].len() == 2
-        && parts
-            .iter()
-            .all(|part| part.chars().all(|ch| ch.is_ascii_digit()));
-    let valid_date = if valid_shape {
-        let year = parts[0].parse::<u32>().unwrap_or_default();
-        let month = parts[1].parse::<u8>().unwrap_or_default();
-        let day = parts[2].parse::<u8>().unwrap_or_default();
-        let leap_year = year % 4 == 0 && (year % 100 != 0 || year % 400 == 0);
-        let max_day = match month {
-            1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
-            4 | 6 | 9 | 11 => 30,
-            2 if leap_year => 29,
-            2 => 28,
-            _ => 0,
-        };
-        year > 0 && day > 0 && day <= max_day
-    } else {
-        false
-    };
-    if !valid_date {
-        return Err(format!("{field}必须采用 YYYY-MM-DD 格式"));
-    }
-    Ok(Some(value))
-}
-
-fn database_error(action: &str, error: sqlx::Error) -> String {
-    if let sqlx::Error::Database(database_error) = &error {
-        if database_error.is_unique_violation() {
-            return format!("{action}失败：相同记录已存在");
-        }
-        if database_error.is_foreign_key_violation() {
-            return format!("{action}失败：关联的记录不存在或仍被使用");
-        }
-    }
-    format!("{action}失败: {error}")
-}
-
-fn ensure_positive_id(id: i64, field: &str) -> Result<(), String> {
-    if id <= 0 {
-        return Err(format!("{field}无效"));
-    }
-    Ok(())
-}
-
-fn ensure_changed(rows_affected: u64, entity: &str) -> Result<(), String> {
-    if rows_affected == 0 {
-        return Err(format!("未找到要操作的{entity}"));
-    }
-    Ok(())
-}
-
-fn validate_film_target_status(target_status: Option<String>) -> Result<String, String> {
-    let target_status = target_status.unwrap_or_else(|| "unshot".to_string());
-    if matches!(target_status.as_str(), "unshot" | "shot") {
-        Ok(target_status)
-    } else {
-        Err("胶片状态无效，仅支持未拍摄或已拍摄".into())
-    }
-}
-
 fn film_display_name(brand: &str, name: &str) -> String {
     let brand = brand.split_whitespace().collect::<Vec<_>>().join(" ");
     let name = name.split_whitespace().collect::<Vec<_>>().join(" ");
@@ -222,6 +109,7 @@ fn film_display_name(brand: &str, name: &str) -> String {
 }
 
 fn safe_media_path(media_dir: &Path, stored_path: &Path) -> Option<PathBuf> {
+    // 数据库只允许保存当前图库层级的相对路径，避免把任意绝对路径暴露给文件命令。
     if stored_path.is_absolute() {
         return None;
     }
@@ -964,6 +852,7 @@ async fn toggle_photo_favorite(
 }
 
 fn preview_file_path(preview_dir: &Path, roll_id: i64, photo_id: i64) -> PathBuf {
+    // TIFF 预览是可再生缓存，必须与 media 下不可误删的正式图库分开。
     preview_dir
         .join("rolls")
         .join(roll_id.to_string())
@@ -1035,6 +924,7 @@ fn extension_allowed(version: &str, extension: &str) -> bool {
 }
 
 fn detect_frame_number(path: &Path) -> Option<i32> {
+    // 扫描仪文件名前缀不稳定，业务约定只认文件名末尾两位，且 00 不属于有效 Frame。
     let stem = path.file_stem()?.to_str()?;
     let suffix = stem.chars().rev().take(2).collect::<Vec<_>>();
     if suffix.len() != 2 || !suffix.iter().all(char::is_ascii_digit) {
@@ -1348,6 +1238,7 @@ async fn import_photo_versions_inner(
         normalized.push((entry, source));
     }
 
+    // 原子性同时跨越数据库和文件系统：提交前任一失败都回滚事务并删除本批已复制文件。
     let mut transaction = state
         .db
         .begin()
@@ -1490,6 +1381,7 @@ async fn import_photo_versions_inner(
         cleanup_copied_files(&copied_files).await;
         return Err(format!("提交照片导入事务失败: {error}"));
     }
+    // 正式图库和数据库已提交后，只失效可再生预览；预览可在下次查看时重新生成。
     for (photo_id, roll_id) in preview_invalidations {
         let preview_path = preview_file_path(&state.preview_dir, roll_id, photo_id);
         let _ = tokio::fs::remove_file(preview_path).await;

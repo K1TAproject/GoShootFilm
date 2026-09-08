@@ -33,8 +33,8 @@ onMounted(fetchDashboard)
 <template>
   <section class="home-page">
     <PageHeader
-      title="你的胶片档案"
-      subtitle="从设备、胶卷到每一格底片，在一个地方掌握拍摄进度。"
+      title="Film Archive"
+      subtitle="从设备、胶卷到底片，掌握拍摄进度"
       :show-home="false"
     />
 

@@ -92,6 +92,153 @@ button {
   color: #ffffff;
 }
 
+/* Shared page primitives used by Cameras, Films and Rolls. */
+#app .page {
+  width: 100%;
+  min-width: 0;
+}
+
+#app .stack {
+  display: flex;
+  flex-direction: column;
+}
+
+#app :where(.page) h2 {
+  margin: 0;
+  color: #f9fafb;
+  letter-spacing: 0;
+}
+
+#app .form-panel {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+#app :where(.form-panel) label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: #9ca3af;
+  font-size: 13px;
+}
+
+#app :where(.filter-panel, .form-panel) :where(select, input, textarea) {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid #303846;
+  border-radius: 6px;
+  background: #0f131b;
+  color: #e5e7eb;
+  padding: 9px 10px;
+  outline: none;
+}
+
+#app :where(.filter-panel, .form-panel) :where(select, input, textarea):focus {
+  border-color: #6b7280;
+}
+
+#app .form-panel textarea {
+  min-height: 90px;
+  resize: vertical;
+}
+
+#app .full-width {
+  grid-column: 1 / -1;
+}
+
+#app :is(.form-actions, .actions) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+#app :is(.primary-btn, .secondary-btn, .danger-btn) {
+  border: 1px solid #384152;
+  border-radius: 6px;
+  padding: 9px 14px;
+  cursor: pointer;
+}
+
+#app .primary-btn {
+  background: #e5e7eb;
+  color: #111827;
+}
+
+#app .primary-btn:hover {
+  background: #f9fafb;
+}
+
+#app .secondary-btn {
+  background: #1d2430;
+  color: #d1d5db;
+}
+
+#app .secondary-btn:hover {
+  background: #252d3a;
+  color: #f9fafb;
+}
+
+#app .add-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-style: dashed;
+}
+
+#app .plus-mark {
+  font-size: 26px;
+  line-height: 1;
+}
+
+#app .detail-grid {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+  color: #9ca3af;
+}
+
+#app .detail-grid strong {
+  color: #e5e7eb;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+#app .section-title {
+  color: #f9fafb;
+  font-weight: 600;
+}
+
+#app .related-roll {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid #262c38;
+  border-radius: 7px;
+  background: #10141c;
+  color: #e5e7eb;
+  padding: 12px;
+  cursor: pointer;
+  text-align: left;
+}
+
+#app .related-roll + .related-roll {
+  margin-top: 8px;
+}
+
+#app .related-title {
+  font-weight: 600;
+}
+
+#app :is(.related-meta, .empty-state) {
+  color: #9ca3af;
+  font-size: 13px;
+}
+
 /* Shared dark theme. Existing page layouts and business states remain unchanged. */
 #app .app-layout {
   background: transparent;
@@ -365,5 +512,11 @@ button {
     transition-duration: 0.01ms !important;
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
+  }
+}
+
+@media (max-width: 760px) {
+  #app .form-panel {
+    grid-template-columns: 1fr;
   }
 }

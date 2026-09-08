@@ -239,6 +239,7 @@ async fn sync_film_catalog(pool: &SqlitePool) -> Result<(), Box<dyn std::error::
 pub(crate) async fn reindex_rolls(
     transaction: &mut Transaction<'_, Sqlite>,
 ) -> Result<(), sqlx::Error> {
+    // roll_index 是面向用户的全局连续卷号，不是 SQLite 主键；删除级联后也必须消除空档。
     let roll_ids: Vec<i64> = sqlx::query_scalar("SELECT id FROM rolls ORDER BY created_at, id")
         .fetch_all(&mut **transaction)
         .await?;

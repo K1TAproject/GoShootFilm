@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
-import { convertFileSrc, invoke } from '@tauri-apps/api/core'
+import { invoke } from '@tauri-apps/api/core'
 import { open } from '@tauri-apps/plugin-dialog'
 import { openPath } from '@tauri-apps/plugin-opener'
 import { getCurrentWebview } from '@tauri-apps/api/webview'
@@ -27,6 +27,7 @@ import type {
 } from '../types'
 import { errorMessage as formatError } from '../utils/errors'
 import { compactFilmTypeLabel, FILM_TYPES, filmDisplayName } from '../utils/films'
+import { isSupportedPhotoPath, photoImageUrl, PHOTO_EXTENSIONS } from '../utils/photos'
 
 const route = useRoute()
 const router = useRouter()
@@ -92,7 +93,7 @@ const activeVersionCount = computed(() => activePhotoVersion.value === 'lab' ? l
 function openLightbox(photo: Photo, src: string) {
   lightboxPhoto.value = photo
   lightboxVersion.value = activePhotoVersion.value
-  lightboxImageSrc.value = getImageUrl(src)
+  lightboxImageSrc.value = photoImageUrl(src)
   isLightboxOpen.value = true
 }
 
@@ -106,22 +107,9 @@ function handleWindowKeydown(event: KeyboardEvent) {
   if (event.key === 'Escape' && isLightboxOpen.value) closeLightbox()
 }
 
-function getImageUrl(rawPath?: string) {
-  if (!rawPath) return ''
-  if (rawPath.startsWith('/')) return rawPath
-  return convertFileSrc(rawPath)
-}
-
 function handleRollImageError(event: Event) {
   const image = event.target as HTMLImageElement
   image.src = '/film-stocks/placeholder.svg'
-}
-
-const imageExtensions = new Set(['png', 'jpg', 'jpeg', 'tif', 'tiff', 'webp', 'bmp', 'gif'])
-
-function isImagePath(path: string) {
-  const ext = path.split(/[\\/]/).pop()?.split('.').pop()?.toLowerCase()
-  return ext ? imageExtensions.has(ext) : false
 }
 
 function chooseDefaultPhotoVersion(photos: Photo[]) {
@@ -476,7 +464,7 @@ function mergeImportAnalysis(
 }
 
 async function openImportReview(version: PhotoVersion, filePaths: string[]) {
-  const imagePaths = filePaths.filter(isImagePath)
+  const imagePaths = filePaths.filter(isSupportedPhotoPath)
   if (imagePaths.length === 0) {
     visibleError.value = '所选内容中没有支持的图片文件'
     return
@@ -507,9 +495,7 @@ async function selectAndImportPhotos(version: PhotoVersion) {
       filters: [
         {
           name: version === 'lab' ? '原始扫描图片' : '调色图片',
-          extensions: version === 'lab'
-            ? ['png', 'jpg', 'jpeg', 'tif', 'tiff', 'webp', 'bmp', 'gif']
-            : ['png', 'jpg', 'jpeg', 'webp']
+          extensions: PHOTO_EXTENSIONS[version]
         }
       ]
     })
@@ -520,7 +506,6 @@ async function selectAndImportPhotos(version: PhotoVersion) {
   } catch (err) {
     console.error('Failed to import photos:', err)
     visibleError.value = formatError(err, '选择照片失败')
-    isBusy.value = false
   }
 }
 
@@ -612,14 +597,13 @@ async function setupNativeDragDrop() {
 
       if (event.payload.type === 'drop') {
         isDraggingFiles.value = false
-        const paths = event.payload.paths.filter(isImagePath)
+        const paths = event.payload.paths.filter(isSupportedPhotoPath)
         const inferredVersion: PhotoVersion = paths.some(path => /\.tiff?$/i.test(path))
           ? 'lab'
           : activePhotoVersion.value
         void openImportReview(inferredVersion, paths).catch(err => {
           console.error('Failed to import dropped photos:', err)
           visibleError.value = formatError(err, '拖入照片失败，本批次未写入')
-          isBusy.value = false
         })
       }
     })
@@ -733,7 +717,7 @@ onUnmounted(() => {
     <div v-else-if="visibleInfo" class="feedback-info" role="status">{{ visibleInfo }}</div>
     <div v-else-if="isLoading" class="feedback-info">正在读取拍摄卷数据…</div>
     <div v-if="currentView === 'grid'" class="stack">
-      <PageHeader title="Rolls" subtitle="按胶卷、设备和拍摄时间整理全部拍摄卷。" />
+      <PageHeader title="Rolls" subtitle="按胶卷、设备和拍摄时间整理全部拍摄卷" />
 
       <div class="filter-panel">
         <select v-model="draftFilmBrand">
@@ -780,7 +764,7 @@ onUnmounted(() => {
         >
           <div class="roll-cover">
             <img
-              :src="getImageUrl(rollCover(roll))"
+              :src="photoImageUrl(rollCover(roll))"
               :alt="filmDisplayName(roll.filmBrand, roll.filmName)"
               @error="handleRollImageError"
             />
@@ -966,21 +950,8 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-.page {
-  width: 100%;
-  min-width: 0;
-}
-
 .stack {
-  display: flex;
-  flex-direction: column;
   gap: 18px;
-}
-
-h2 {
-  margin: 0;
-  color: #f9fafb;
-  letter-spacing: 0;
 }
 
 h2 {
@@ -1008,25 +979,6 @@ h2 {
   font-size: 12px;
 }
 
-select,
-input,
-textarea {
-  width: 100%;
-  min-width: 0;
-  border: 1px solid #303846;
-  border-radius: 6px;
-  background: #0f131b;
-  color: #e5e7eb;
-  padding: 9px 10px;
-  outline: none;
-}
-
-select:focus,
-input:focus,
-textarea:focus {
-  border-color: #6b7280;
-}
-
 select:disabled {
   border-color: #252c37;
   background: #11151c;
@@ -1034,38 +986,10 @@ select:disabled {
   cursor: not-allowed;
 }
 
-textarea {
-  min-height: 90px;
-  resize: vertical;
-}
-
 .primary-btn,
 .secondary-btn,
 .danger-btn {
-  border: 1px solid #384152;
-  border-radius: 6px;
-  padding: 9px 14px;
-  cursor: pointer;
   transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease, opacity 0.16s ease;
-}
-
-.primary-btn {
-  background: #e5e7eb;
-  color: #111827;
-}
-
-.primary-btn:hover {
-  background: #f9fafb;
-}
-
-.secondary-btn {
-  background: #1d2430;
-  color: #d1d5db;
-}
-
-.secondary-btn:hover {
-  background: #252d3a;
-  color: #f9fafb;
 }
 
 .danger-btn {
@@ -1188,42 +1112,6 @@ textarea {
 .add-card {
   width: 100%;
   min-height: 84px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  border-style: dashed;
-}
-
-.plus-mark {
-  font-size: 26px;
-  line-height: 1;
-}
-
-.form-panel {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
-}
-
-label {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  color: #9ca3af;
-  font-size: 13px;
-}
-
-.full-width {
-  grid-column: 1 / -1;
-}
-
-.form-actions,
-.actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
 }
 
 .detail-layout {
@@ -1231,22 +1119,7 @@ label {
 }
 
 .detail-grid {
-  display: grid;
   grid-template-columns: 90px minmax(0, 1fr);
-  gap: 12px;
-  margin-top: 18px;
-  color: #9ca3af;
-}
-
-.detail-grid strong {
-  color: #e5e7eb;
-  font-weight: 500;
-  overflow-wrap: anywhere;
-}
-
-.section-title {
-  color: #f9fafb;
-  font-weight: 600;
 }
 
 .gallery-toolbar {
@@ -1282,11 +1155,6 @@ label {
   padding: 12px;
 }
 
-.empty-state {
-  color: #9ca3af;
-  font-size: 13px;
-}
-
 @media (max-width: 900px) {
   .filter-panel {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1308,10 +1176,6 @@ label {
 }
 
 @media (max-width: 760px) {
-  .form-panel {
-    grid-template-columns: 1fr;
-  }
-
   .filter-panel {
     grid-template-columns: 1fr;
   }

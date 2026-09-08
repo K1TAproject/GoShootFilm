@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { convertFileSrc } from '@tauri-apps/api/core'
 import type { LabPreviewState, Photo, PhotoVersion } from '../types'
+import { photoImageUrl } from '../utils/photos'
 
 const props = defineProps<{
   photos: Photo[]
@@ -21,12 +21,6 @@ const emit = defineEmits<{
 const sortedPhotos = computed(() => props.photos
   .filter(photo => props.version === 'edit' ? photo.editScanPath : photo.labScanPath)
   .sort((a, b) => (a.frameNumber ?? 1000) - (b.frameNumber ?? 1000) || a.id - b.id))
-
-function imageUrl(path?: string) {
-  if (!path) return ''
-  if (path.startsWith('/')) return path
-  return convertFileSrc(path)
-}
 
 function sourceFor(photo: Photo) {
   return props.version === 'edit'
@@ -55,7 +49,7 @@ function errorFor(photo: Photo) {
           @click="emit('view', photo, sourceFor(photo)!)"
         >
           <img
-            :src="imageUrl(sourceFor(photo))"
+            :src="photoImageUrl(sourceFor(photo))"
             :alt="`Frame ${photo.frameNumber || '?'} ${version === 'lab' ? '原始扫描预览' : '调色图'}`"
             @error="emit('image-error', photo, version)"
           />
