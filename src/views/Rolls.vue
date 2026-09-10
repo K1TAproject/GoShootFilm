@@ -2,7 +2,6 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import { open } from '@tauri-apps/plugin-dialog'
-import { openPath } from '@tauri-apps/plugin-opener'
 import { getCurrentWebview } from '@tauri-apps/api/webview'
 import { useRoute, useRouter } from 'vue-router'
 import PageHeader from '../components/PageHeader.vue'
@@ -10,6 +9,7 @@ import PhotoGallery from '../components/PhotoGallery.vue'
 import PhotoImportDialog from '../components/PhotoImportDialog.vue'
 import PhotoLightbox from '../components/PhotoLightbox.vue'
 import PhotoVersionTabs from '../components/PhotoVersionTabs.vue'
+import RollCover from '../components/RollCover.vue'
 import type {
   Camera,
   Film,
@@ -19,6 +19,7 @@ import type {
   ImportResult,
   LabPreview,
   LabPreviewState,
+  LibraryStatus,
   Photo,
   PhotoImportEntry,
   PhotoVersion,
@@ -85,10 +86,24 @@ const importVersion = ref<PhotoVersion>('edit')
 const importItems = ref<ImportAnalysisItem[]>([])
 const importError = ref('')
 const importBusy = ref(false)
+const libraryAvailable = ref(false)
 
 const editCount = computed(() => selectedRoll.value?.photos.filter(photo => photo.editScanPath).length ?? 0)
 const labCount = computed(() => selectedRoll.value?.photos.filter(photo => photo.labScanPath).length ?? 0)
 const activeVersionCount = computed(() => activePhotoVersion.value === 'lab' ? labCount.value : editCount.value)
+
+const cameraRollCounts = computed(() => {
+  const counts = new Map<number, number>()
+  for (const roll of rolls.value) counts.set(roll.cameraId, (counts.get(roll.cameraId) ?? 0) + 1)
+  return counts
+})
+
+const sortedCameras = computed(() => [...cameras.value].sort((a, b) =>
+  (cameraRollCounts.value.get(b.id) ?? 0) - (cameraRollCounts.value.get(a.id) ?? 0)
+  || a.brand.localeCompare(b.brand)
+  || a.model.localeCompare(b.model)
+  || a.id - b.id
+))
 
 function openLightbox(photo: Photo, src: string) {
   lightboxPhoto.value = photo
@@ -105,11 +120,6 @@ function closeLightbox() {
 
 function handleWindowKeydown(event: KeyboardEvent) {
   if (event.key === 'Escape' && isLightboxOpen.value) closeLightbox()
-}
-
-function handleRollImageError(event: Event) {
-  const image = event.target as HTMLImageElement
-  image.src = '/film-stocks/placeholder.svg'
 }
 
 function chooseDefaultPhotoVersion(photos: Photo[]) {
@@ -171,17 +181,19 @@ async function fetchRolls() {
   isLoading.value = true
   visibleError.value = ''
   try {
-    const [rollData, cameraData, filmData] = await Promise.all([
+    const [rollData, cameraData, filmData, library] = await Promise.all([
       invoke<RollSummary[]>('get_rolls'),
       invoke<Camera[]>('get_cameras'),
-      invoke<Film[]>('get_films')
+      invoke<Film[]>('get_films'),
+      invoke<LibraryStatus>('get_library_status')
     ])
     rolls.value = rollData
     cameras.value = cameraData
     films.value = filmData
+    libraryAvailable.value = library.available
 
-    if (!formCameraId.value && cameras.value.length > 0) {
-      formCameraId.value = cameras.value[0].id
+    if (!formCameraId.value && sortedCameras.value.length > 0) {
+      formCameraId.value = sortedCameras.value[0].id
     }
     if (!formFilmId.value && films.value.length > 0) {
       formFilmId.value = films.value[0].id
@@ -203,6 +215,14 @@ async function fetchRolls() {
     visibleError.value = formatError(err, '无法读取拍摄卷数据')
   } finally {
     isLoading.value = false
+  }
+}
+
+async function refreshLibraryAvailability() {
+  try {
+    libraryAvailable.value = (await invoke<LibraryStatus>('get_library_status')).available
+  } catch (error) {
+    visibleError.value = formatError(error, '无法读取图库设置')
   }
 }
 
@@ -290,7 +310,7 @@ function resetFilters() {
 
 function resetAddForm() {
   formFilmId.value = films.value[0]?.id ?? null
-  formCameraId.value = cameras.value[0]?.id ?? null
+  formCameraId.value = sortedCameras.value[0]?.id ?? null
   formShotMonth.value = ''
   formCity.value = ''
   formNote.value = ''
@@ -432,7 +452,7 @@ async function handleDeleteRoll() {
 }
 
 function getFilmOptionLabel(film: Film) {
-  return `${filmDisplayName(film.brand, film.name)} (ISO ${film.iso})`
+  return filmDisplayName(film.brand, film.name)
 }
 
 function getCameraOptionLabel(camera: Camera) {
@@ -488,6 +508,10 @@ async function openImportReview(version: PhotoVersion, filePaths: string[]) {
 
 async function selectAndImportPhotos(version: PhotoVersion) {
   if (!selectedRoll.value) return
+  if (!libraryAvailable.value) {
+    visibleError.value = '尚未设置可用的图库目录，请先在左侧“图库设置”中选择位置。'
+    return
+  }
 
   try {
     const selected = await open({
@@ -597,6 +621,10 @@ async function setupNativeDragDrop() {
 
       if (event.payload.type === 'drop') {
         isDraggingFiles.value = false
+        if (!libraryAvailable.value) {
+          visibleError.value = '尚未设置可用的图库目录，暂时不能导入照片。'
+          return
+        }
         const paths = event.payload.paths.filter(isSupportedPhotoPath)
         const inferredVersion: PhotoVersion = paths.some(path => /\.tiff?$/i.test(path))
           ? 'lab'
@@ -634,11 +662,10 @@ async function revealPhotoOriginalLocation() {
     return
   }
   try {
-    const directory = await invoke<string>('get_roll_media_directory', {
+    await invoke<string>('get_roll_media_directory', {
       rollId: selectedRoll.value.id,
       version: activePhotoVersion.value,
     })
-    await openPath(directory)
   } catch (error) {
     visibleError.value = formatError(error, '无法打开图片原始位置')
   }
@@ -663,10 +690,6 @@ async function deletePhoto(photoId: number) {
   } finally {
     isBusy.value = false
   }
-}
-
-function rollCover(roll: RollSummary) {
-  return roll.coverPath || '/film-stocks/placeholder.svg'
 }
 
 watch(draftFilmBrand, () => {
@@ -700,10 +723,12 @@ onMounted(() => {
   fetchRolls()
   setupNativeDragDrop()
   window.addEventListener('keydown', handleWindowKeydown)
+  window.addEventListener('goshootfilm:library-changed', refreshLibraryAvailability)
 })
 
 onUnmounted(() => {
   window.removeEventListener('keydown', handleWindowKeydown)
+  window.removeEventListener('goshootfilm:library-changed', refreshLibraryAvailability)
   if (unlistenDragDrop) {
     unlistenDragDrop()
     unlistenDragDrop = null
@@ -755,6 +780,11 @@ onUnmounted(() => {
       </div>
 
       <div class="roll-list">
+        <button class="add-card" @click="openAddForm">
+          <span class="plus-mark">+</span>
+          <span>添加新卷</span>
+        </button>
+
         <button
           v-for="roll in filteredRolls"
           :key="roll.id"
@@ -762,13 +792,11 @@ onUnmounted(() => {
           class="roll-card"
           @click="viewDetail(roll)"
         >
-          <div class="roll-cover">
-            <img
-              :src="photoImageUrl(rollCover(roll))"
-              :alt="filmDisplayName(roll.filmBrand, roll.filmName)"
-              @error="handleRollImageError"
-            />
-          </div>
+          <RollCover
+            :roll-id="roll.id"
+            :has-cover="Boolean(roll.coverPath)"
+            :alt="filmDisplayName(roll.filmBrand, roll.filmName)"
+          />
           <div class="card-body">
             <div class="card-kicker">第 {{ roll.index }} 卷</div>
             <h2>{{ filmDisplayName(roll.filmBrand, roll.filmName) }}</h2>
@@ -781,10 +809,6 @@ onUnmounted(() => {
           <span class="roll-photo-count">{{ roll.photoCount }} 张</span>
         </button>
 
-        <button class="add-card" @click="openAddForm">
-          <span class="plus-mark">+</span>
-          <span>添加新卷</span>
-        </button>
       </div>
 
       <div v-if="filteredRolls.length === 0" class="empty-state">没有符合条件的拍摄卷。</div>
@@ -805,7 +829,7 @@ onUnmounted(() => {
         <label>
           <span>使用设备 *</span>
           <select v-model.number="formCameraId">
-            <option v-for="camera in cameras" :key="camera.id" :value="camera.id">{{ getCameraOptionLabel(camera) }}</option>
+            <option v-for="camera in sortedCameras" :key="camera.id" :value="camera.id">{{ getCameraOptionLabel(camera) }}</option>
           </select>
         </label>
         <label>
@@ -859,7 +883,7 @@ onUnmounted(() => {
           <label>
             <span>使用设备</span>
             <select v-model.number="editCameraId">
-              <option v-for="camera in cameras" :key="camera.id" :value="camera.id">{{ getCameraOptionLabel(camera) }}</option>
+              <option v-for="camera in sortedCameras" :key="camera.id" :value="camera.id">{{ getCameraOptionLabel(camera) }}</option>
             </select>
           </label>
           <label>
@@ -901,8 +925,8 @@ onUnmounted(() => {
             >
               打开图片原始位置
             </button>
-            <button class="secondary-btn" :disabled="isBusy" @click="selectAndImportPhotos('edit')">导入调色图</button>
-            <button class="secondary-btn" :disabled="isBusy" @click="selectAndImportPhotos('lab')">导入原始扫描</button>
+            <button class="secondary-btn" :disabled="isBusy || !libraryAvailable" @click="selectAndImportPhotos('edit')">导入调色图</button>
+            <button class="secondary-btn" :disabled="isBusy || !libraryAvailable" @click="selectAndImportPhotos('lab')">导入原始扫描</button>
           </div>
         </div>
         <div class="feedback-info path-notice">
@@ -921,6 +945,7 @@ onUnmounted(() => {
             @favorite="toggleFavorite"
             @delete="deletePhoto"
             @image-error="handleVersionImageError"
+            @retry-preview="loadLabPreview"
           />
         </div>
       </section>
@@ -1044,24 +1069,6 @@ select:disabled {
   border-color: #4b5563;
   background: #1a202b;
   transform: translateY(-2px);
-}
-
-.roll-cover {
-  width: 100%;
-  height: 166px;
-  min-height: 0;
-  background: #0f131b;
-  border-right: 1px solid #262c38;
-  overflow: hidden;
-}
-
-.roll-cover img {
-  width: 100%;
-  height: 100%;
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: cover;
-  display: block;
 }
 
 .card-body {

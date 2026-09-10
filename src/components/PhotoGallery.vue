@@ -16,6 +16,7 @@ const emit = defineEmits<{
   (event: 'favorite', photo: Photo): void
   (event: 'delete', photoId: number): void
   (event: 'image-error', photo: Photo, version: PhotoVersion): void
+  (event: 'retry-preview', photo: Photo): void
 }>()
 
 const sortedPhotos = computed(() => props.photos
@@ -64,6 +65,7 @@ function errorFor(photo: Photo) {
         <div v-else-if="errorFor(photo)" class="photo-state error-state">
           <strong>图片无法读取</strong>
           <small>{{ errorFor(photo) }}</small>
+          <button v-if="version === 'lab'" type="button" @click="emit('retry-preview', photo)">重试预览</button>
         </div>
 
         <div v-else class="photo-state error-state">
@@ -157,6 +159,7 @@ function errorFor(photo: Photo) {
 .photo-state small { color: #7e8998; line-height: 1.4; }
 .error-state { color: #fecaca; }
 .error-state small { color: #f1a8ad; overflow-wrap: anywhere; }
+.error-state button { padding: 5px 9px; font-size: 12px; }
 
 .spinner {
   width: 22px;

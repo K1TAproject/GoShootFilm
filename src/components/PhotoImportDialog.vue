@@ -33,7 +33,7 @@ function frameValue(event: Event) {
         <button class="icon-button" type="button" aria-label="关闭导入窗口" @click="emit('close')">×</button>
       </header>
 
-      <p class="dialog-tip">Frame 优先取文件名末尾两位数字。请先处理所有红色问题和同版本冲突，整批确认后才会写入。</p>
+      <p class="dialog-tip">Frame 优先取文件名末尾两位数字，请先处理所有红色问题和同版本冲突。</p>
       <div v-if="error" class="feedback-error" role="alert">{{ error }}</div>
 
       <div class="import-list">

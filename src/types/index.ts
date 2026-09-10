@@ -115,3 +115,18 @@ export interface DashboardStats {
   photoCount: number
   favoritePhotoCount: number
 }
+
+export interface LibraryStatus {
+  libraryPath?: string
+  available: boolean
+  needsMigration: boolean
+  legacyDataDetected: boolean
+  error?: string
+}
+
+export interface LibraryMigrationResult {
+  libraryPath: string
+  fileCount: number
+  totalBytes: number
+  migrated: boolean
+}

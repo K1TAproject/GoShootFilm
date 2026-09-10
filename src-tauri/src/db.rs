@@ -22,8 +22,7 @@ struct CatalogFilm {
 
 pub struct DatabaseResources {
     pub pool: SqlitePool,
-    pub media_dir: PathBuf,
-    pub preview_dir: PathBuf,
+    pub app_data_dir: PathBuf,
 }
 
 pub async fn init_db(app: &tauri::App) -> Result<DatabaseResources, Box<dyn std::error::Error>> {
@@ -56,8 +55,7 @@ pub async fn init_db(app: &tauri::App) -> Result<DatabaseResources, Box<dyn std:
 
     Ok(DatabaseResources {
         pool,
-        media_dir,
-        preview_dir,
+        app_data_dir: app_dir,
     })
 }
 

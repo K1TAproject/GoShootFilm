@@ -17,6 +17,8 @@ dist-ssr
 .env.*
 *.env
 !.env.example
+*.key
+*.key.password
 
 # Tauri / Rust build artifacts
 src-tauri/target/
@@ -38,3 +40,7 @@ Thumbs.db
 *.njsproj
 *.sln
 *.sw?
+
+# Local code analysis tools
+.codegraph/
+.serena/

@@ -23,6 +23,13 @@ const isEditing = ref(false)
 const isLoading = ref(false)
 const isBusy = ref(false)
 const visibleError = ref('')
+const today = (() => {
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+})()
 
 const emit = defineEmits<{
   (e: 'jump-to-roll', rollId: number): void
@@ -212,7 +219,7 @@ onMounted(() => {
           @click="viewDetail(camera)"
         >
           <div class="camera-main">
-            <h2>{{ camera.brand }} {{ camera.model }}</h2>
+            <h2 :title="`${camera.brand} ${camera.model}`">{{ camera.brand }} {{ camera.model }}</h2>
           </div>
           <div class="camera-footer">
             <span>{{ camera.format || '135' }}</span>
@@ -248,7 +255,7 @@ onMounted(() => {
         </label>
         <label>
           <span>购入日期</span>
-          <input v-model="formPurchaseDate" type="date" />
+          <input v-model="formPurchaseDate" type="date" :max="today" />
         </label>
         <label class="full-width">
           <span>备注</span>
@@ -297,7 +304,7 @@ onMounted(() => {
           <span>状态</span>
           <select v-model="selectedCamera.status">
             <option value="active">在用</option>
-            <option value="disable">闲置</option>
+            <option value="inactive">闲置</option>
           </select>
         </label>
         <label>
@@ -306,7 +313,7 @@ onMounted(() => {
         </label>
         <label>
           <span>购入日期</span>
-          <input v-model="selectedCamera.purchaseDate" type="date" />
+          <input v-model="selectedCamera.purchaseDate" type="date" :max="today" />
         </label>
         <label class="full-width">
           <span>备注</span>
@@ -392,6 +399,16 @@ h2 {
   flex: 1;
   place-items: center;
   text-align: center;
+}
+
+.camera-main h2 {
+  display: -webkit-box;
+  max-height: 2.4em;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
 .camera-footer {
