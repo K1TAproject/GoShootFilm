@@ -257,8 +257,7 @@ button {
 }
 
 #app .app-mark {
-  background: linear-gradient(135deg, #b6a8ff, var(--app-mint));
-  color: #090c12;
+  background: transparent;
   box-shadow: 0 8px 26px rgba(91, 207, 185, 0.15);
 }
 

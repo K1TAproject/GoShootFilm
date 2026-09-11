@@ -26,7 +26,10 @@ pub struct DatabaseResources {
 }
 
 pub async fn init_db(app: &tauri::App) -> Result<DatabaseResources, Box<dyn std::error::Error>> {
-    let app_dir = app.path().app_data_dir()?;
+    init_db_at(app.path().app_data_dir()?).await
+}
+
+async fn init_db_at(app_dir: PathBuf) -> Result<DatabaseResources, Box<dyn std::error::Error>> {
     fs::create_dir_all(&app_dir)?;
 
     let db_path = app_dir.join("goshootfilm.db");
@@ -47,11 +50,6 @@ pub async fn init_db(app: &tauri::App) -> Result<DatabaseResources, Box<dyn std:
     let mut transaction = pool.begin().await?;
     reindex_rolls(&mut transaction).await?;
     transaction.commit().await?;
-
-    let media_dir = app_dir.join("media");
-    fs::create_dir_all(&media_dir)?;
-    let preview_dir = app_dir.join("previews");
-    fs::create_dir_all(&preview_dir)?;
 
     Ok(DatabaseResources {
         pool,
@@ -320,6 +318,23 @@ mod tests {
             .connect("sqlite::memory:")
             .await
             .expect("create in-memory database")
+    }
+
+    #[tokio::test]
+    async fn database_initialization_does_not_create_gallery_directories() {
+        let app_data =
+            std::env::temp_dir().join(format!("goshootfilm-db-no-gallery-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&app_data);
+
+        let resources = init_db_at(app_data.clone())
+            .await
+            .expect("initialize database");
+        resources.pool.close().await;
+
+        assert!(app_data.join("goshootfilm.db").is_file());
+        assert!(!app_data.join("media").exists());
+        assert!(!app_data.join("previews").exists());
+        fs::remove_dir_all(app_data).expect("remove test app data");
     }
 
     #[tokio::test]
