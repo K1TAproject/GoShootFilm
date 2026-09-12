@@ -1,6 +1,7 @@
 mod db;
 mod library;
 mod models;
+mod startup;
 mod validation;
 
 use models::{
@@ -1696,14 +1697,23 @@ async fn get_roll_cover_preview(
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    startup::install_panic_hook();
+    startup::record("tauri", "building application");
+    let result = tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .setup(|app| {
-            let resources = tauri::async_runtime::block_on(db::init_db(app))
-                .map_err(|e| format!("数据库初始化失败: {e}"))?;
+            startup::record("setup", "initializing database");
+            let resources = match tauri::async_runtime::block_on(db::init_db(app)) {
+                Ok(resources) => resources,
+                Err(error) => {
+                    startup::report_error("database initialization failed", error.as_ref());
+                    return Err(format!("数据库初始化失败: {error}").into());
+                }
+            };
+            startup::record("setup", "database ready");
             let library = library::load_runtime(&resources.app_data_dir);
             app.manage(AppState {
                 db: resources.pool,
@@ -1712,6 +1722,8 @@ pub fn run() {
                 gallery_operation_lock: tokio::sync::RwLock::new(()),
                 preview_locks: tokio::sync::Mutex::new(HashMap::new()),
             });
+            startup::record("setup", "application state ready");
+            startup::mark_startup_complete();
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -1740,8 +1752,10 @@ pub fn run() {
             get_library_status,
             set_library_path
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .run(tauri::generate_context!());
+    if let Err(error) = result {
+        startup::report_error("tauri event loop failed", &error);
+    }
 }
 
 #[cfg(test)]

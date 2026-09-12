@@ -1,7 +1,6 @@
 name: Release
 
 on:
-  workflow_dispatch:
   push:
     tags:
       - "v*"
@@ -19,7 +18,26 @@ jobs:
           node-version: 22
           cache: npm
       - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
       - run: npm ci
+      - name: Verify release source and tests
+        shell: pwsh
+        run: |
+          node --version
+          npm --version
+          rustc --version
+          cargo --version
+          $crlfMigrations = Get-ChildItem src-tauri/migrations -Filter *.sql | Where-Object {
+            [System.IO.File]::ReadAllText($_.FullName).Contains("`r`n")
+          }
+          if ($crlfMigrations) {
+            throw "SQL migrations must use LF line endings: $($crlfMigrations.Name -join ', ')"
+          }
+          npm run build
+          cargo fmt --manifest-path src-tauri/Cargo.toml --check
+          cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings
+          cargo test --manifest-path src-tauri/Cargo.toml
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

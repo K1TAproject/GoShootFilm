@@ -1,3 +1,4 @@
+use sha2::{Digest, Sha384};
 use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
 use sqlx::{Row, Sqlite, SqlitePool, Transaction};
 use std::collections::HashSet;
@@ -9,6 +10,21 @@ use tauri::Manager;
 
 static MIGRATOR: sqlx::migrate::Migrator = sqlx::migrate!("./migrations");
 const FILM_CATALOG: &str = include_str!("../../src/data/film-catalog.csv");
+const MIGRATION_SOURCES: &[(i64, &[u8])] = &[
+    (1, include_bytes!("../migrations/0001_initial.sql")),
+    (
+        2,
+        include_bytes!("../migrations/0002_import_official_films.sql"),
+    ),
+    (
+        3,
+        include_bytes!("../migrations/0003_normalize_builtin_film_status.sql"),
+    ),
+    (
+        4,
+        include_bytes!("../migrations/0004_sync_film_catalog.sql"),
+    ),
+];
 
 #[derive(Debug)]
 struct CatalogFilm {
@@ -44,6 +60,7 @@ async fn init_db_at(app_dir: PathBuf) -> Result<DatabaseResources, Box<dyn std::
         .connect_with(options)
         .await?;
 
+    repair_crlf_migration_checksums(&pool).await?;
     MIGRATOR.run(&pool).await?;
     repair_legacy_camera_schema(&pool).await?;
     sync_film_catalog(&pool).await?;
@@ -55,6 +72,53 @@ async fn init_db_at(app_dir: PathBuf) -> Result<DatabaseResources, Box<dyn std::
         pool,
         app_data_dir: app_dir,
     })
+}
+
+fn migration_line_ending_checksums(source: &[u8]) -> (Vec<u8>, Vec<u8>) {
+    let mut lf = Vec::with_capacity(source.len());
+    let mut index = 0;
+    while index < source.len() {
+        if source[index] == b'\r' && source.get(index + 1) == Some(&b'\n') {
+            lf.push(b'\n');
+            index += 2;
+        } else {
+            lf.push(source[index]);
+            index += 1;
+        }
+    }
+    let mut crlf = Vec::with_capacity(lf.len());
+    for byte in &lf {
+        if *byte == b'\n' {
+            crlf.push(b'\r');
+        }
+        crlf.push(*byte);
+    }
+    (Sha384::digest(lf).to_vec(), Sha384::digest(crlf).to_vec())
+}
+
+async fn repair_crlf_migration_checksums(pool: &SqlitePool) -> Result<(), sqlx::Error> {
+    let ledger_exists: i64 = sqlx::query_scalar(
+        "SELECT EXISTS(SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = '_sqlx_migrations')",
+    )
+    .fetch_one(pool)
+    .await?;
+    if ledger_exists == 0 {
+        return Ok(());
+    }
+
+    // v0.1.2 was built on a Windows runner that checked out SQL files as CRLF. Only the
+    // known line-ending-only checksums are normalized; any real migration edit still fails.
+    let mut transaction = pool.begin().await?;
+    for (version, source) in MIGRATION_SOURCES {
+        let (lf_checksum, crlf_checksum) = migration_line_ending_checksums(source);
+        sqlx::query("UPDATE _sqlx_migrations SET checksum = ? WHERE version = ? AND checksum = ?")
+            .bind(lf_checksum)
+            .bind(version)
+            .bind(crlf_checksum)
+            .execute(&mut *transaction)
+            .await?;
+    }
+    transaction.commit().await
 }
 
 fn invalid_catalog(message: impl Into<String>) -> IoError {
@@ -311,6 +375,52 @@ async fn repair_legacy_camera_schema(pool: &SqlitePool) -> Result<(), sqlx::Erro
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn embedded_migrations_use_stable_lf_line_endings() {
+        for migration in [
+            include_bytes!("../migrations/0001_initial.sql").as_slice(),
+            include_bytes!("../migrations/0002_import_official_films.sql").as_slice(),
+            include_bytes!("../migrations/0003_normalize_builtin_film_status.sql").as_slice(),
+            include_bytes!("../migrations/0004_sync_film_catalog.sql").as_slice(),
+        ] {
+            assert!(!migration.windows(2).any(|bytes| bytes == b"\r\n"));
+        }
+    }
+
+    #[tokio::test]
+    async fn crlf_only_migration_checksums_are_repaired() {
+        let pool = memory_pool().await;
+        MIGRATOR.run(&pool).await.expect("apply LF migrations");
+        for (version, source) in MIGRATION_SOURCES {
+            let (_, crlf_checksum) = migration_line_ending_checksums(source);
+            sqlx::query("UPDATE _sqlx_migrations SET checksum = ? WHERE version = ?")
+                .bind(crlf_checksum)
+                .bind(version)
+                .execute(&pool)
+                .await
+                .expect("store CRLF checksum");
+        }
+
+        assert!(MIGRATOR.run(&pool).await.is_err());
+        repair_crlf_migration_checksums(&pool)
+            .await
+            .expect("repair CRLF checksums");
+        MIGRATOR
+            .run(&pool)
+            .await
+            .expect("accept repaired migration ledger");
+
+        for (version, source) in MIGRATION_SOURCES {
+            let stored: Vec<u8> =
+                sqlx::query_scalar("SELECT checksum FROM _sqlx_migrations WHERE version = ?")
+                    .bind(version)
+                    .fetch_one(&pool)
+                    .await
+                    .expect("read repaired checksum");
+            assert_eq!(stored, migration_line_ending_checksums(source).0);
+        }
+    }
 
     async fn memory_pool() -> SqlitePool {
         SqlitePoolOptions::new()

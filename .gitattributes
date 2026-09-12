@@ -3,6 +3,7 @@
 *.ts text eol=lf
 *.vue text eol=lf
 *.rs text eol=lf
+*.sql text eol=lf
 *.toml text eol=lf
 *.json text eol=lf
 *.md text eol=lf
