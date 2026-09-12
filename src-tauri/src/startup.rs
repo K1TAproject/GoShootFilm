@@ -6,6 +6,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 const APP_IDENTIFIER: &str = "com.tauri-app.goshootfilm";
+// 只有初始化完成前的 panic 才弹出“启动失败”，运行期 panic 仍写日志但不误导用户。
 static STARTUP_COMPLETE: AtomicBool = AtomicBool::new(false);
 
 pub fn install_panic_hook() {
@@ -47,6 +48,7 @@ pub fn record(stage: &str, detail: &str) {
 }
 
 pub fn report_error(stage: &str, error: &dyn Error) {
+    // Windows 发布版没有可见控制台，必须先保存完整错误链，再给出可定位日志的提示。
     let mut detail = format!("error[0]: {error}");
     let mut source = error.source();
     let mut depth = 1;

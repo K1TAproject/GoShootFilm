@@ -34,7 +34,7 @@ onMounted(fetchDashboard)
   <section class="home-page">
     <PageHeader
       title="Film Archive"
-      subtitle="从设备、胶卷到底片，掌握拍摄进度"
+      subtitle="掌握拍摄进度"
       :show-home="false"
     />
 
@@ -78,7 +78,7 @@ onMounted(fetchDashboard)
         <div class="progress-track" role="progressbar" :aria-valuenow="filmProgress" aria-valuemin="0" aria-valuemax="100">
           <span :style="{ width: `${filmProgress}%` }"></span>
         </div>
-        <p>按胶卷目录中已经产生过 Roll 的型号计算。</p>
+
       </section>
 
       <section class="dashboard-panel">

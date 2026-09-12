@@ -317,13 +317,27 @@ button {
 }
 
 #app .film-card.is-shot {
-  border-color: rgba(85, 214, 190, 0.23);
+  border-color: rgba(85, 214, 190, 0.42);
   background: linear-gradient(145deg, rgba(20, 30, 38, 0.98), rgba(15, 21, 29, 0.98));
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.11), 0 0 18px rgba(85, 214, 190, 0.07);
 }
 
 #app .film-card.is-unshot {
-  border-color: rgba(148, 163, 184, 0.11);
-  background: rgba(14, 18, 25, 0.94);
+  border-color: rgba(155, 135, 245, 0.34);
+  background: linear-gradient(145deg, rgba(25, 22, 38, 0.96), rgba(14, 18, 25, 0.96));
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.11), 0 0 18px rgba(155, 135, 245, 0.06);
+}
+
+#app .film-card.is-shot:hover,
+#app .film-card.is-shot:focus-visible {
+  border-color: rgba(85, 214, 190, 0.68);
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.2), 0 0 24px rgba(85, 214, 190, 0.12);
+}
+
+#app .film-card.is-unshot:hover,
+#app .film-card.is-unshot:focus-visible {
+  border-color: rgba(155, 135, 245, 0.62);
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.2), 0 0 24px rgba(155, 135, 245, 0.12);
 }
 
 #app .add-card {

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
+import { getVersion } from '@tauri-apps/api/app'
 import { invoke } from '@tauri-apps/api/core'
 import { open } from '@tauri-apps/plugin-dialog'
 import { check, type Update } from '@tauri-apps/plugin-updater'
@@ -24,9 +25,30 @@ const updateError = ref('')
 const updateStatus = ref('')
 const updateProgress = ref<number>()
 const updateNotice = ref('')
+const appVersion = ref('')
+const versionLoaded = ref(false)
+const versionLoading = ref(false)
 
 function openRollFromRelation(rollId: number) {
   void router.push({ name: 'rolls', query: { roll: String(rollId) } })
+}
+
+async function loadAppVersion() {
+  if (versionLoaded.value || versionLoading.value) return
+  versionLoading.value = true
+  try {
+    appVersion.value = await getVersion()
+  } catch {
+    appVersion.value = ''
+  } finally {
+    versionLoaded.value = true
+    versionLoading.value = false
+  }
+}
+
+function openSettings() {
+  settingsDialogOpen.value = true
+  void loadAppVersion()
 }
 
 async function refreshLibraryStatus() {
@@ -150,13 +172,13 @@ onMounted(() => {
           <RouterLink to="/films">Films</RouterLink>
           <RouterLink to="/rolls">Rolls</RouterLink>
         </nav>
-        <button class="settings-link" type="button" @click="settingsDialogOpen = true">⚙ 设置</button>
+        <button class="settings-link" type="button" @click="openSettings">⚙ 设置</button>
       </aside>
 
       <main class="main-content">
         <div v-if="libraryStatus && (!libraryStatus.available || libraryStatus.needsMigration)" class="library-banner" role="alert">
           <span>{{ libraryStatus.error || (libraryStatus.needsMigration ? '检测到 AppData 中的旧图库，请选择新图库位置完成安全迁移。' : '尚未设置图库位置；照片导入暂不可用。') }}</span>
-          <button type="button" @click="settingsDialogOpen = true">处理</button>
+          <button type="button" @click="openSettings">处理</button>
         </div>
         <RouterView v-slot="{ Component }">
           <component :is="Component" @jump-to-roll="openRollFromRelation" />
@@ -167,28 +189,35 @@ onMounted(() => {
         <section class="settings-dialog" role="dialog" aria-modal="true" aria-label="设置">
           <div class="settings-heading">
             <h2>设置</h2>
-            <button type="button" aria-label="关闭" @click="settingsDialogOpen = false">×</button>
+            <button class="settings-close" type="button" aria-label="关闭设置" title="关闭" @click="settingsDialogOpen = false">×</button>
           </div>
           <section class="settings-section">
             <h3>图库</h3>
-            <p>数据库继续保存在 AppData；正式图库与可再生预览存放在这里。</p>
+            <p>正式图库与可再生预览存放</p>
             <div class="library-path">{{ libraryStatus?.libraryPath || '尚未选择' }}</div>
             <div v-if="libraryError" class="feedback-error" role="alert">{{ libraryError }}</div>
             <div v-if="libraryInfo" class="feedback-info" role="status">{{ libraryInfo }}</div>
             <div class="settings-actions">
-              <button type="button" :disabled="libraryBusy" @click="chooseLibraryPath">
+              <button class="primary-btn settings-action-button" type="button" :disabled="libraryBusy" @click="chooseLibraryPath">
                 {{ libraryBusy ? '正在复制并校验…' : '选择图库目录' }}
               </button>
             </div>
           </section>
           <section class="settings-section">
             <h3>软件更新</h3>
-            <p>检查并安装 GoShootFilm 的最新版本。</p>
+            <p>检查并安装 GoShootFilm 的最新版本</p>
             <div v-if="updateNotice" class="feedback-info" role="status">{{ updateNotice }}</div>
             <div class="settings-actions">
-              <button type="button" :disabled="updateBusy" @click="checkForUpdates(true)">
+              <button class="secondary-btn settings-action-button" type="button" :disabled="updateBusy" @click="checkForUpdates(true)">
                 {{ updateBusy ? '正在检查…' : '检查更新' }}
               </button>
+            </div>
+          </section>
+          <section class="settings-section">
+            <h3>关于</h3>
+            <div class="about-app">
+              <strong>GoShootFilm</strong>
+              <span>{{ versionLoading ? '正在读取版本…' : appVersion ? `版本 ${appVersion}` : '版本信息不可用' }}</span>
             </div>
           </section>
         </section>
@@ -297,6 +326,62 @@ onMounted(() => {
 .settings-section h3 { margin: 0; font-size: 15px; }
 .library-path { margin: 14px 0; padding: 10px; border-radius: 6px; background: #0f131a; overflow-wrap: anywhere; }
 .settings-actions { justify-content: flex-end; margin-top: 16px; }
+
+.settings-action-button {
+  min-width: 132px;
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.settings-action-button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.settings-action-button:disabled {
+  box-shadow: none;
+}
+
+.settings-close {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 8px;
+  background: #111720;
+  color: #aeb7c6;
+  cursor: pointer;
+  font-size: 20px;
+  line-height: 1;
+  transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease, transform 0.16s ease;
+}
+
+.settings-close:hover {
+  border-color: rgba(155, 135, 245, 0.48);
+  background: #202736;
+  color: #ffffff;
+}
+
+.settings-close:active {
+  transform: translateY(1px);
+}
+
+.about-app {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 12px;
+  color: #aeb7c6;
+  font-size: 13px;
+}
+
+.about-app strong {
+  color: #f3f6fb;
+  font-size: 14px;
+}
 
 .brand-block {
   display: flex;

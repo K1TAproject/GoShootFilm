@@ -106,8 +106,8 @@ async fn repair_crlf_migration_checksums(pool: &SqlitePool) -> Result<(), sqlx::
         return Ok(());
     }
 
-    // v0.1.2 was built on a Windows runner that checked out SQL files as CRLF. Only the
-    // known line-ending-only checksums are normalized; any real migration edit still fails.
+    // v0.1.2 的 Windows 构建曾把 SQL 检出为 CRLF。这里只修正内容相同、仅换行符
+    // 不同的已知校验值；其他差异仍交给 SQLx 拒绝，避免掩盖真实的迁移改动。
     let mut transaction = pool.begin().await?;
     for (version, source) in MIGRATION_SOURCES {
         let (lf_checksum, crlf_checksum) = migration_line_ending_checksums(source);

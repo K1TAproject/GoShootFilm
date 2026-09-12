@@ -278,7 +278,7 @@ onMounted(() => {
     <div v-if="visibleError" class="feedback-error" role="alert">{{ visibleError }}</div>
     <div v-else-if="isLoading" class="feedback-info">正在读取胶片数据…</div>
     <div v-if="currentView === 'grid'" class="stack">
-      <PageHeader title="Films" subtitle="整理胶卷资料，并按拍摄状态快速筛选。" />
+      <PageHeader title="Films" subtitle="整理胶卷资料" />
 
       <div class="filter-panel film-filter-panel">
         <div class="filter-fields">

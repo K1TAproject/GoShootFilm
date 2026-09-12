@@ -150,6 +150,29 @@ type CameraRollRow = (
     i64,
 );
 
+fn camera_response(
+    (id, brand, model, status, format, purchase_date, note): CameraRow,
+) -> CameraResponse {
+    CameraResponse {
+        id,
+        brand,
+        model,
+        status,
+        format,
+        purchase_date,
+        note,
+    }
+}
+
+async fn dashboard_cameras(pool: &SqlitePool) -> Result<Vec<CameraResponse>, sqlx::Error> {
+    let rows: Vec<CameraRow> = sqlx::query_as(
+        "SELECT id, brand, model, status, format, purchase_date, note FROM cameras ORDER BY created_at ASC, id ASC",
+    )
+    .fetch_all(pool)
+    .await?;
+    Ok(rows.into_iter().map(camera_response).collect())
+}
+
 async fn validate_purchase_date(
     pool: &SqlitePool,
     purchase_date: Option<String>,
@@ -232,27 +255,17 @@ async fn get_cameras(state: tauri::State<'_, AppState>) -> Result<Vec<CameraResp
         .await
         .map_err(|e| format!("读取相机失败: {e}"))?;
 
-    Ok(rows
-        .into_iter()
-        .map(
-            |(id, brand, model, status, format, purchase_date, note)| CameraResponse {
-                id,
-                brand,
-                model,
-                status,
-                format,
-                purchase_date,
-                note,
-            },
-        )
-        .collect())
+    Ok(rows.into_iter().map(camera_response).collect())
 }
 
 #[tauri::command]
 async fn get_dashboard_stats(
     state: tauri::State<'_, AppState>,
 ) -> Result<DashboardStatsResponse, String> {
-    let cameras = get_cameras(state.clone()).await?;
+    // 首页设备概览表达登记顺序；不要复用 Cameras 页按品牌排序或任何 Rolls 使用频率排序。
+    let cameras = dashboard_cameras(&state.db)
+        .await
+        .map_err(|e| format!("读取首页相机失败: {e}"))?;
     let (film_count, shot_film_count, roll_count, photo_count, favorite_photo_count): (
         i64,
         i64,
@@ -1809,6 +1822,42 @@ mod validation_tests {
             .await
             .is_err());
         assert!(validate_purchase_date(&pool, None).await.unwrap().is_none());
+    }
+
+    #[tokio::test]
+    async fn dashboard_cameras_follow_creation_time_then_id() {
+        let pool = SqlitePool::connect("sqlite::memory:")
+            .await
+            .expect("open test database");
+        sqlx::query(
+            "CREATE TABLE cameras (id INTEGER PRIMARY KEY, brand TEXT NOT NULL, model TEXT NOT NULL, status TEXT NOT NULL, format TEXT, purchase_date TEXT, note TEXT, created_at DATETIME NOT NULL)",
+        )
+        .execute(&pool)
+        .await
+        .expect("create cameras table");
+        for (id, brand, created_at) in [
+            (30_i64, "Earlier B", "2026-01-01 08:00:00"),
+            (10_i64, "Earlier A", "2026-01-01 08:00:00"),
+            (20_i64, "Latest", "2026-02-01 08:00:00"),
+        ] {
+            sqlx::query(
+                "INSERT INTO cameras (id, brand, model, status, created_at) VALUES (?, ?, 'Test', 'active', ?)",
+            )
+            .bind(id)
+            .bind(brand)
+            .bind(created_at)
+            .execute(&pool)
+            .await
+            .expect("insert camera");
+        }
+
+        let ids: Vec<i64> = dashboard_cameras(&pool)
+            .await
+            .expect("load dashboard cameras")
+            .into_iter()
+            .map(|camera| camera.id)
+            .collect();
+        assert_eq!(ids, vec![10, 30, 20]);
     }
 
     #[test]

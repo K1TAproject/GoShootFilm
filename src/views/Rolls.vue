@@ -742,7 +742,7 @@ onUnmounted(() => {
     <div v-else-if="visibleInfo" class="feedback-info" role="status">{{ visibleInfo }}</div>
     <div v-else-if="isLoading" class="feedback-info">正在读取拍摄卷数据…</div>
     <div v-if="currentView === 'grid'" class="stack">
-      <PageHeader title="Rolls" subtitle="按胶卷、设备和拍摄时间整理全部拍摄卷" />
+      <PageHeader title="Rolls" subtitle="整理全部拍摄卷" />
 
       <div class="filter-panel">
         <select v-model="draftFilmBrand">

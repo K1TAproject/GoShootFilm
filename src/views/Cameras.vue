@@ -208,7 +208,7 @@ onMounted(() => {
     <div v-if="visibleError" class="feedback-error" role="alert">{{ visibleError }}</div>
     <div v-else-if="isLoading" class="feedback-info">正在读取相机数据…</div>
     <div v-if="currentView === 'grid'" class="stack">
-      <PageHeader title="Cameras" subtitle="管理相机设备与每台相机的拍摄记录" />
+      <PageHeader title="Cameras" subtitle="管理相机设备" />
 
       <div class="cards-grid">
         <button
