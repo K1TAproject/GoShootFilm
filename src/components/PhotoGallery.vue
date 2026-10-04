@@ -1,76 +1,136 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onUnmounted, type ObjectDirective } from 'vue'
 import type { LabPreviewState, Photo, PhotoVersion } from '../types'
 import { photoImageUrl } from '../utils/photos'
 
 const props = defineProps<{
   photos: Photo[]
   version: PhotoVersion
-  previews: Record<number, LabPreviewState>
+  previews: Record<string, LabPreviewState>
   imageErrors: Record<string, string>
   busy: boolean
 }>()
 
 const emit = defineEmits<{
-  (event: 'view', photo: Photo, source: string): void
+  (event: 'view', photo: Photo): void
   (event: 'favorite', photo: Photo): void
   (event: 'delete', photoId: number): void
   (event: 'image-error', photo: Photo, version: PhotoVersion): void
-  (event: 'retry-preview', photo: Photo): void
+  (event: 'request-preview', photo: Photo, version: PhotoVersion): void
+  (event: 'retry-preview', photo: Photo, version: PhotoVersion): void
 }>()
 
 const sortedPhotos = computed(() => props.photos
   .filter(photo => props.version === 'edit' ? photo.editScanPath : photo.labScanPath)
   .sort((a, b) => (a.frameNumber ?? 1000) - (b.frameNumber ?? 1000) || a.id - b.id))
 
+function previewKey(photo: Photo, version = props.version) {
+  return `${version}:${photo.id}`
+}
+
+function previewFor(photo: Photo) {
+  return props.previews[previewKey(photo)]
+}
+
 function sourceFor(photo: Photo) {
-  return props.version === 'edit'
-    ? photo.editScanPath
-    : props.previews[photo.id]?.previewPath
+  return previewFor(photo)?.previewPath
 }
 
 function errorFor(photo: Photo) {
-  return props.version === 'lab'
-    ? props.previews[photo.id]?.error || props.imageErrors[`lab:${photo.id}`]
-    : props.imageErrors[`edit:${photo.id}`]
+  return previewFor(photo)?.error || props.imageErrors[previewKey(photo)]
 }
+
+interface PreviewRequest {
+  photo: Photo
+  version: PhotoVersion
+}
+
+const observedRequests = new WeakMap<Element, PreviewRequest>()
+const previewObserver = typeof IntersectionObserver === 'undefined'
+  ? null
+  : new IntersectionObserver(entries => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue
+        const request = observedRequests.get(entry.target)
+        if (!request) continue
+        requestPreview(request)
+        previewObserver?.unobserve(entry.target)
+      }
+    }, { rootMargin: '120px 0px' })
+
+function requestPreview(request: PreviewRequest) {
+  const key = previewKey(request.photo, request.version)
+  const state = props.previews[key]
+  if (state?.loading || state?.previewPath || state?.error) return
+  emit('request-preview', request.photo, request.version)
+}
+
+const vRequestPreview: ObjectDirective<HTMLElement, PreviewRequest> = {
+  mounted(element, binding) {
+    observedRequests.set(element, binding.value)
+    if (previewObserver) previewObserver.observe(element)
+    else requestPreview(binding.value)
+  },
+  updated(element, binding) {
+    observedRequests.set(element, binding.value)
+    const previous = binding.oldValue
+    const key = previewKey(binding.value.photo, binding.value.version)
+    if (previous && previewKey(previous.photo, previous.version) === key && props.previews[key]) return
+    if (previewObserver) previewObserver.observe(element)
+    else requestPreview(binding.value)
+  },
+  unmounted(element) {
+    previewObserver?.unobserve(element)
+    observedRequests.delete(element)
+  },
+}
+
+onUnmounted(() => previewObserver?.disconnect())
 
 </script>
 
 <template>
   <div v-if="sortedPhotos.length === 0" class="empty-state">当前版本还没有可显示的影像。</div>
   <div v-else class="photo-grid">
-    <article v-for="photo in sortedPhotos" :key="photo.id" class="photo-card">
+    <article
+      v-for="photo in sortedPhotos"
+      :key="photo.id"
+      v-request-preview="{ photo, version }"
+      class="photo-card"
+    >
       <div class="photo-frame">
         <button
           v-if="sourceFor(photo) && !errorFor(photo)"
           type="button"
           class="image-button"
           :aria-label="`打开 Frame ${photo.frameNumber || '?'} ${version === 'lab' ? '原始扫描预览' : '调色图'}大图`"
-          @click="emit('view', photo, sourceFor(photo)!)"
+          @click="emit('view', photo)"
         >
           <img
             :src="photoImageUrl(sourceFor(photo))"
             :alt="`Frame ${photo.frameNumber || '?'} ${version === 'lab' ? '原始扫描预览' : '调色图'}`"
+            loading="lazy"
+            decoding="async"
+            fetchpriority="low"
             @error="emit('image-error', photo, version)"
           />
         </button>
 
-        <div v-else-if="version === 'lab' && previews[photo.id]?.loading" class="photo-state">
+        <div v-else-if="previewFor(photo)?.loading" class="photo-state">
           <span class="spinner"></span>
-          <strong>正在生成原始扫描预览</strong>
-          <small>原件不会被修改</small>
+          <strong>正在准备影像缩略图</strong>
+          <small>正式图库图片不会被修改</small>
         </div>
 
         <div v-else-if="errorFor(photo)" class="photo-state error-state">
           <strong>图片无法读取</strong>
           <small>{{ errorFor(photo) }}</small>
-          <button v-if="version === 'lab'" type="button" @click="emit('retry-preview', photo)">重试预览</button>
+          <button type="button" @click="emit('retry-preview', photo, version)">重试预览</button>
         </div>
 
-        <div v-else class="photo-state error-state">
-          <strong>图片无法读取</strong>
-          <small>{{ version === 'lab' ? '原始扫描预览尚未生成' : '调色图路径无效' }}</small>
+        <div v-else class="photo-state">
+          <strong>等待加载缩略图</strong>
+          <small>滚动到此处时加载缩略图</small>
         </div>
 
         <button
@@ -115,6 +175,8 @@ function errorFor(photo: Photo) {
   border: 1px solid #29313d;
   border-radius: 9px;
   background: #10151c;
+  content-visibility: auto;
+  contain-intrinsic-size: 260px;
 }
 
 .photo-frame {

@@ -24,6 +24,9 @@ use validation::{
     validate_date, validate_film_target_status, validate_shot_month,
 };
 
+const PREVIEW_MAX_CONCURRENCY: usize = 1;
+const PHOTO_THUMBNAIL_MAX_EDGE: u32 = 640;
+
 // 定义一个结构体用来在全局保存数据库连接池
 pub struct AppState {
     pub db: SqlitePool,
@@ -31,6 +34,7 @@ pub struct AppState {
     pub library: RwLock<library::LibraryRuntime>,
     pub gallery_operation_lock: tokio::sync::RwLock<()>,
     pub preview_locks: tokio::sync::Mutex<HashMap<String, Arc<tokio::sync::Mutex<()>>>>,
+    pub preview_generation_limit: tokio::sync::Semaphore,
 }
 
 fn library_directories(state: &AppState) -> Result<(PathBuf, PathBuf), String> {
@@ -659,12 +663,17 @@ async fn cleanup_preview_records(
     let mut roll_ids = HashSet::new();
     for (photo_id, roll_id) in preview_records {
         roll_ids.insert(*roll_id);
-        let preview_path = preview_file_path(preview_dir, *roll_id, *photo_id);
-        if let Err(error) = tokio::fs::remove_file(preview_path).await {
-            if error.kind() != std::io::ErrorKind::NotFound {
-                return Err(format!(
-                    "{deleted_entity}已删除，但关联预览资源清理失败: {error}"
-                ));
+        for preview_path in [
+            preview_file_path(preview_dir, *roll_id, *photo_id),
+            photo_thumbnail_path(preview_dir, *roll_id, *photo_id, "lab"),
+            photo_thumbnail_path(preview_dir, *roll_id, *photo_id, "edit"),
+        ] {
+            if let Err(error) = tokio::fs::remove_file(preview_path).await {
+                if error.kind() != std::io::ErrorKind::NotFound {
+                    return Err(format!(
+                        "{deleted_entity}已删除，但关联预览资源清理失败: {error}"
+                    ));
+                }
             }
         }
     }
@@ -990,6 +999,14 @@ fn preview_file_path(preview_dir: &Path, roll_id: i64, photo_id: i64) -> PathBuf
         .join(format!("{photo_id}.png"))
 }
 
+fn photo_thumbnail_path(preview_dir: &Path, roll_id: i64, photo_id: i64, version: &str) -> PathBuf {
+    preview_dir
+        .join("rolls")
+        .join(roll_id.to_string())
+        .join("thumbs")
+        .join(format!("{version}-{photo_id}.png"))
+}
+
 fn roll_cover_preview_path(preview_dir: &Path, roll_id: i64) -> PathBuf {
     preview_dir
         .join("rolls")
@@ -1008,6 +1025,16 @@ fn build_lab_preview(source: &Path, target: &Path) -> Result<(), String> {
     preview
         .save_with_format(target, image::ImageFormat::Png)
         .map_err(|error| format!("生成原始扫描预览失败: {error}"))
+}
+
+fn build_photo_thumbnail(source: &Path, target: &Path) -> Result<(), String> {
+    let image = image::open(source)
+        .map_err(|error| format!("图片无法读取（{}）: {error}", source.display()))?;
+    image
+        .thumbnail(PHOTO_THUMBNAIL_MAX_EDGE, PHOTO_THUMBNAIL_MAX_EDGE)
+        .to_rgb8()
+        .save_with_format(target, image::ImageFormat::Png)
+        .map_err(|error| format!("生成网格缩略图失败: {error}"))
 }
 
 fn build_roll_cover_preview(source: &Path, target: &Path) -> Result<(), String> {
@@ -1327,10 +1354,15 @@ async fn delete_photo(state: tauri::State<'_, AppState>, photo_id: i64) -> Resul
         .map_err(|e| e.to_string())?;
     ensure_changed(result.rows_affected(), "照片")?;
 
-    let preview_path = preview_file_path(&preview_dir, roll_id, photo_id);
-    if let Err(error) = tokio::fs::remove_file(&preview_path).await {
-        if error.kind() != std::io::ErrorKind::NotFound {
-            return Err(format!("照片记录已移除，但预览资源清理失败: {error}"));
+    for preview_path in [
+        preview_file_path(&preview_dir, roll_id, photo_id),
+        photo_thumbnail_path(&preview_dir, roll_id, photo_id, "lab"),
+        photo_thumbnail_path(&preview_dir, roll_id, photo_id, "edit"),
+    ] {
+        if let Err(error) = tokio::fs::remove_file(preview_path).await {
+            if error.kind() != std::io::ErrorKind::NotFound {
+                return Err(format!("照片记录已移除，但预览资源清理失败: {error}"));
+            }
         }
     }
     let _ = tokio::fs::remove_file(roll_cover_preview_path(&preview_dir, roll_id)).await;
@@ -1568,9 +1600,7 @@ async fn import_photo_versions_inner(
                 .bind(photo_id)
                 .execute(&mut *transaction)
                 .await;
-            if version == "lab" {
-                preview_invalidations.push((*photo_id, roll_id));
-            }
+            preview_invalidations.push((*photo_id, roll_id));
             updated_count += 1;
             result.map(|_| ())
         } else {
@@ -1586,9 +1616,7 @@ async fn import_photo_versions_inner(
                 .execute(&mut *transaction)
                 .await;
             if let Ok(result) = &result {
-                if version == "lab" {
-                    preview_invalidations.push((result.last_insert_rowid(), roll_id));
-                }
+                preview_invalidations.push((result.last_insert_rowid(), roll_id));
             }
             imported_count += 1;
             result.map(|_| ())
@@ -1605,8 +1633,17 @@ async fn import_photo_versions_inner(
     }
     // 正式图库和数据库已提交后，只失效可再生预览；预览可在下次查看时重新生成。
     for (photo_id, roll_id) in preview_invalidations {
-        let preview_path = preview_file_path(&preview_dir, roll_id, photo_id);
-        let _ = tokio::fs::remove_file(preview_path).await;
+        let _ = tokio::fs::remove_file(photo_thumbnail_path(
+            &preview_dir,
+            roll_id,
+            photo_id,
+            &version,
+        ))
+        .await;
+        if version == "lab" {
+            let _ =
+                tokio::fs::remove_file(preview_file_path(&preview_dir, roll_id, photo_id)).await;
+        }
     }
     if version == "edit" {
         let _ = tokio::fs::remove_file(roll_cover_preview_path(&preview_dir, roll_id)).await;
@@ -1618,21 +1655,38 @@ async fn import_photo_versions_inner(
     })
 }
 
-async fn lab_original_for_photo(state: &AppState, photo_id: i64) -> Result<(i64, PathBuf), String> {
+async fn photo_original_for_version(
+    state: &AppState,
+    photo_id: i64,
+    version: &str,
+) -> Result<(i64, PathBuf), String> {
     ensure_positive_id(photo_id, "照片编号")?;
-    let row: Option<(i64, Option<String>)> =
-        sqlx::query_as("SELECT roll_id, lab_scan_path FROM photos WHERE id = ?")
-            .bind(photo_id)
-            .fetch_optional(&state.db)
-            .await
-            .map_err(|error| format!("读取原始扫描记录失败: {error}"))?;
+    validate_photo_version(version)?;
+    let query = if version == "lab" {
+        "SELECT roll_id, lab_scan_path FROM photos WHERE id = ?"
+    } else {
+        "SELECT roll_id, edit_scan_path FROM photos WHERE id = ?"
+    };
+    let version_label = if version == "lab" {
+        "原始扫描图"
+    } else {
+        "调色图"
+    };
+    let row: Option<(i64, Option<String>)> = sqlx::query_as(query)
+        .bind(photo_id)
+        .fetch_optional(&state.db)
+        .await
+        .map_err(|error| format!("读取{version_label}记录失败: {error}"))?;
     let (roll_id, stored_path) = row.ok_or_else(|| "照片记录不存在".to_string())?;
-    let stored_path = stored_path.ok_or_else(|| "该 Frame 没有原始扫描图".to_string())?;
+    let stored_path = stored_path.ok_or_else(|| format!("该 Frame 没有{version_label}"))?;
     let (media_dir, _) = library_directories(state)?;
     let original_path = resolve_stored_path_buf(&media_dir, &stored_path)
-        .ok_or_else(|| "原始扫描路径无效".to_string())?;
+        .ok_or_else(|| format!("{version_label}路径无效"))?;
     if !original_path.is_file() {
-        return Err(format!("原始扫描文件不存在: {}", original_path.display()));
+        return Err(format!(
+            "{version_label}文件不存在: {}",
+            original_path.display()
+        ));
     }
     Ok((roll_id, original_path))
 }
@@ -1650,17 +1704,64 @@ async fn get_lab_preview_inner(
     photo_id: i64,
 ) -> Result<LabPreviewResponse, String> {
     let _gallery_guard = state.gallery_operation_lock.read().await;
-    let (roll_id, original_path) = lab_original_for_photo(state, photo_id).await?;
+    let (roll_id, original_path) = photo_original_for_version(state, photo_id, "lab").await?;
     let (_, preview_dir) = library_directories(state)?;
     let preview_path = preview_file_path(&preview_dir, roll_id, photo_id);
     let task_lock = preview_task_lock(state, format!("lab:{photo_id}")).await;
     let _task_guard = task_lock.lock().await;
     if !preview_is_fresh(&original_path, &preview_path).await {
+        // 高分辨率 TIFF 解码会明显占用 CPU 和内存；跨照片统一限流，避免同时吃满机器。
+        let _generation_permit = state
+            .preview_generation_limit
+            .acquire()
+            .await
+            .map_err(|_| "预览任务队列不可用".to_string())?;
         build_preview_file(
             original_path,
             preview_path.clone(),
             build_lab_preview,
             "原始扫描预览",
+        )
+        .await?;
+    }
+
+    Ok(LabPreviewResponse {
+        photo_id,
+        preview_path: preview_path.to_string_lossy().into_owned(),
+    })
+}
+
+#[tauri::command]
+async fn get_photo_thumbnail(
+    state: tauri::State<'_, AppState>,
+    photo_id: i64,
+    version: String,
+) -> Result<LabPreviewResponse, String> {
+    get_photo_thumbnail_inner(&state, photo_id, &version).await
+}
+
+async fn get_photo_thumbnail_inner(
+    state: &AppState,
+    photo_id: i64,
+    version: &str,
+) -> Result<LabPreviewResponse, String> {
+    let _gallery_guard = state.gallery_operation_lock.read().await;
+    let (roll_id, original_path) = photo_original_for_version(state, photo_id, version).await?;
+    let (_, preview_dir) = library_directories(state)?;
+    let preview_path = photo_thumbnail_path(&preview_dir, roll_id, photo_id, version);
+    let task_lock = preview_task_lock(state, format!("thumb:{version}:{photo_id}")).await;
+    let _task_guard = task_lock.lock().await;
+    if !preview_is_fresh(&original_path, &preview_path).await {
+        let _generation_permit = state
+            .preview_generation_limit
+            .acquire()
+            .await
+            .map_err(|_| "缩略图任务队列不可用".to_string())?;
+        build_preview_file(
+            original_path,
+            preview_path.clone(),
+            build_photo_thumbnail,
+            "网格缩略图",
         )
         .await?;
     }
@@ -1697,6 +1798,11 @@ async fn get_roll_cover_preview(
     let task_lock = preview_task_lock(&state, format!("cover:{roll_id}")).await;
     let _task_guard = task_lock.lock().await;
     if !preview_is_fresh(&original_path, &preview_path).await {
+        let _generation_permit = state
+            .preview_generation_limit
+            .acquire()
+            .await
+            .map_err(|_| "封面任务队列不可用".to_string())?;
         build_preview_file(
             original_path,
             preview_path.clone(),
@@ -1734,6 +1840,7 @@ pub fn run() {
                 library: RwLock::new(library),
                 gallery_operation_lock: tokio::sync::RwLock::new(()),
                 preview_locks: tokio::sync::Mutex::new(HashMap::new()),
+                preview_generation_limit: tokio::sync::Semaphore::new(PREVIEW_MAX_CONCURRENCY),
             });
             startup::record("setup", "application state ready");
             startup::mark_startup_complete();
@@ -1761,6 +1868,7 @@ pub fn run() {
             import_photo_versions,
             get_roll_media_directory,
             get_lab_preview,
+            get_photo_thumbnail,
             get_roll_cover_preview,
             get_library_status,
             set_library_path
@@ -1913,6 +2021,31 @@ mod validation_tests {
         std::fs::remove_dir_all(&test_dir).expect("clean preview test directory");
     }
 
+    #[test]
+    fn photo_thumbnail_is_small_and_separate_from_the_original() {
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("time after epoch")
+            .as_nanos();
+        let test_dir = std::env::temp_dir().join(format!(
+            "goshootfilm-thumbnail-test-{}-{unique}",
+            std::process::id()
+        ));
+        std::fs::create_dir_all(&test_dir).expect("create thumbnail test directory");
+        let original = test_dir.join("edit.png");
+        let thumbnail = test_dir.join("thumbnail.png");
+        image::RgbImage::from_pixel(1600, 800, image::Rgb([20, 40, 60]))
+            .save_with_format(&original, image::ImageFormat::Png)
+            .expect("create photo fixture");
+
+        build_photo_thumbnail(&original, &thumbnail).expect("build photo thumbnail");
+
+        assert_eq!(image::image_dimensions(&original).unwrap(), (1600, 800));
+        assert_eq!(image::image_dimensions(&thumbnail).unwrap(), (640, 320));
+        assert_ne!(original, thumbnail);
+        std::fs::remove_dir_all(&test_dir).expect("clean thumbnail test directory");
+    }
+
     #[tokio::test]
     async fn concurrent_requests_share_one_complete_tiff_preview() {
         let unique = SystemTime::now()
@@ -1954,6 +2087,7 @@ mod validation_tests {
             }),
             gallery_operation_lock: tokio::sync::RwLock::new(()),
             preview_locks: tokio::sync::Mutex::new(HashMap::new()),
+            preview_generation_limit: tokio::sync::Semaphore::new(PREVIEW_MAX_CONCURRENCY),
         };
 
         let (first, second) = tokio::join!(
@@ -2029,6 +2163,7 @@ mod validation_tests {
             }),
             gallery_operation_lock: tokio::sync::RwLock::new(()),
             preview_locks: tokio::sync::Mutex::new(HashMap::new()),
+            preview_generation_limit: tokio::sync::Semaphore::new(PREVIEW_MAX_CONCURRENCY),
         };
 
         let lab_result = import_photo_versions_inner(
@@ -2078,6 +2213,20 @@ mod validation_tests {
             .join("rolls/1/lab/260203000031430008.tif")
             .is_file());
         assert!(media_dir.join("rolls/1/edit/edit_08.png").is_file());
+        let photo_id: i64 =
+            sqlx::query_scalar("SELECT id FROM photos WHERE roll_id = 1 AND frame_number = 8")
+                .fetch_one(&pool)
+                .await
+                .expect("read paired photo id");
+        let lab_thumbnail = get_photo_thumbnail_inner(&state, photo_id, "lab")
+            .await
+            .expect("build lab thumbnail");
+        let edit_thumbnail = get_photo_thumbnail_inner(&state, photo_id, "edit")
+            .await
+            .expect("build edit thumbnail");
+        assert_ne!(lab_thumbnail.preview_path, edit_thumbnail.preview_path);
+        assert!(Path::new(&lab_thumbnail.preview_path).is_file());
+        assert!(Path::new(&edit_thumbnail.preview_path).is_file());
 
         let duplicate_source_dir = test_dir.join("duplicate-source");
         std::fs::create_dir_all(&duplicate_source_dir).expect("create duplicate source directory");

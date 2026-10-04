@@ -46,6 +46,7 @@ const visibleError = ref('')
 const visibleInfo = ref('')
 const activePhotoVersion = ref<PhotoVersion>('edit')
 const labPreviews = ref<Record<number, LabPreviewState>>({})
+const thumbnailPreviews = ref<Record<string, LabPreviewState>>({})
 const imageErrors = ref<Record<string, string>>({})
 let unlistenDragDrop: (() => void) | null = null
 
@@ -105,11 +106,28 @@ const sortedCameras = computed(() => [...cameras.value].sort((a, b) =>
   || a.id - b.id
 ))
 
-function openLightbox(photo: Photo, src: string) {
+function thumbnailKey(photo: Photo, version: PhotoVersion) {
+  return `${version}:${photo.id}`
+}
+
+function openLightbox(photo: Photo) {
+  const version = activePhotoVersion.value
   lightboxPhoto.value = photo
-  lightboxVersion.value = activePhotoVersion.value
-  lightboxImageSrc.value = photoImageUrl(src)
+  lightboxVersion.value = version
+  const source = version === 'edit'
+    ? photo.editScanPath
+    : labPreviews.value[photo.id]?.previewPath || thumbnailPreviews.value[thumbnailKey(photo, version)]?.previewPath
+  lightboxImageSrc.value = photoImageUrl(source)
   isLightboxOpen.value = true
+  if (version === 'lab') {
+    void loadLabPreview(photo).then(previewPath => {
+      if (previewPath && isLightboxOpen.value && lightboxPhoto.value?.id === photo.id && lightboxVersion.value === 'lab') {
+        lightboxImageSrc.value = photoImageUrl(previewPath)
+      } else if (!previewPath && labPreviews.value[photo.id]?.error) {
+        visibleError.value = labPreviews.value[photo.id].error || '原始扫描图片无法读取'
+      }
+    })
+  }
 }
 
 function closeLightbox() {
@@ -130,36 +148,45 @@ function chooseDefaultPhotoVersion(photos: Photo[]) {
       : 'edit'
 }
 
-async function loadLabPreview(photo: Photo) {
-  if (!photo.labScanPath || labPreviews.value[photo.id]?.loading || labPreviews.value[photo.id]?.previewPath) return
-  labPreviews.value = {
-    ...labPreviews.value,
-    [photo.id]: { loading: true },
-  }
+async function loadLabPreview(photo: Photo): Promise<string | undefined> {
+  if (!photo.labScanPath) return
+  const existing = labPreviews.value[photo.id]
+  if (existing?.previewPath) return existing.previewPath
+  if (existing?.loading) return
+  labPreviews.value[photo.id] = { loading: true }
   try {
     const preview = await invoke<LabPreview>('get_lab_preview', { photoId: photo.id })
-    labPreviews.value = {
-      ...labPreviews.value,
-      [photo.id]: { loading: false, previewPath: preview.previewPath },
-    }
+    labPreviews.value[photo.id] = { loading: false, previewPath: preview.previewPath }
+    return preview.previewPath
   } catch (error) {
-    labPreviews.value = {
-      ...labPreviews.value,
-      [photo.id]: { loading: false, error: formatError(error, '原始扫描图片无法读取') },
-    }
+    labPreviews.value[photo.id] = { loading: false, error: formatError(error, '原始扫描图片无法读取') }
   }
 }
 
-function loadCurrentLabPreviews() {
-  if (activePhotoVersion.value !== 'lab' || !selectedRoll.value) return
-  for (const photo of selectedRoll.value.photos) {
-    if (photo.labScanPath) void loadLabPreview(photo)
+async function loadPhotoThumbnail(photo: Photo, version: PhotoVersion) {
+  const source = version === 'lab' ? photo.labScanPath : photo.editScanPath
+  if (!source) return
+  const key = thumbnailKey(photo, version)
+  const existing = thumbnailPreviews.value[key]
+  if (existing?.loading || existing?.previewPath) return
+  thumbnailPreviews.value[key] = { loading: true }
+  try {
+    const preview = await invoke<LabPreview>('get_photo_thumbnail', { photoId: photo.id, version })
+    thumbnailPreviews.value[key] = { loading: false, previewPath: preview.previewPath }
+  } catch (error) {
+    thumbnailPreviews.value[key] = { loading: false, error: formatError(error, '影像缩略图无法生成') }
   }
+}
+
+function retryPhotoThumbnail(photo: Photo, version: PhotoVersion) {
+  const key = thumbnailKey(photo, version)
+  delete thumbnailPreviews.value[key]
+  delete imageErrors.value[key]
+  void loadPhotoThumbnail(photo, version)
 }
 
 function switchPhotoVersion(version: PhotoVersion) {
   activePhotoVersion.value = version
-  if (version === 'lab') loadCurrentLabPreviews()
 }
 
 function handleVersionImageError(photo: Photo, version: PhotoVersion) {
@@ -340,9 +367,9 @@ async function openRollDetail(rollId: number, syncRoute = true) {
     const roll = await invoke<RollDetail>('get_roll_detail', { id: rollId })
     selectedRoll.value = { ...roll, photos: roll.photos || [] }
     labPreviews.value = {}
+    thumbnailPreviews.value = {}
     imageErrors.value = {}
     chooseDefaultPhotoVersion(selectedRoll.value.photos)
-    loadCurrentLabPreviews()
     resetEditForm(selectedRoll.value)
     isEditing.value = false
     currentView.value = 'detail'
@@ -364,6 +391,10 @@ function viewDetail(roll: RollSummary) {
 function backToGrid(syncRoute = true) {
   currentView.value = 'grid'
   selectedRoll.value = null
+  labPreviews.value = {}
+  thumbnailPreviews.value = {}
+  imageErrors.value = {}
+  closeLightbox()
   isEditing.value = false
   isDraggingFiles.value = false
   if (syncRoute && route.query.roll) {
@@ -592,6 +623,7 @@ async function confirmPhotoImport() {
     importDialogOpen.value = false
     importItems.value = []
     labPreviews.value = {}
+    thumbnailPreviews.value = {}
     imageErrors.value = {}
     await fetchRolls()
     await openRollDetail(rollId)
@@ -683,6 +715,10 @@ async function deletePhoto(photoId: number) {
     const remainingPreviews = { ...labPreviews.value }
     delete remainingPreviews[photoId]
     labPreviews.value = remainingPreviews
+    for (const version of ['lab', 'edit'] as const) {
+      delete thumbnailPreviews.value[`${version}:${photoId}`]
+      delete imageErrors.value[`${version}:${photoId}`]
+    }
     visibleInfo.value = '照片记录已删除；正式图库文件已保留。'
   } catch (err) {
     console.error('Failed to delete photo:', err)
@@ -929,23 +965,22 @@ onUnmounted(() => {
             <button class="secondary-btn" :disabled="isBusy || !libraryAvailable" @click="selectAndImportPhotos('lab')">导入原始扫描</button>
           </div>
         </div>
-        <div class="feedback-info path-notice">
-          原始扫描与调色图存放在正式图库；原始扫描预览存放在独立、可再生的预览图库。界面中的 TIFF 预览不是原件。
-        </div>
+
         <div
           :class="['drop-zone', isDraggingFiles ? 'drag-active' : '']"
         >
           <PhotoGallery
             :photos="selectedRoll.photos"
             :version="activePhotoVersion"
-            :previews="labPreviews"
+            :previews="thumbnailPreviews"
             :image-errors="imageErrors"
             :busy="isBusy"
             @view="openLightbox"
             @favorite="toggleFavorite"
             @delete="deletePhoto"
             @image-error="handleVersionImageError"
-            @retry-preview="loadLabPreview"
+            @request-preview="loadPhotoThumbnail"
+            @retry-preview="retryPhotoThumbnail"
           />
         </div>
       </section>
