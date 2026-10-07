@@ -3,12 +3,14 @@ import Home from './views/Home.vue'
 import Cameras from './views/Cameras.vue'
 import Films from './views/Films.vue'
 import Rolls from './views/Rolls.vue'
+import Albums from './views/Albums.vue'
 
 const routes = [
     { path: '/', name: 'home', component: Home },
     { path: '/cameras', name: 'cameras', component: Cameras },
     { path: '/films', name: 'films', component: Films },
     { path: '/rolls', name: 'rolls', component: Rolls },
+    { path: '/albums', name: 'albums', component: Albums },
     { path: '/:pathMatch(.*)*', redirect: '/' }
 ]
 

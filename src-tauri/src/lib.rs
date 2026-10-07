@@ -1,4 +1,6 @@
 mod db;
+mod digital;
+mod equipment;
 mod library;
 mod models;
 mod startup;
@@ -25,7 +27,7 @@ use validation::{
 };
 
 const PREVIEW_MAX_CONCURRENCY: usize = 1;
-const PHOTO_THUMBNAIL_MAX_EDGE: u32 = 640;
+pub(crate) const PHOTO_THUMBNAIL_MAX_EDGE: u32 = 640;
 
 // 定义一个结构体用来在全局保存数据库连接池
 pub struct AppState {
@@ -37,7 +39,7 @@ pub struct AppState {
     pub preview_generation_limit: tokio::sync::Semaphore,
 }
 
-fn library_directories(state: &AppState) -> Result<(PathBuf, PathBuf), String> {
+pub(crate) fn library_directories(state: &AppState) -> Result<(PathBuf, PathBuf), String> {
     state
         .library
         .read()
@@ -45,7 +47,10 @@ fn library_directories(state: &AppState) -> Result<(PathBuf, PathBuf), String> {
         .directories()
 }
 
-async fn preview_task_lock(state: &AppState, key: String) -> Arc<tokio::sync::Mutex<()>> {
+pub(crate) async fn preview_task_lock(
+    state: &AppState,
+    key: String,
+) -> Arc<tokio::sync::Mutex<()>> {
     let mut locks = state.preview_locks.lock().await;
     locks
         .entry(key)
@@ -177,7 +182,7 @@ async fn dashboard_cameras(pool: &SqlitePool) -> Result<Vec<CameraResponse>, sql
     Ok(rows.into_iter().map(camera_response).collect())
 }
 
-async fn validate_purchase_date(
+pub(crate) async fn validate_purchase_date(
     pool: &SqlitePool,
     purchase_date: Option<String>,
 ) -> Result<Option<String>, String> {
@@ -270,34 +275,45 @@ async fn get_dashboard_stats(
     let cameras = dashboard_cameras(&state.db)
         .await
         .map_err(|e| format!("读取首页相机失败: {e}"))?;
-    let (film_count, shot_film_count, roll_count, photo_count, favorite_photo_count): (
-        i64,
-        i64,
-        i64,
-        i64,
-        i64,
-    ) = sqlx::query_as(
+    let (
+        film_count,
+        shot_film_count,
+        roll_count,
+        photo_count,
+        favorite_photo_count,
+        equipment_item_count,
+        digital_album_count,
+        digital_photo_count,
+    ): (i64, i64, i64, i64, i64, i64, i64, i64) = sqlx::query_as(
         r#"
         SELECT
             (SELECT COUNT(*) FROM film_stocks),
             (SELECT COUNT(DISTINCT film_stock_id) FROM rolls),
             (SELECT COUNT(*) FROM rolls),
             (SELECT COUNT(*) FROM photos),
-            (SELECT COUNT(*) FROM photos WHERE is_favorite = 1)
+            (SELECT COUNT(*) FROM photos WHERE is_favorite = 1),
+            (SELECT COUNT(*) FROM equipment_items),
+            (SELECT COUNT(*) FROM digital_albums),
+            (SELECT COUNT(*) FROM digital_photos)
         "#,
     )
     .fetch_one(&state.db)
     .await
     .map_err(|e| format!("读取首页统计失败: {e}"))?;
+    let camera_count = cameras.len() as i64;
 
     Ok(DashboardStatsResponse {
-        camera_count: cameras.len() as i64,
+        camera_count,
         cameras,
         film_count,
         shot_film_count,
         roll_count,
         photo_count,
         favorite_photo_count,
+        equipment_count: camera_count + equipment_item_count,
+        digital_album_count,
+        digital_photo_count,
+        archived_photo_count: photo_count + digital_photo_count,
     })
 }
 
@@ -1047,7 +1063,7 @@ fn build_roll_cover_preview(source: &Path, target: &Path) -> Result<(), String> 
         .map_err(|error| format!("生成拍摄卷封面缩略图失败: {error}"))
 }
 
-async fn preview_is_fresh(source: &Path, preview: &Path) -> bool {
+pub(crate) async fn preview_is_fresh(source: &Path, preview: &Path) -> bool {
     match (
         tokio::fs::metadata(source).await,
         tokio::fs::metadata(preview).await,
@@ -1848,6 +1864,21 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             get_dashboard_stats,
+            equipment::get_equipment_items,
+            equipment::add_equipment_item,
+            equipment::update_equipment_item,
+            equipment::delete_equipment_item,
+            digital::get_digital_albums,
+            digital::add_digital_album,
+            digital::update_digital_album,
+            digital::get_digital_album_detail,
+            digital::delete_digital_album,
+            digital::analyze_digital_import,
+            digital::import_digital_photos,
+            digital::get_digital_media_directory,
+            digital::get_digital_photo_preview,
+            digital::toggle_digital_photo_favorite,
+            digital::delete_digital_photo,
             get_cameras,
             get_films,
             get_rolls,

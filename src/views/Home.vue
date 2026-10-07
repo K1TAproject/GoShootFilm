@@ -33,8 +33,8 @@ onMounted(fetchDashboard)
 <template>
   <section class="home-page">
     <PageHeader
-      title="Film Archive"
-      subtitle="掌握拍摄进度"
+      title="Photo Archive"
+      subtitle="管理器材、胶卷与数码影像"
       :show-home="false"
     />
 
@@ -43,9 +43,9 @@ onMounted(fetchDashboard)
 
     <div class="feature-grid">
       <RouterLink class="feature-card cameras-feature" to="/cameras">
-        <span>设备档案</span>
-        <strong>Cameras</strong>
-        <small>查看与管理全部相机 →</small>
+        <span>器材档案</span>
+        <strong>Equipment</strong>
+        <small>管理机身、镜头与其他器材 →</small>
       </RouterLink>
       <RouterLink class="feature-card films-feature" to="/films">
         <span>胶卷资料</span>
@@ -57,14 +57,19 @@ onMounted(fetchDashboard)
         <strong>Rolls</strong>
         <small>浏览胶卷与照片 →</small>
       </RouterLink>
+      <RouterLink class="feature-card albums-feature" to="/albums">
+        <span>数码影像</span>
+        <strong>Albums</strong>
+        <small>整理 CR2 原件与 PNG 调色图 →</small>
+      </RouterLink>
     </div>
 
     <template v-if="stats">
       <div class="stats-grid">
-        <StatCard label="相机" :value="stats.cameraCount" hint="已登记设备" />
+        <StatCard label="器材总数" :value="stats.equipmentCount" hint="机身、镜头与其他器材" />
         <StatCard label="已拍摄卷数" :value="stats.rollCount" hint="全部 Rolls" />
-        <StatCard label="已归档照片" :value="stats.photoCount" hint="应用图库中的照片" />
-        <StatCard label="收藏照片" :value="stats.favoritePhotoCount" hint="标记为收藏" />
+        <StatCard label="数码相册" :value="stats.digitalAlbumCount" hint="用户创建的相册" />
+        <StatCard label="已归档照片" :value="stats.archivedPhotoCount" hint="胶片与数码照片记录" />
       </div>
 
       <section class="dashboard-panel progress-panel">
@@ -84,10 +89,10 @@ onMounted(fetchDashboard)
       <section class="dashboard-panel">
         <div class="panel-heading">
           <div>
-            <span>全部相机</span>
-            <strong>设备概览</strong>
+            <span>全部相机机身</span>
+            <strong>机身概览</strong>
           </div>
-          <RouterLink to="/cameras">管理设备</RouterLink>
+          <RouterLink to="/cameras">管理器材</RouterLink>
         </div>
         <div v-if="stats.cameras.length" class="camera-list">
           <RouterLink v-for="camera in stats.cameras" :key="camera.id" to="/cameras" class="camera-list-item">
@@ -98,7 +103,7 @@ onMounted(fetchDashboard)
             <small>{{ camera.status === 'active' ? '在用' : '闲置' }}</small>
           </RouterLink>
         </div>
-        <div v-else class="empty-state">还没有相机，前往 Cameras 添加第一台设备。</div>
+        <div v-else class="empty-state">还没有相机机身，前往 Equipment 添加第一台设备。</div>
       </section>
     </template>
   </section>
@@ -118,7 +123,7 @@ onMounted(fetchDashboard)
 }
 
 .feature-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .stats-grid {
@@ -159,6 +164,7 @@ onMounted(fetchDashboard)
 .cameras-feature { background: linear-gradient(145deg, #293346, #171c25); }
 .films-feature { background: linear-gradient(145deg, #3b3125, #1b1917); }
 .rolls-feature { background: linear-gradient(145deg, #2b3840, #171d21); }
+.albums-feature { background: linear-gradient(145deg, #292842, #171721); }
 
 .feature-card span,
 .feature-card small {

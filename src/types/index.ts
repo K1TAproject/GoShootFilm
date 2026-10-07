@@ -39,6 +39,7 @@ export interface RollSummary {
 
 export interface Photo {
   id: number
+  displayName?: string
   frameNumber?: number
   labScanPath?: string
   editScanPath?: string
@@ -114,6 +115,60 @@ export interface DashboardStats {
   rollCount: number
   photoCount: number
   favoritePhotoCount: number
+  equipmentCount: number
+  digitalAlbumCount: number
+  digitalPhotoCount: number
+  archivedPhotoCount: number
+}
+
+export interface EquipmentItem {
+  id: number
+  category: 'lens' | 'other'
+  subtype?: string
+  brand: string
+  model: string
+  mount?: string
+  status: 'active' | 'inactive'
+  purchaseDate?: string
+  note?: string
+}
+
+export interface DigitalPhoto {
+  id: number
+  pairingKey: string
+  rawPath?: string
+  editPath?: string
+  isFavorite: boolean
+}
+
+export interface DigitalAlbum {
+  id: number
+  title: string
+  cameraId?: number
+  shotDate?: string
+  city?: string
+  note?: string
+  cameraBrand?: string
+  cameraModel?: string
+  photoCount: number
+  rawCount: number
+  editCount: number
+  coverPhotoId?: number
+  coverVersion?: 'raw' | 'edit'
+}
+
+export interface DigitalAlbumDetail extends DigitalAlbum {
+  photos: DigitalPhoto[]
+}
+
+export interface DigitalImportAnalysisItem {
+  sourcePath: string
+  fileName: string
+  pairingKey: string
+  existingVersion: boolean
+  pairedVersion: boolean
+  issue?: string
+  conflictAction: ImportConflictAction
 }
 
 export interface LibraryStatus {

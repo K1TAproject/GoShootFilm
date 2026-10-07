@@ -135,4 +135,77 @@ pub struct DashboardStatsResponse {
     pub roll_count: i64,
     pub photo_count: i64,
     pub favorite_photo_count: i64,
+    pub equipment_count: i64,
+    pub digital_album_count: i64,
+    pub digital_photo_count: i64,
+    pub archived_photo_count: i64,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct EquipmentItemResponse {
+    pub id: i64,
+    pub category: String,
+    pub subtype: Option<String>,
+    pub brand: String,
+    pub model: String,
+    pub mount: Option<String>,
+    pub status: String,
+    pub purchase_date: Option<String>,
+    pub note: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DigitalPhotoResponse {
+    pub id: i64,
+    pub pairing_key: String,
+    pub raw_path: Option<String>,
+    pub edit_path: Option<String>,
+    pub is_favorite: bool,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DigitalAlbumResponse {
+    pub id: i64,
+    pub title: String,
+    pub camera_id: Option<i64>,
+    pub shot_date: Option<String>,
+    pub city: Option<String>,
+    pub note: Option<String>,
+    pub camera_brand: Option<String>,
+    pub camera_model: Option<String>,
+    pub photo_count: i64,
+    pub raw_count: i64,
+    pub edit_count: i64,
+    pub cover_photo_id: Option<i64>,
+    pub cover_version: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DigitalAlbumDetailResponse {
+    #[serde(flatten)]
+    pub album: DigitalAlbumResponse,
+    pub photos: Vec<DigitalPhotoResponse>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DigitalImportEntry {
+    pub source_path: String,
+    pub pairing_key: Option<String>,
+    pub conflict_action: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DigitalImportAnalysisItemResponse {
+    pub source_path: String,
+    pub file_name: String,
+    pub pairing_key: String,
+    pub existing_version: bool,
+    pub paired_version: bool,
+    pub issue: Option<String>,
 }

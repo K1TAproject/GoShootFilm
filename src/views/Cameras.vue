@@ -1,13 +1,29 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
+import { useRoute, useRouter } from 'vue-router'
 import PageHeader from '../components/PageHeader.vue'
-import type { Camera, CameraDetail, CameraRoll, RollSummary } from '../types'
+import EquipmentItems from '../components/EquipmentItems.vue'
+import StatCard from '../components/StatCard.vue'
+import type { Camera, CameraDetail, CameraRoll, DigitalAlbum, EquipmentItem, RollSummary } from '../types'
 import { errorMessage as formatError } from '../utils/errors'
 import { filmDisplayName } from '../utils/films'
 
 const cameras = ref<Camera[]>([])
+const route = useRoute()
+const router = useRouter()
+const pageRoot = ref<HTMLElement>()
+const gridScroll = ref(0)
 const allRolls = ref<RollSummary[]>([])
+const equipmentItems = ref<EquipmentItem[]>([])
+const digitalAlbums = ref<DigitalAlbum[]>([])
+const activeCategory = ref<'all' | 'camera' | 'lens' | 'other'>('all')
+const categoryOptions = [
+  { value: 'all', label: '全部' },
+  { value: 'camera', label: '机身' },
+  { value: 'lens', label: '镜头' },
+  { value: 'other', label: '其他' },
+] as const
 const currentView = ref<'grid' | 'add' | 'detail'>('grid')
 
 const formBrand = ref('')
@@ -33,18 +49,23 @@ const today = (() => {
 
 const emit = defineEmits<{
   (e: 'jump-to-roll', rollId: number): void
+  (e: 'jump-to-album', albumId: number): void
 }>()
 
 async function fetchCameras() {
   isLoading.value = true
   visibleError.value = ''
   try {
-    const [cameraData, rollData] = await Promise.all([
+    const [cameraData, rollData, equipmentData, albumData] = await Promise.all([
       invoke<Camera[]>('get_cameras'),
-      invoke<RollSummary[]>('get_rolls')
+      invoke<RollSummary[]>('get_rolls'),
+      invoke<EquipmentItem[]>('get_equipment_items'),
+      invoke<DigitalAlbum[]>('get_digital_albums')
     ])
     cameras.value = cameraData
     allRolls.value = rollData
+    equipmentItems.value = equipmentData
+    digitalAlbums.value = albumData
 
     if (selectedCamera.value) {
       const updated = cameras.value.find(camera => camera.id === selectedCamera.value?.id)
@@ -78,6 +99,13 @@ const sortedCameras = computed(() => {
     || a.id - b.id
   )
 })
+
+const lensCount = computed(() => equipmentItems.value.filter(item => item.category === 'lens').length)
+const otherCount = computed(() => equipmentItems.value.filter(item => item.category === 'other').length)
+const equipmentCount = computed(() => cameras.value.length + equipmentItems.value.length)
+const cameraAlbums = computed(() => selectedCamera.value
+  ? digitalAlbums.value.filter(album => album.cameraId === selectedCamera.value?.id)
+  : [])
 
 function resetCameraForm() {
   formBrand.value = ''
@@ -119,7 +147,17 @@ async function handleAddCamera() {
   }
 }
 
-async function viewDetail(camera: Camera) {
+function scrollContainer(): Window | HTMLElement {
+  return pageRoot.value?.closest('.main-content') as HTMLElement || window
+}
+
+function scrollPosition() {
+  const container = scrollContainer()
+  return container === window ? window.scrollY : (container as HTMLElement).scrollTop
+}
+
+async function viewDetail(camera: Camera, updateRoute = true) {
+  if (currentView.value === 'grid') gridScroll.value = scrollPosition()
   isLoading.value = true
   visibleError.value = ''
   try {
@@ -128,6 +166,7 @@ async function viewDetail(camera: Camera) {
     relatedRolls.value = res.rolls || []
     isEditing.value = false
     currentView.value = 'detail'
+    if (updateRoute) await router.push({ name: 'cameras', query: { camera: String(camera.id) } })
   } catch (err) {
     console.error('Failed to fetch camera detail:', err)
     visibleError.value = formatError(err, '读取相机详情失败')
@@ -181,7 +220,7 @@ async function handleDeleteCamera(id: number) {
   visibleError.value = ''
   try {
     await invoke('delete_camera', { id })
-    backToGrid()
+    await backToGrid()
     await fetchCameras()
   } catch (err) {
     console.error('Failed to delete camera:', err)
@@ -191,26 +230,52 @@ async function handleDeleteCamera(id: number) {
   }
 }
 
-function backToGrid() {
+async function backToGrid(updateRoute = true) {
   currentView.value = 'grid'
   selectedCamera.value = null
   relatedRolls.value = []
   isEditing.value = false
+  if (updateRoute) await router.push({ name: 'cameras' })
+  requestAnimationFrame(() => scrollContainer().scrollTo({ top: gridScroll.value, behavior: 'auto' }))
 }
 
-onMounted(() => {
-  fetchCameras()
+watch(() => route.query.camera, value => {
+  const id = Number(value)
+  if (Number.isInteger(id) && id > 0 && selectedCamera.value?.id !== id) {
+    const camera = cameras.value.find(item => item.id === id)
+    if (camera) void viewDetail(camera, false)
+  } else if (!value && currentView.value === 'detail') {
+    void backToGrid(false)
+  }
+})
+
+onMounted(async () => {
+  await fetchCameras()
+  const id = Number(route.query.camera)
+  const camera = cameras.value.find(item => item.id === id)
+  if (camera) await viewDetail(camera, false)
 })
 </script>
 
 <template>
-  <section class="page">
+  <section ref="pageRoot" class="page">
     <div v-if="visibleError" class="feedback-error" role="alert">{{ visibleError }}</div>
     <div v-else-if="isLoading" class="feedback-info">正在读取相机数据…</div>
     <div v-if="currentView === 'grid'" class="stack">
-      <PageHeader title="Cameras" subtitle="管理相机设备" />
+      <PageHeader title="Equipment" subtitle="管理相机机身、镜头与其他器材" />
 
-      <div class="cards-grid">
+      <div class="stats-grid">
+        <StatCard label="器材总数" :value="equipmentCount" />
+        <StatCard label="机身" :value="cameras.length" />
+        <StatCard label="镜头" :value="lensCount" />
+        <StatCard label="其他器材" :value="otherCount" />
+      </div>
+
+      <div class="category-tabs">
+        <button v-for="option in categoryOptions" :key="option.value" type="button" :class="{ active: activeCategory === option.value }" @click="activeCategory = option.value">{{ option.label }}</button>
+      </div>
+
+      <div v-if="activeCategory === 'all' || activeCategory === 'camera'" class="cards-grid">
         <button
           type="button"
           v-for="camera in sortedCameras"
@@ -218,8 +283,10 @@ onMounted(() => {
           class="camera-card"
           @click="viewDetail(camera)"
         >
+          <span class="camera-kind">机身</span>
           <div class="camera-main">
-            <h2 :title="`${camera.brand} ${camera.model}`">{{ camera.brand }} {{ camera.model }}</h2>
+            <small>{{ camera.brand }}</small>
+            <h2 :title="`${camera.brand} ${camera.model}`">{{ camera.model }}</h2>
           </div>
           <div class="camera-footer">
             <span>{{ camera.format || '135' }}</span>
@@ -228,16 +295,24 @@ onMounted(() => {
           </div>
         </button>
 
-        <button class="add-card" @click="openAddForm">
+        <button v-if="activeCategory === 'camera'" class="add-card" @click="openAddForm">
           <span class="plus-mark">+</span>
-          <span>添加新设备</span>
+          <span>添加相机机身</span>
         </button>
       </div>
+      <EquipmentItems
+        v-if="activeCategory !== 'camera'"
+        :items="equipmentItems"
+        :category="activeCategory === 'all' ? 'all' : activeCategory"
+        @refresh="fetchCameras"
+        @error="visibleError = $event"
+        @add-camera="openAddForm"
+      />
     </div>
 
     <div v-else-if="currentView === 'add'" class="stack">
-      <PageHeader title="新增相机">
-        <button class="secondary-btn" @click="backToGrid">返回</button>
+      <PageHeader title="新增相机机身">
+        <button class="secondary-btn" @click="backToGrid()">返回</button>
       </PageHeader>
 
       <div class="form-panel">
@@ -263,17 +338,17 @@ onMounted(() => {
         </label>
         <div class="form-actions full-width">
           <button class="primary-btn" :disabled="isBusy" @click="handleAddCamera">保存</button>
-          <button class="secondary-btn" @click="backToGrid">取消</button>
+          <button class="secondary-btn" @click="backToGrid()">取消</button>
         </div>
       </div>
     </div>
 
     <div v-else-if="currentView === 'detail' && selectedCamera" class="stack">
-      <PageHeader title="相机详情">
+      <PageHeader title="机身详情">
         <div class="actions">
           <button v-if="!isEditing" class="secondary-btn" @click="startEditing">编辑</button>
           <button v-if="!isEditing" class="danger-btn" :disabled="isBusy" @click="handleDeleteCamera(selectedCamera.id)">删除</button>
-          <button class="secondary-btn" @click="backToGrid">返回</button>
+          <button class="secondary-btn" @click="backToGrid()">返回</button>
         </div>
       </PageHeader>
 
@@ -326,7 +401,7 @@ onMounted(() => {
       </div>
 
       <section class="related-section">
-        <div class="section-title">关联 Rolls</div>
+        <div class="section-title">胶卷拍摄卷</div>
         <div v-if="relatedRolls.length === 0" class="empty-state">暂无拍摄记录。</div>
         <button
           v-for="roll in relatedRolls"
@@ -337,6 +412,14 @@ onMounted(() => {
         >
           <span class="related-title">第 {{ roll.rollIndex }} 卷 · {{ filmDisplayName(roll.filmBrand, roll.filmName) }}</span>
           <span class="related-meta">{{ roll.shotMonth || '未记录日期' }} · {{ roll.city || '未记录地点' }}</span>
+        </button>
+      </section>
+      <section class="related-section">
+        <div class="section-title">数码相册</div>
+        <div v-if="cameraAlbums.length === 0" class="empty-state">暂无数码相册。</div>
+        <button v-for="album in cameraAlbums" v-else :key="album.id" class="related-roll" @click="emit('jump-to-album', album.id)">
+          <span class="related-title">{{ album.title }}</span>
+          <span class="related-meta">{{ album.shotDate || '未记录日期' }} · {{ album.photoCount }} 张照片</span>
         </button>
       </section>
     </div>
@@ -360,6 +443,11 @@ h2 {
   min-width: 0;
 }
 
+.stats-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.category-tabs { display: flex; gap: 5px; border: 1px solid #2a3340; border-radius: 9px; background: #11161d; padding: 4px; width: fit-content; }
+.category-tabs button { border: 0; border-radius: 6px; background: transparent; color: #909cac; padding: 8px 13px; cursor: pointer; }
+.category-tabs button.active { background: #283140; color: #f8fafc; }
+
 .camera-card,
 .add-card,
 .form-panel,
@@ -370,6 +458,8 @@ h2 {
   border: 1px solid #262c38;
   border-radius: 8px;
 }
+
+@media (max-width: 760px) { .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 
 .camera-card,
 .add-card {
@@ -400,6 +490,9 @@ h2 {
   place-items: center;
   text-align: center;
 }
+
+.camera-kind { width: fit-content; border: 1px solid #394353; border-radius: 999px; padding: 4px 8px; color: #9da9b9; font-size: 11px; }
+.camera-main small { color: #909cac; }
 
 .camera-main h2 {
   display: -webkit-box;

@@ -5,6 +5,8 @@ defineProps<{
   modelValue: PhotoVersion
   editCount: number
   labCount: number
+  editLabel?: string
+  labLabel?: string
 }>()
 
 const emit = defineEmits<{
@@ -21,7 +23,7 @@ const emit = defineEmits<{
       :class="{ active: modelValue === 'edit' }"
       @click="emit('update:modelValue', 'edit')"
     >
-      调色图 <span>{{ editCount }}</span>
+      {{ editLabel || '调色图' }} <span>{{ editCount }}</span>
     </button>
     <button
       type="button"
@@ -30,7 +32,7 @@ const emit = defineEmits<{
       :class="{ active: modelValue === 'lab' }"
       @click="emit('update:modelValue', 'lab')"
     >
-      原始扫描 <span>{{ labCount }}</span>
+      {{ labLabel || '原始扫描' }} <span>{{ labCount }}</span>
     </button>
   </div>
 </template>

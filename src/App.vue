@@ -33,6 +33,10 @@ function openRollFromRelation(rollId: number) {
   void router.push({ name: 'rolls', query: { roll: String(rollId) } })
 }
 
+function openAlbumFromRelation(albumId: number) {
+  void router.push({ name: 'albums', query: { album: String(albumId) } })
+}
+
 async function loadAppVersion() {
   if (versionLoaded.value || versionLoading.value) return
   versionLoading.value = true
@@ -163,14 +167,15 @@ onMounted(() => {
           <img class="app-mark" :src="appIcon" alt="">
           <div>
             <div class="app-title">GoShootFilm</div>
-            <div class="app-caption">Film archive</div>
+            <div class="app-caption">Photo archive</div>
           </div>
         </RouterLink>
         <nav class="nav-tabs">
           <RouterLink to="/" active-class="" exact-active-class="router-link-exact-active">Home</RouterLink>
-          <RouterLink to="/cameras">Cameras</RouterLink>
+          <RouterLink to="/cameras">Equipment</RouterLink>
           <RouterLink to="/films">Films</RouterLink>
           <RouterLink to="/rolls">Rolls</RouterLink>
+          <RouterLink to="/albums">Albums</RouterLink>
         </nav>
         <button class="settings-link" type="button" @click="openSettings">⚙ 设置</button>
       </aside>
@@ -181,7 +186,7 @@ onMounted(() => {
           <button type="button" @click="openSettings">处理</button>
         </div>
         <RouterView v-slot="{ Component }">
-          <component :is="Component" @jump-to-roll="openRollFromRelation" />
+          <component :is="Component" @jump-to-roll="openRollFromRelation" @jump-to-album="openAlbumFromRelation" />
         </RouterView>
       </main>
 

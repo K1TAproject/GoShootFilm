@@ -5,7 +5,10 @@ defineProps<{
   open: boolean
   source?: string
   frameNumber?: number
+  displayName?: string
   version: PhotoVersion
+  labLabel?: string
+  editLabel?: string
 }>()
 
 const emit = defineEmits<{
@@ -18,13 +21,13 @@ const emit = defineEmits<{
   <div v-if="open" class="lightbox-overlay" @click.self="emit('close')">
     <header>
       <div>
-        <strong>Frame {{ frameNumber || '?' }}</strong>
-        <span>{{ version === 'lab' ? '原始扫描预览（非原 TIFF）' : '调色图' }}</span>
+        <strong>{{ displayName || `Frame ${frameNumber || '?'}` }}</strong>
+        <span>{{ version === 'lab' ? (labLabel || '原始扫描预览（非原 TIFF）') : (editLabel || '调色图') }}</span>
       </div>
       <button class="close-btn" aria-label="关闭大图" @click="emit('close')">×</button>
     </header>
     <div class="lightbox-content">
-      <img v-if="source" :src="source" :alt="`Frame ${frameNumber || '?'} 大图`" @error="emit('image-error')" />
+      <img v-if="source" :src="source" :alt="`${displayName || `Frame ${frameNumber || '?'}`} 大图`" @error="emit('image-error')" />
     </div>
   </div>
 </template>

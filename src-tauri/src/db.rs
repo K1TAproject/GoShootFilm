@@ -24,6 +24,10 @@ const MIGRATION_SOURCES: &[(i64, &[u8])] = &[
         4,
         include_bytes!("../migrations/0004_sync_film_catalog.sql"),
     ),
+    (
+        5,
+        include_bytes!("../migrations/0005_equipment_digital.sql"),
+    ),
 ];
 
 #[derive(Debug)]
@@ -383,6 +387,7 @@ mod tests {
             include_bytes!("../migrations/0002_import_official_films.sql").as_slice(),
             include_bytes!("../migrations/0003_normalize_builtin_film_status.sql").as_slice(),
             include_bytes!("../migrations/0004_sync_film_catalog.sql").as_slice(),
+            include_bytes!("../migrations/0005_equipment_digital.sql").as_slice(),
         ] {
             assert!(!migration.windows(2).any(|bytes| bytes == b"\r\n"));
         }
@@ -840,5 +845,53 @@ mod tests {
             .await
             .expect("read new business index");
         assert_eq!(stored_index, 1);
+    }
+
+    #[tokio::test]
+    async fn digital_schema_pairs_case_insensitively_and_keeps_album_when_camera_is_deleted() {
+        let pool = memory_pool().await;
+        MIGRATOR.run(&pool).await.expect("run migrations");
+        let camera_id = sqlx::query("INSERT INTO cameras (brand, model) VALUES ('Canon', '5D')")
+            .execute(&pool)
+            .await
+            .expect("insert camera")
+            .last_insert_rowid();
+        let album_id =
+            sqlx::query("INSERT INTO digital_albums (title, camera_id) VALUES ('Test', ?)")
+                .bind(camera_id)
+                .execute(&pool)
+                .await
+                .expect("insert album")
+                .last_insert_rowid();
+        sqlx::query("INSERT INTO digital_photos (album_id, pairing_key, raw_path) VALUES (?, 'IMG_1234', 'digital/1/raw/IMG_1234.CR2')")
+            .bind(album_id)
+            .execute(&pool)
+            .await
+            .expect("insert digital photo");
+        let duplicate = sqlx::query("INSERT INTO digital_photos (album_id, pairing_key, edit_path) VALUES (?, 'img_1234', 'digital/1/edit/IMG_1234.png')")
+            .bind(album_id)
+            .execute(&pool)
+            .await;
+        assert!(duplicate.is_err());
+
+        sqlx::query("DELETE FROM cameras WHERE id = ?")
+            .bind(camera_id)
+            .execute(&pool)
+            .await
+            .expect("delete camera");
+        let stored_camera: Option<i64> =
+            sqlx::query_scalar("SELECT camera_id FROM digital_albums WHERE id = ?")
+                .bind(album_id)
+                .fetch_one(&pool)
+                .await
+                .expect("read album camera");
+        assert_eq!(stored_camera, None);
+        let photo_count: i64 =
+            sqlx::query_scalar("SELECT COUNT(*) FROM digital_photos WHERE album_id = ?")
+                .bind(album_id)
+                .fetch_one(&pool)
+                .await
+                .expect("read digital photos");
+        assert_eq!(photo_count, 1);
     }
 }

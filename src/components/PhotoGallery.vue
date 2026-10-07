@@ -9,6 +9,8 @@ const props = defineProps<{
   previews: Record<string, LabPreviewState>
   imageErrors: Record<string, string>
   busy: boolean
+  labLabel?: string
+  editLabel?: string
 }>()
 
 const emit = defineEmits<{
@@ -22,7 +24,18 @@ const emit = defineEmits<{
 
 const sortedPhotos = computed(() => props.photos
   .filter(photo => props.version === 'edit' ? photo.editScanPath : photo.labScanPath)
-  .sort((a, b) => (a.frameNumber ?? 1000) - (b.frameNumber ?? 1000) || a.id - b.id))
+  .sort((a, b) => {
+    if (a.displayName || b.displayName) return (a.displayName || '').localeCompare(b.displayName || '') || a.id - b.id
+    return (a.frameNumber ?? 1000) - (b.frameNumber ?? 1000) || a.id - b.id
+  }))
+
+function photoLabel(photo: Photo) {
+  return photo.displayName || `Frame ${photo.frameNumber || '?'}`
+}
+
+function versionLabel(version = props.version) {
+  return version === 'lab' ? (props.labLabel || '原始扫描预览') : (props.editLabel || '调色图')
+}
 
 function previewKey(photo: Photo, version = props.version) {
   return `${version}:${photo.id}`
@@ -103,12 +116,12 @@ onUnmounted(() => previewObserver?.disconnect())
           v-if="sourceFor(photo) && !errorFor(photo)"
           type="button"
           class="image-button"
-          :aria-label="`打开 Frame ${photo.frameNumber || '?'} ${version === 'lab' ? '原始扫描预览' : '调色图'}大图`"
+          :aria-label="`打开 ${photoLabel(photo)} ${versionLabel()}大图`"
           @click="emit('view', photo)"
         >
           <img
             :src="photoImageUrl(sourceFor(photo))"
-            :alt="`Frame ${photo.frameNumber || '?'} ${version === 'lab' ? '原始扫描预览' : '调色图'}`"
+            :alt="`${photoLabel(photo)} ${versionLabel()}`"
             loading="lazy"
             decoding="async"
             fetchpriority="low"
@@ -156,7 +169,7 @@ onUnmounted(() => previewObserver?.disconnect())
       </div>
 
       <footer class="photo-footer">
-        <strong>Frame {{ photo.frameNumber || '?' }}</strong>
+        <strong>{{ photoLabel(photo) }}</strong>
       </footer>
     </article>
   </div>

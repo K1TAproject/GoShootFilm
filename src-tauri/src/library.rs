@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use sqlx::SqlitePool;
+use std::ffi::OsStr;
 use std::fs;
 use std::io::{Read, Write};
 use std::path::{Component, Path, PathBuf};
@@ -476,6 +477,42 @@ async fn validate_database_paths(pool: &SqlitePool, media_dir: &Path) -> Result<
             ));
         }
     }
+    let digital_rows: Vec<(Option<String>, Option<String>)> =
+        sqlx::query_as("SELECT raw_path, edit_path FROM digital_photos")
+            .fetch_all(pool)
+            .await
+            .map_err(|error| format!("读取数码照片路径用于迁移校验失败: {error}"))?;
+    for stored_path in digital_rows
+        .into_iter()
+        .flat_map(|(raw, edit)| [raw, edit])
+        .flatten()
+    {
+        let parts = Path::new(&stored_path)
+            .components()
+            .map(|part| match part {
+                Component::Normal(value) => Some(value),
+                _ => None,
+            })
+            .collect::<Option<Vec<_>>>()
+            .ok_or_else(|| format!("数据库包含无效数码图库相对路径: {stored_path}"))?;
+        let valid = parts.len() == 4
+            && parts[0] == OsStr::new("digital")
+            && parts[1]
+                .to_str()
+                .and_then(|value| value.parse::<i64>().ok())
+                .is_some_and(|id| id > 0)
+            && matches!(parts[2].to_str(), Some("raw" | "edit"));
+        if !valid {
+            return Err(format!("数据库包含无效数码图库相对路径: {stored_path}"));
+        }
+        let resolved = media_dir.join(&stored_path);
+        if !resolved.is_file() {
+            return Err(format!(
+                "迁移后找不到数据库数码照片文件: {}",
+                resolved.display()
+            ));
+        }
+    }
     Ok(())
 }
 
@@ -566,6 +603,10 @@ mod tests {
         fs::write(app_data.join("media/rolls/1/edit/photo.jpg"), b"image").unwrap();
         let pool = SqlitePool::connect("sqlite::memory:").await.unwrap();
         sqlx::query("CREATE TABLE photos (lab_scan_path TEXT, edit_scan_path TEXT)")
+            .execute(&pool)
+            .await
+            .unwrap();
+        sqlx::query("CREATE TABLE digital_photos (raw_path TEXT, edit_path TEXT)")
             .execute(&pool)
             .await
             .unwrap();
