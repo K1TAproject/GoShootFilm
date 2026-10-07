@@ -132,18 +132,28 @@ pub(crate) async fn get_digital_albums(
 async fn checked_camera_id(
     state: &AppState,
     camera_id: Option<i64>,
+    current_album_id: Option<i64>,
 ) -> Result<Option<i64>, String> {
     let Some(camera_id) = camera_id else {
         return Ok(None);
     };
     ensure_positive_id(camera_id, "相机 ID")?;
-    let exists: i64 = sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM cameras WHERE id = ?)")
-        .bind(camera_id)
-        .fetch_one(&state.db)
-        .await
-        .map_err(|error| database_error("确认相机", error))?;
+    let exists: i64 = sqlx::query_scalar(
+        "SELECT EXISTS(
+            SELECT 1 FROM cameras c
+            WHERE c.id = ? AND (
+                c.camera_type = 'digital'
+                OR EXISTS(SELECT 1 FROM digital_albums a WHERE a.id = ? AND a.camera_id = c.id)
+            )
+        )",
+    )
+    .bind(camera_id)
+    .bind(current_album_id)
+    .fetch_one(&state.db)
+    .await
+    .map_err(|error| database_error("确认相机", error))?;
     if exists == 0 {
-        return Err("所选相机不存在".into());
+        return Err("所选数码相机不存在".into());
     }
     Ok(Some(camera_id))
 }
@@ -165,7 +175,7 @@ pub(crate) async fn add_digital_album(
         "INSERT INTO digital_albums (title, camera_id, shot_date, city, note) VALUES (?, ?, ?, ?, ?)",
     )
     .bind(generated_title)
-    .bind(checked_camera_id(&state, camera_id).await?)
+    .bind(checked_camera_id(&state, camera_id, None).await?)
     .bind(shot_date)
     .bind(city)
     .bind(clean_optional(note, "备注", 2000)?)
@@ -194,7 +204,7 @@ pub(crate) async fn update_digital_album(
         "UPDATE digital_albums SET title = ?, camera_id = ?, shot_date = ?, city = ?, note = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
     )
     .bind(generated_title)
-    .bind(checked_camera_id(&state, camera_id).await?)
+    .bind(checked_camera_id(&state, camera_id, Some(id)).await?)
     .bind(shot_date)
     .bind(city)
     .bind(clean_optional(note, "备注", 2000)?)
@@ -343,16 +353,12 @@ fn normalize_source(
         .and_then(OsStr::to_str)
         .map(str::to_ascii_lowercase)
         .ok_or_else(|| format!("无法识别文件类型: {raw}"))?;
-    let allowed = if version == "raw" {
-        extension == "cr2"
-    } else {
-        extension == "png"
-    };
+    let allowed = supported_import_extension(version, &extension);
     if !allowed {
         return Err(if version == "raw" {
-            format!("RAW 导入仅支持 CR2: {raw}")
+            format!("原图导入仅支持 CR2、TIF、TIFF、JPG、JPEG: {raw}")
         } else {
-            format!("调色图导入仅支持 PNG: {raw}")
+            format!("调色图导入仅支持 PNG、JPG、JPEG、WebP: {raw}")
         });
     }
     let canonical = path
@@ -382,6 +388,14 @@ fn normalize_source(
         file_name,
         pairing_key,
     })
+}
+
+fn supported_import_extension(version: &str, extension: &str) -> bool {
+    match version {
+        "raw" => matches!(extension, "cr2" | "tif" | "tiff" | "jpg" | "jpeg"),
+        "edit" => matches!(extension, "png" | "jpg" | "jpeg" | "webp"),
+        _ => false,
+    }
 }
 
 #[tauri::command]
@@ -675,12 +689,17 @@ async fn import_digital_photos_inner(
     })
 }
 
-fn raw_preview_path(previews: &Path, album_id: i64, photo_id: i64) -> PathBuf {
+fn original_preview_path(
+    previews: &Path,
+    album_id: i64,
+    photo_id: i64,
+    extension: &str,
+) -> PathBuf {
     previews
         .join("digital")
         .join(album_id.to_string())
         .join("raw")
-        .join(format!("{photo_id}.jpg"))
+        .join(format!("{photo_id}.{extension}"))
 }
 
 fn thumb_path(previews: &Path, album_id: i64, photo_id: i64, version: &str) -> PathBuf {
@@ -885,6 +904,22 @@ fn build_thumbnail(source: &Path, target: &Path) -> Result<(), String> {
     library::atomic_replace(&temporary, target).map_err(|error| format!("保存缩略图失败: {error}"))
 }
 
+fn build_tiff_preview(source: &Path, target: &Path) -> Result<(), String> {
+    let image = image::open(source)
+        .map_err(|error| format!("TIFF 无法读取（{}）: {error}", source.display()))?;
+    let preview = image.thumbnail(2048, 2048);
+    let parent = target
+        .parent()
+        .ok_or_else(|| "无法确定 TIFF 预览目录".to_string())?;
+    fs::create_dir_all(parent).map_err(|error| format!("无法创建 TIFF 预览目录: {error}"))?;
+    let temporary = target.with_extension(format!("tmp-{}", std::process::id()));
+    preview
+        .save_with_format(&temporary, ImageFormat::Png)
+        .map_err(|error| format!("生成 TIFF 预览失败: {error}"))?;
+    library::atomic_replace(&temporary, target)
+        .map_err(|error| format!("保存 TIFF 预览失败: {error}"))
+}
+
 async fn source_for_photo(
     state: &AppState,
     photo_id: i64,
@@ -920,23 +955,40 @@ pub(crate) async fn get_digital_photo_preview(
     let (album_id, formal_source) = source_for_photo(&state, photo_id, &version).await?;
     let (_, previews) = library_directories(&state)?;
     let preview_source = if version == "raw" {
-        let raw_preview = raw_preview_path(&previews, album_id, photo_id);
-        let lock = preview_task_lock(&state, format!("digital-raw:{photo_id}")).await;
-        let _lock = lock.lock().await;
-        let fresh = super::preview_is_fresh(&formal_source, &raw_preview).await;
-        if !fresh {
-            let source = formal_source.clone();
-            let target = raw_preview.clone();
-            let _permit = state
-                .preview_generation_limit
-                .acquire()
+        let extension = formal_source
+            .extension()
+            .and_then(OsStr::to_str)
+            .map(str::to_ascii_lowercase)
+            .ok_or_else(|| "原图缺少可识别的扩展名".to_string())?;
+        if matches!(extension.as_str(), "jpg" | "jpeg") {
+            formal_source.clone()
+        } else {
+            let preview_extension = if extension == "cr2" { "jpg" } else { "png" };
+            let raw_preview =
+                original_preview_path(&previews, album_id, photo_id, preview_extension);
+            let lock = preview_task_lock(&state, format!("digital-raw:{photo_id}")).await;
+            let _lock = lock.lock().await;
+            let fresh = super::preview_is_fresh(&formal_source, &raw_preview).await;
+            if !fresh {
+                let source = formal_source.clone();
+                let target = raw_preview.clone();
+                let _permit = state
+                    .preview_generation_limit
+                    .acquire()
+                    .await
+                    .map_err(|_| "预览队列不可用".to_string())?;
+                tauri::async_runtime::spawn_blocking(move || {
+                    if extension == "cr2" {
+                        extract_cr2_preview(&source, &target)
+                    } else {
+                        build_tiff_preview(&source, &target)
+                    }
+                })
                 .await
-                .map_err(|_| "预览队列不可用".to_string())?;
-            tauri::async_runtime::spawn_blocking(move || extract_cr2_preview(&source, &target))
-                .await
-                .map_err(|error| format!("CR2 预览任务失败: {error}"))??;
+                .map_err(|error| format!("原图预览任务失败: {error}"))??;
+            }
+            raw_preview
         }
-        raw_preview
     } else {
         formal_source.clone()
     };
@@ -1002,7 +1054,8 @@ pub(crate) async fn delete_digital_photo(
         .map_err(|error| database_error("删除数码照片", error))?;
     let (_, previews) = library_directories(&state)?;
     for path in [
-        raw_preview_path(&previews, album_id, photo_id),
+        original_preview_path(&previews, album_id, photo_id, "jpg"),
+        original_preview_path(&previews, album_id, photo_id, "png"),
         thumb_path(&previews, album_id, photo_id, "raw"),
         thumb_path(&previews, album_id, photo_id, "edit"),
     ] {
@@ -1012,7 +1065,7 @@ pub(crate) async fn delete_digital_photo(
             }
         }
     }
-    Ok("照片记录已删除；正式 CR2 和 PNG 已保留".into())
+    Ok("照片记录已删除；正式原图和调色图已保留".into())
 }
 
 #[cfg(test)]
@@ -1029,6 +1082,38 @@ mod tests {
             path.file_stem().and_then(OsStr::to_str),
             Some("IMG_1234-final")
         );
+    }
+
+    #[test]
+    fn original_and_edit_extensions_stay_separate() {
+        for extension in ["cr2", "tif", "tiff", "jpg", "jpeg"] {
+            assert!(supported_import_extension("raw", extension));
+        }
+        for extension in ["png", "jpg", "jpeg", "webp"] {
+            assert!(supported_import_extension("edit", extension));
+        }
+        assert!(!supported_import_extension("raw", "png"));
+        assert!(!supported_import_extension("edit", "tiff"));
+    }
+
+    #[test]
+    fn tiff_preview_is_separate_and_does_not_modify_original() {
+        let root = std::env::temp_dir().join(format!(
+            "goshootfilm-digital-tiff-preview-{}",
+            std::process::id()
+        ));
+        let _ = fs::remove_dir_all(&root);
+        fs::create_dir_all(&root).unwrap();
+        let source = root.join("IMG_2001.tif");
+        let target = root.join("preview.png");
+        image::RgbImage::from_pixel(32, 20, image::Rgb([12, 34, 56]))
+            .save_with_format(&source, ImageFormat::Tiff)
+            .unwrap();
+        let before = fs::read(&source).unwrap();
+        build_tiff_preview(&source, &target).unwrap();
+        assert!(image::open(&target).is_ok());
+        assert_eq!(fs::read(&source).unwrap(), before);
+        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
@@ -1228,6 +1313,69 @@ mod tests {
         .unwrap();
         assert_eq!(rolled_back, 0);
         assert!(!root.join("media/digital/1/raw/IMG_9999.CR2").exists());
+        state.db.close().await;
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[tokio::test]
+    async fn tiff_and_jpeg_originals_are_copied_with_their_names() {
+        let root = std::env::temp_dir().join(format!(
+            "goshootfilm-digital-original-import-test-{}",
+            std::process::id()
+        ));
+        let _ = fs::remove_dir_all(&root);
+        fs::create_dir_all(&root).unwrap();
+        let state = import_test_state(&root).await;
+        for (name, format) in [
+            ("IMG_2001.TIFF", ImageFormat::Tiff),
+            ("IMG_2002.JPEG", ImageFormat::Jpeg),
+        ] {
+            let source = root.join(name);
+            image::RgbImage::from_pixel(8, 8, image::Rgb([20, 40, 60]))
+                .save_with_format(&source, format)
+                .unwrap();
+            import_digital_photos_inner(
+                &state,
+                1,
+                "raw".into(),
+                vec![DigitalImportEntry {
+                    source_path: source.to_string_lossy().into_owned(),
+                    pairing_key: None,
+                    conflict_action: "add".into(),
+                }],
+            )
+            .await
+            .unwrap();
+            assert!(root.join("media/digital/1/raw").join(name).is_file());
+        }
+        let edit_source = root.join("IMG_2001.jpg");
+        image::RgbImage::from_pixel(8, 8, image::Rgb([60, 40, 20]))
+            .save_with_format(&edit_source, ImageFormat::Jpeg)
+            .unwrap();
+        import_digital_photos_inner(
+            &state,
+            1,
+            "edit".into(),
+            vec![DigitalImportEntry {
+                source_path: edit_source.to_string_lossy().into_owned(),
+                pairing_key: None,
+                conflict_action: "add".into(),
+            }],
+        )
+        .await
+        .unwrap();
+        let paired_edit: String = sqlx::query_scalar(
+            "SELECT edit_path FROM digital_photos WHERE pairing_key = 'IMG_2001'",
+        )
+        .fetch_one(&state.db)
+        .await
+        .unwrap();
+        assert_eq!(paired_edit, "digital/1/edit/IMG_2001.jpg");
+        let count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM digital_photos")
+            .fetch_one(&state.db)
+            .await
+            .unwrap();
+        assert_eq!(count, 2);
         state.db.close().await;
         fs::remove_dir_all(root).unwrap();
     }

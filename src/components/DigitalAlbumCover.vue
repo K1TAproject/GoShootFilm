@@ -35,6 +35,6 @@ onMounted(load)
 </template>
 
 <style scoped>
-.cover { aspect-ratio: 3 / 2; display: grid; place-items: center; overflow: hidden; background: #0d1219; color: #596575; font-size: 12px; letter-spacing: .08em; }
+.cover { width: 100%; height: 100%; display: grid; place-items: center; overflow: hidden; background: #0d1219; color: #596575; font-size: 12px; letter-spacing: .08em; }
 img { width: 100%; height: 100%; display: block; object-fit: cover; }
 </style>

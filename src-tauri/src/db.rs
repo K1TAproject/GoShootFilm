@@ -28,6 +28,7 @@ const MIGRATION_SOURCES: &[(i64, &[u8])] = &[
         5,
         include_bytes!("../migrations/0005_equipment_digital.sql"),
     ),
+    (6, include_bytes!("../migrations/0006_camera_types.sql")),
 ];
 
 #[derive(Debug)]
@@ -388,9 +389,35 @@ mod tests {
             include_bytes!("../migrations/0003_normalize_builtin_film_status.sql").as_slice(),
             include_bytes!("../migrations/0004_sync_film_catalog.sql").as_slice(),
             include_bytes!("../migrations/0005_equipment_digital.sql").as_slice(),
+            include_bytes!("../migrations/0006_camera_types.sql").as_slice(),
         ] {
             assert!(!migration.windows(2).any(|bytes| bytes == b"\r\n"));
         }
+    }
+
+    #[tokio::test]
+    async fn existing_cameras_default_to_film_after_camera_type_migration() {
+        let pool = memory_pool().await;
+        sqlx::query(
+            "CREATE TABLE cameras (id INTEGER PRIMARY KEY, brand TEXT NOT NULL, model TEXT NOT NULL)",
+        )
+        .execute(&pool)
+        .await
+        .expect("create legacy camera table");
+        sqlx::query("INSERT INTO cameras (brand, model) VALUES ('Nikon', 'F2')")
+            .execute(&pool)
+            .await
+            .expect("insert existing camera");
+        sqlx::raw_sql(include_str!("../migrations/0006_camera_types.sql"))
+            .execute(&pool)
+            .await
+            .expect("apply camera type migration");
+        let row: (String, Option<String>) =
+            sqlx::query_as("SELECT camera_type, sensor_format FROM cameras")
+                .fetch_one(&pool)
+                .await
+                .expect("read camera type");
+        assert_eq!(row, ("film".into(), None));
     }
 
     #[tokio::test]

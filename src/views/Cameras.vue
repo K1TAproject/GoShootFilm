@@ -28,7 +28,9 @@ const currentView = ref<'grid' | 'add' | 'detail'>('grid')
 
 const formBrand = ref('')
 const formModel = ref('')
+const formCameraType = ref<'film' | 'digital'>('film')
 const formFormat = ref('135')
+const formSensorFormat = ref('')
 const formPurchaseDate = ref('')
 const formNote = ref('')
 
@@ -106,11 +108,20 @@ const equipmentCount = computed(() => cameras.value.length + equipmentItems.valu
 const cameraAlbums = computed(() => selectedCamera.value
   ? digitalAlbums.value.filter(album => album.cameraId === selectedCamera.value?.id)
   : [])
+const albumCounts = computed(() => {
+  const counts = new Map<number, number>()
+  for (const album of digitalAlbums.value) {
+    if (album.cameraId) counts.set(album.cameraId, (counts.get(album.cameraId) ?? 0) + 1)
+  }
+  return counts
+})
 
 function resetCameraForm() {
   formBrand.value = ''
   formModel.value = ''
+  formCameraType.value = 'film'
   formFormat.value = '135'
+  formSensorFormat.value = ''
   formPurchaseDate.value = ''
   formNote.value = ''
 }
@@ -125,6 +136,10 @@ async function handleAddCamera() {
     visibleError.value = '请填写相机品牌和型号'
     return
   }
+  if (formCameraType.value === 'digital' && !formSensorFormat.value.trim()) {
+    visibleError.value = '请填写数码相机的 CMOS 规格'
+    return
+  }
 
   isBusy.value = true
   visibleError.value = ''
@@ -132,7 +147,9 @@ async function handleAddCamera() {
     await invoke('add_camera', {
       brand: formBrand.value,
       model: formModel.value,
-      format: formFormat.value || '135',
+      cameraType: formCameraType.value,
+      format: formCameraType.value === 'film' ? (formFormat.value || '135') : null,
+      sensorFormat: formCameraType.value === 'digital' ? formSensorFormat.value : null,
       purchaseDate: formPurchaseDate.value || null,
       note: formNote.value || null
     })
@@ -186,7 +203,9 @@ async function handleUpdateCamera() {
       brand: selectedCamera.value.brand,
       model: selectedCamera.value.model,
       status: selectedCamera.value.status,
-      format: selectedCamera.value.format || '135',
+      cameraType: selectedCamera.value.cameraType,
+      format: selectedCamera.value.cameraType === 'film' ? (selectedCamera.value.format || '135') : null,
+      sensorFormat: selectedCamera.value.cameraType === 'digital' ? selectedCamera.value.sensorFormat : null,
       purchaseDate: selectedCamera.value.purchaseDate || null,
       note: selectedCamera.value.note || null
     })
@@ -275,38 +294,42 @@ onMounted(async () => {
         <button v-for="option in categoryOptions" :key="option.value" type="button" :class="{ active: activeCategory === option.value }" @click="activeCategory = option.value">{{ option.label }}</button>
       </div>
 
-      <div v-if="activeCategory === 'all' || activeCategory === 'camera'" class="cards-grid">
-        <button
-          type="button"
-          v-for="camera in sortedCameras"
-          :key="camera.id"
-          class="camera-card"
-          @click="viewDetail(camera)"
-        >
-          <span class="camera-kind">机身</span>
-          <div class="camera-main">
-            <small>{{ camera.brand }}</small>
-            <h2 :title="`${camera.brand} ${camera.model}`">{{ camera.model }}</h2>
-          </div>
-          <div class="camera-footer">
-            <span>{{ camera.format || '135' }}</span>
-            <span>已拍摄{{ rollCount(camera.id) }}卷</span>
-            <span>{{ camera.status === 'active' ? '在用' : '闲置' }}</span>
-          </div>
-        </button>
+      <section v-if="activeCategory === 'all' || activeCategory === 'camera'" class="equipment-section">
+        <h2>机身</h2>
+        <div class="cards-grid">
+          <div v-if="sortedCameras.length === 0" class="equipment-empty">暂无器材</div>
+          <button
+            type="button"
+            v-for="camera in sortedCameras"
+            :key="camera.id"
+            class="camera-card"
+            @click="viewDetail(camera)"
+          >
+            <span class="camera-kind">{{ camera.cameraType === 'digital' ? '数码机身' : '胶片机身' }}</span>
+            <div class="camera-main">
+              <small>{{ camera.brand }}</small>
+              <h2 :title="`${camera.brand} ${camera.model}`">{{ camera.model }}</h2>
+            </div>
+            <div class="camera-footer">
+              <span>{{ camera.cameraType === 'digital' ? camera.sensorFormat : (camera.format || '135') }}</span>
+              <span v-if="camera.cameraType === 'digital'" :title="`已归档 ${albumCounts.get(camera.id) || 0} 个相册`">归档 {{ albumCounts.get(camera.id) || 0 }} 册</span>
+              <span v-else>已拍摄{{ rollCount(camera.id) }}卷</span>
+              <span>{{ camera.status === 'active' ? '在用' : '闲置' }}</span>
+            </div>
+          </button>
 
-        <button v-if="activeCategory === 'camera'" class="add-card" @click="openAddForm">
-          <span class="plus-mark">+</span>
-          <span>添加相机机身</span>
-        </button>
-      </div>
+          <button type="button" class="add-card" @click="openAddForm">
+            <span class="plus-mark">+</span>
+            <span>添加机身</span>
+          </button>
+        </div>
+      </section>
       <EquipmentItems
         v-if="activeCategory !== 'camera'"
         :items="equipmentItems"
         :category="activeCategory === 'all' ? 'all' : activeCategory"
         @refresh="fetchCameras"
         @error="visibleError = $event"
-        @add-camera="openAddForm"
       />
     </div>
 
@@ -317,6 +340,10 @@ onMounted(async () => {
 
       <div class="form-panel">
         <label>
+          <span>相机类型</span>
+          <select v-model="formCameraType"><option value="film">胶片相机</option><option value="digital">数码相机</option></select>
+        </label>
+        <label>
           <span>品牌 *</span>
           <input v-model="formBrand" placeholder="Nikon" />
         </label>
@@ -324,9 +351,13 @@ onMounted(async () => {
           <span>型号 *</span>
           <input v-model="formModel" placeholder="F2" />
         </label>
-        <label>
-          <span>画幅</span>
+        <label v-if="formCameraType === 'film'">
+          <span>胶片画幅</span>
           <input v-model="formFormat" placeholder="135" />
+        </label>
+        <label v-else>
+          <span>CMOS 规格 *</span>
+          <input v-model="formSensorFormat" placeholder="APS-C / 全画幅 / 中画幅" />
         </label>
         <label>
           <span>购入日期</span>
@@ -359,14 +390,19 @@ onMounted(async () => {
         </div>
         <div class="detail-grid">
           <span>状态</span><strong>{{ selectedCamera.status === 'active' ? '在用' : '闲置' }}</strong>
-          <span>画幅</span><strong>{{ selectedCamera.format || '135' }}</strong>
+          <span>相机类型</span><strong>{{ selectedCamera.cameraType === 'digital' ? '数码相机' : '胶片相机' }}</strong>
+          <span>{{ selectedCamera.cameraType === 'digital' ? 'CMOS 规格' : '胶片画幅' }}</span><strong>{{ selectedCamera.cameraType === 'digital' ? selectedCamera.sensorFormat : (selectedCamera.format || '135') }}</strong>
           <span>购入日期</span><strong>{{ selectedCamera.purchaseDate || '未记录' }}</strong>
-          <span>已拍摄卷数</span><strong>{{ relatedRolls.length }}</strong>
+          <span>{{ selectedCamera.cameraType === 'digital' ? '已归档相册' : '已拍摄卷数' }}</span><strong>{{ selectedCamera.cameraType === 'digital' ? cameraAlbums.length : relatedRolls.length }}</strong>
           <span>备注</span><strong>{{ selectedCamera.note || '暂无备注' }}</strong>
         </div>
       </div>
 
       <div v-else class="form-panel">
+        <label>
+          <span>相机类型</span>
+          <select v-model="selectedCamera.cameraType"><option value="film">胶片相机</option><option value="digital">数码相机</option></select>
+        </label>
         <label>
           <span>品牌</span>
           <input v-model="selectedCamera.brand" />
@@ -382,9 +418,13 @@ onMounted(async () => {
             <option value="inactive">闲置</option>
           </select>
         </label>
-        <label>
-          <span>画幅</span>
+        <label v-if="selectedCamera.cameraType === 'film'">
+          <span>胶片画幅</span>
           <input v-model="selectedCamera.format" />
+        </label>
+        <label v-else>
+          <span>CMOS 规格</span>
+          <input v-model="selectedCamera.sensorFormat" />
         </label>
         <label>
           <span>购入日期</span>
@@ -400,7 +440,7 @@ onMounted(async () => {
         </div>
       </div>
 
-      <section class="related-section">
+      <section v-if="selectedCamera.cameraType === 'film'" class="related-section">
         <div class="section-title">胶卷拍摄卷</div>
         <div v-if="relatedRolls.length === 0" class="empty-state">暂无拍摄记录。</div>
         <button
@@ -414,7 +454,7 @@ onMounted(async () => {
           <span class="related-meta">{{ roll.shotMonth || '未记录日期' }} · {{ roll.city || '未记录地点' }}</span>
         </button>
       </section>
-      <section class="related-section">
+      <section v-if="selectedCamera.cameraType === 'digital'" class="related-section">
         <div class="section-title">数码相册</div>
         <div v-if="cameraAlbums.length === 0" class="empty-state">暂无数码相册。</div>
         <button v-for="album in cameraAlbums" v-else :key="album.id" class="related-roll" @click="emit('jump-to-album', album.id)">
@@ -442,6 +482,8 @@ h2 {
   gap: 16px;
   min-width: 0;
 }
+.equipment-section { display: grid; gap: 12px; min-width: 0; }
+.equipment-section > h2 { margin: 0; font-size: 16px; }
 
 .stats-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
 .category-tabs { display: flex; gap: 5px; border: 1px solid #2a3340; border-radius: 9px; background: #11161d; padding: 4px; width: fit-content; }
@@ -463,7 +505,7 @@ h2 {
 
 .camera-card,
 .add-card {
-  min-height: 170px;
+  height: 170px;
   padding: 18px;
   color: inherit;
   cursor: pointer;
@@ -485,6 +527,8 @@ h2 {
 }
 
 .camera-main {
+  min-width: 0;
+  width: 100%;
   display: grid;
   flex: 1;
   place-items: center;
@@ -495,27 +539,36 @@ h2 {
 .camera-main small { color: #909cac; }
 
 .camera-main h2 {
+  width: 100%;
   display: -webkit-box;
   max-height: 2.4em;
   overflow: hidden;
   overflow-wrap: anywhere;
+  word-break: break-word;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   line-clamp: 2;
 }
 
+.add-card { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; border-style: dashed; background: rgba(21, 25, 34, .52); }
+.plus-mark { font-size: 28px; line-height: 1; }
+.equipment-empty { min-height: 170px; display: grid; place-items: center; border: 1px dashed #303846; border-radius: 8px; color: #8f9bad; }
+
 .camera-footer {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  flex-wrap: nowrap;
+  gap: 5px;
+  min-width: 0;
 }
 
 .camera-footer span {
+  min-width: 0;
+  white-space: nowrap;
   border-radius: 999px;
   background: #202737;
   color: #cbd5e1;
-  padding: 4px 8px;
-  font-size: 12px;
+  padding: 4px 6px;
+  font-size: 11px;
 }
 
 .form-panel,

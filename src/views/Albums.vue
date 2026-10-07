@@ -51,6 +51,12 @@ const importVersion = ref<'raw' | 'edit'>('edit')
 const importItems = ref<DigitalImportAnalysisItem[]>([])
 const importError = ref('')
 const listScroll = ref(0)
+const draftCameraFilter = ref<number | null>(null)
+const draftYearFilter = ref('')
+const draftMonthFilter = ref('')
+const activeCameraFilter = ref<number | null>(null)
+const activeYearFilter = ref('')
+const activeMonthFilter = ref('')
 
 const photoAdapters = computed<Photo[]>(() => (selected.value?.photos || []).map(photo => ({
   id: photo.id,
@@ -61,6 +67,9 @@ const photoAdapters = computed<Photo[]>(() => (selected.value?.photos || []).map
 })))
 const rawCount = computed(() => selected.value?.rawCount || 0)
 const editCount = computed(() => selected.value?.editCount || 0)
+const albumCameraOptions = computed(() => cameras.value.filter(camera =>
+  camera.cameraType === 'digital' || camera.id === cameraId.value
+))
 const duplicatePairingKeys = computed(() => {
   const counts = new Map<string, number>()
   for (const item of importItems.value) {
@@ -69,6 +78,46 @@ const duplicatePairingKeys = computed(() => {
   }
   return new Set([...counts].filter(([, count]) => count > 1).map(([key]) => key))
 })
+const lightboxOriginalLabel = computed(() =>
+  lightboxPhoto.value?.labScanPath?.toLowerCase().endsWith('.cr2') ? 'CR2 内嵌预览' : '原图'
+)
+const filterCameras = computed(() => cameras.value.filter(camera =>
+  albums.value.some(album => album.cameraId === camera.id)
+))
+const availableYears = computed(() => Array.from(new Set(
+  albums.value
+    .map(album => album.shotDate?.match(/^(\d{4})-(\d{2})$/)?.[1])
+    .filter((year): year is string => Boolean(year))
+)).sort((a, b) => b.localeCompare(a)))
+const availableMonths = computed(() => Array.from(new Set(
+  albums.value
+    .map(album => album.shotDate?.match(/^(\d{4})-(\d{2})$/))
+    .filter(match => match?.[1] === draftYearFilter.value)
+    .map(match => match![2])
+)).sort())
+const filteredAlbums = computed(() => albums.value.filter(album => {
+  const matchesCamera = activeCameraFilter.value ? album.cameraId === activeCameraFilter.value : true
+  const matchesYear = activeYearFilter.value ? album.shotDate?.startsWith(`${activeYearFilter.value}-`) : true
+  const matchesMonth = activeYearFilter.value && activeMonthFilter.value
+    ? album.shotDate === `${activeYearFilter.value}-${activeMonthFilter.value}`
+    : true
+  return matchesCamera && matchesYear && matchesMonth
+}))
+
+function applyFilters() {
+  activeCameraFilter.value = draftCameraFilter.value
+  activeYearFilter.value = draftYearFilter.value
+  activeMonthFilter.value = draftMonthFilter.value
+}
+
+function resetFilters() {
+  draftCameraFilter.value = null
+  draftYearFilter.value = ''
+  draftMonthFilter.value = ''
+  activeCameraFilter.value = null
+  activeYearFilter.value = ''
+  activeMonthFilter.value = ''
+}
 
 function resetForm() {
   shotDate.value = ''
@@ -169,7 +218,7 @@ function startEdit() {
 }
 
 async function removeAlbum() {
-  if (!selected.value || !confirm('确定删除这个相册及照片记录吗？可再生预览会清理，但正式 CR2 和 PNG 文件会保留。')) return
+  if (!selected.value || !confirm('确定删除这个相册及照片记录吗？可再生预览会清理，但正式原图和调色图文件会保留。')) return
   busy.value = true
   try {
     await invoke('delete_digital_album', { id: selected.value.id })
@@ -198,7 +247,7 @@ async function loadPreview(photo: Photo, version: PhotoVersion, thumbnail = true
     if (thumbnail) previews.value[previewKey] = { loading: false, previewPath: result.previewPath }
     return result.previewPath
   } catch (cause) {
-    const message = errorMessage(cause, version === 'lab' ? 'CR2 内嵌预览无法生成' : '调色图无法读取')
+    const message = errorMessage(cause, version === 'lab' ? '原图预览无法生成' : '调色图无法读取')
     if (thumbnail) previews.value[previewKey] = { loading: false, error: message }
     else error.value = message
   }
@@ -229,7 +278,7 @@ async function toggleFavorite(photo: Photo) {
 }
 
 async function deletePhoto(photoId: number) {
-  if (!confirm('确定删除这条照片记录吗？只清理预览，正式 CR2 和 PNG 文件会保留。')) return
+  if (!confirm('确定删除这条照片记录吗？只清理预览，正式原图和调色图文件会保留。')) return
   busy.value = true
   try {
     await invoke('delete_digital_photo', { photoId })
@@ -249,8 +298,8 @@ async function chooseImport(version: 'raw' | 'edit') {
   }
   const result = await open({
     multiple: true,
-    title: version === 'raw' ? '选择 CR2 原件' : '选择 PNG 调色图',
-    filters: [{ name: version === 'raw' ? 'Canon CR2' : 'PNG', extensions: [version === 'raw' ? 'cr2' : 'png'] }],
+    title: version === 'raw' ? '选择原图' : '选择调色图',
+    filters: [{ name: version === 'raw' ? '原图' : '调色图', extensions: version === 'raw' ? ['cr2', 'tif', 'tiff', 'jpg', 'jpeg'] : ['png', 'jpg', 'jpeg', 'webp'] }],
   })
   const paths = !result ? [] : Array.isArray(result) ? result : [result]
   if (!paths.length) return
@@ -328,6 +377,10 @@ watch(() => route.query.album, value => {
   else if (!value && view.value === 'detail') void backToGrid(false)
 })
 
+watch(draftYearFilter, () => {
+  if (!availableMonths.value.includes(draftMonthFilter.value)) draftMonthFilter.value = ''
+})
+
 onMounted(async () => {
   await fetchAlbums()
   const id = Number(route.query.album)
@@ -344,20 +397,42 @@ onUnmounted(() => window.removeEventListener('keydown', handleKey))
     <div v-else-if="loading" class="feedback-info">正在读取数码相册…</div>
 
     <div v-if="view === 'grid'" class="stack">
-      <PageHeader title="Albums" subtitle="整理数码 RAW 原件与调色照片">
-        <button class="primary-btn" type="button" @click="openCreate">新建相册</button>
-      </PageHeader>
-      <div v-if="albums.length" class="album-grid">
-        <button v-for="album in albums" :key="album.id" type="button" class="album-card" @click="openDetail(album.id)">
+      <PageHeader title="Albums" subtitle="整理数码原图与调色照片" />
+      <div class="filter-panel">
+        <select v-model.number="draftCameraFilter">
+          <option :value="null">全部数码相机</option>
+          <option v-for="camera in filterCameras" :key="camera.id" :value="camera.id">{{ camera.brand }} {{ camera.model }}</option>
+        </select>
+        <select v-model="draftYearFilter">
+          <option value="">全部年份</option>
+          <option v-for="year in availableYears" :key="year" :value="year">{{ year }} 年</option>
+        </select>
+        <select v-model="draftMonthFilter" :disabled="!draftYearFilter">
+          <option value="">全部月份</option>
+          <option v-for="month in availableMonths" :key="month" :value="month">{{ Number(month) }} 月</option>
+        </select>
+        <button class="primary-btn" type="button" @click="applyFilters">确定</button>
+        <button class="secondary-btn" type="button" @click="resetFilters">重置筛选</button>
+      </div>
+      <div class="album-list">
+        <button class="add-card" type="button" @click="openCreate">
+          <span class="plus-mark">+</span>
+          <span>添加相册</span>
+        </button>
+        <button v-for="album in filteredAlbums" :key="album.id" type="button" class="album-card" @click="openDetail(album.id)">
           <DigitalAlbumCover :photo-id="album.coverPhotoId" :version="album.coverVersion" />
           <div class="album-body">
             <h2 :title="album.title">{{ album.title }}</h2>
-            <p>{{ album.cameraBrand && album.cameraModel ? `${album.cameraBrand} ${album.cameraModel}` : '未指定相机' }}</p>
-            <footer><span>{{ album.photoCount }} 条记录</span><span>RAW {{ album.rawCount }}</span><span>调色 {{ album.editCount }}</span></footer>
+            <div class="album-meta-lines">
+              <span><b>设备</b>{{ album.cameraBrand && album.cameraModel ? `${album.cameraBrand} ${album.cameraModel}` : '未指定相机' }}</span>
+              <span><b>时间</b>{{ album.shotDate || '未记录' }}</span>
+              <span><b>地点</b>{{ album.city || '未记录' }}</span>
+            </div>
           </div>
+          <span class="album-photo-count">{{ album.photoCount }} 张 · 原图 {{ album.rawCount }} · 调色 {{ album.editCount }}</span>
         </button>
       </div>
-      <div v-else class="empty-state">还没有数码相册。</div>
+      <div v-if="filteredAlbums.length === 0" class="empty-state">没有符合条件的数码相册。</div>
     </div>
 
     <div v-else-if="view === 'form'" class="stack">
@@ -366,7 +441,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKey))
       </PageHeader>
       <div class="form-panel">
         <label><span>拍摄月份</span><input v-model="shotDate" type="month" /></label>
-        <label><span>相机机身</span><select v-model="cameraId"><option :value="null">未指定</option><option v-for="camera in cameras" :key="camera.id" :value="camera.id">{{ camera.brand }} {{ camera.model }}</option></select></label>
+        <label><span>数码相机</span><select v-model="cameraId"><option :value="null">未指定</option><option v-for="camera in albumCameraOptions" :key="camera.id" :value="camera.id">{{ camera.brand }} {{ camera.model }}</option></select></label>
         <label><span>地点</span><input v-model="city" /></label>
         <label class="wide"><span>备注</span><textarea v-model="note"></textarea></label>
         <div class="form-actions wide"><button class="primary-btn" type="button" :disabled="busy" @click="saveAlbum">{{ busy ? '保存中…' : '保存' }}</button></div>
@@ -381,10 +456,10 @@ onUnmounted(() => window.removeEventListener('keydown', handleKey))
       <section class="gallery-panel">
         <div class="gallery-toolbar">
           <div class="section-title">数码影像</div>
-          <PhotoVersionTabs v-model="activeVersion" :edit-count="editCount" :lab-count="rawCount" lab-label="RAW" />
+          <PhotoVersionTabs v-model="activeVersion" :edit-count="editCount" :lab-count="rawCount" lab-label="原图" />
           <div class="actions">
             <button v-if="activeVersion === 'edit' ? editCount : rawCount" class="secondary-btn" @click="openDirectory">打开图片原始位置</button>
-            <button class="secondary-btn" :disabled="busy || !libraryAvailable" @click="chooseImport(activeVersion === 'lab' ? 'raw' : 'edit')">{{ activeVersion === 'lab' ? '导入 CR2' : '导入 PNG' }}</button>
+            <button class="secondary-btn" :disabled="busy || !libraryAvailable" @click="chooseImport(activeVersion === 'lab' ? 'raw' : 'edit')">{{ activeVersion === 'lab' ? '导入原图' : '导入调色图' }}</button>
           </div>
         </div>
         <PhotoGallery
@@ -393,7 +468,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKey))
           :previews="previews"
           :image-errors="imageErrors"
           :busy="busy"
-          lab-label="CR2 内嵌预览"
+          lab-label="原图"
           @view="openLightbox"
           @favorite="toggleFavorite"
           @delete="deletePhoto"
@@ -404,13 +479,14 @@ onUnmounted(() => window.removeEventListener('keydown', handleKey))
       </section>
     </div>
 
-    <PhotoLightbox :open="lightboxOpen" :source="lightboxSource" :display-name="lightboxPhoto?.displayName" :version="activeVersion" lab-label="CR2 内嵌预览" @close="lightboxOpen = false" @image-error="error = '图片无法显示'; lightboxOpen = false" />
+    <PhotoLightbox :open="lightboxOpen" :source="lightboxSource" :display-name="lightboxPhoto?.displayName" :version="activeVersion" :lab-label="lightboxOriginalLabel" @close="lightboxOpen = false" @image-error="error = '图片无法显示'; lightboxOpen = false" />
 
     <div v-if="importOpen" class="modal" @click.self="!busy && (importOpen = false)">
       <section class="import-dialog" role="dialog" aria-modal="true">
-        <header><div><h2>导入{{ importVersion === 'raw' ? ' CR2 原件' : ' PNG 调色图' }}</h2><p>按完整文件名配对；可以在导入前修改配对名称。</p></div><button class="close" @click="importOpen = false">×</button></header>
-        <div v-if="importError" class="feedback-error">{{ importError }}</div>
-        <div class="import-list">
+        <header><div><h2>导入{{ importVersion === 'raw' ? '原图' : '调色图' }}</h2><p>按完整文件名配对；可以在导入前修改配对名称。</p></div><button class="close" :disabled="busy" @click="!busy && (importOpen = false)">×</button></header>
+        <div class="import-body">
+          <div class="import-feedback"><div v-if="importError" class="feedback-error">{{ importError }}</div></div>
+          <div class="import-list">
           <article v-for="item in importItems" :key="item.sourcePath">
             <strong>{{ item.fileName }}</strong>
             <label><span>配对名称</span><input v-model="item.pairingKey" /></label>
@@ -420,8 +496,9 @@ onUnmounted(() => window.removeEventListener('keydown', handleKey))
             </select>
             <small v-else>{{ item.pairedVersion ? '将补充到已有配对记录' : '将新增照片记录' }}</small>
           </article>
+          </div>
         </div>
-        <div class="form-actions"><button class="primary-btn" :disabled="busy" @click="confirmImport">{{ busy ? '导入中…' : '确认整批导入' }}</button><button class="secondary-btn" :disabled="busy" @click="importOpen = false">取消</button></div>
+        <div class="form-actions import-actions"><button class="primary-btn" :disabled="busy" @click="confirmImport">{{ busy ? '导入中…' : '确认整批导入' }}</button><button class="secondary-btn" :disabled="busy" @click="importOpen = false">取消</button></div>
       </section>
     </div>
   </section>
@@ -429,14 +506,20 @@ onUnmounted(() => window.removeEventListener('keydown', handleKey))
 
 <style scoped>
 .stack { gap: 18px; }
-.album-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
-.album-card { overflow: hidden; border: 1px solid #29313d; border-radius: 10px; background: #121820; color: inherit; padding: 0; text-align: left; cursor: pointer; }
-.album-card:hover { border-color: #536174; transform: translateY(-2px); }
-.album-body { padding: 15px; }
-.album-body h2 { min-height: 2.4em; display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; margin: 0; font-size: 20px; }
-.album-body p { color: #8f9bad; font-size: 12px; }
-footer { display: flex; gap: 7px; flex-wrap: wrap; }
-footer span { border-radius: 999px; background: #202735; padding: 5px 8px; color: #aeb8c7; font-size: 11px; }
+.filter-panel { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) auto auto; gap: 10px; align-items: center; border: 1px solid #29313d; border-radius: 10px; background: #141920; padding: 16px; font-size: 12px; }
+.filter-panel select:disabled { border-color: #252c37; background: #11151c; color: #626d7b; cursor: not-allowed; }
+.album-list { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.album-card, .add-card { min-width: 0; overflow: hidden; border: 1px solid #29313d; border-radius: 10px; background: #151922; color: inherit; text-align: left; cursor: pointer; transition: border-color .16s ease, background .16s ease, transform .16s ease; }
+.album-card { width: 100%; height: 166px; display: grid; grid-template-columns: 220px minmax(0, 1fr) auto; align-items: stretch; padding: 0 20px 0 0; }
+.album-card:hover, .add-card:hover { border-color: #536174; background: #1a202b; transform: translateY(-2px); }
+.album-body { min-width: 0; align-self: center; padding: 20px; }
+.album-body h2 { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; margin: 0; font-size: 20px; }
+.album-meta-lines { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
+.album-meta-lines span { color: #cbd5e1; font-size: 12px; }
+.album-meta-lines b { display: inline-block; width: 44px; color: #778394; font-weight: 500; }
+.album-photo-count { align-self: center; color: #8591a1; font-size: 12px; white-space: nowrap; }
+.add-card { width: 100%; min-height: 84px; display: flex; align-items: center; justify-content: center; gap: 8px; border-style: dashed; background: rgba(21, 25, 34, .52); text-align: center; }
+.plus-mark { font-size: 26px; line-height: 1; }
 .form-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; border: 1px solid #29313d; border-radius: 10px; background: #141920; padding: 20px; }
 label { display: grid; gap: 7px; }
 label span { color: #9aa6b5; font-size: 12px; }
@@ -447,16 +530,19 @@ label span { color: #9aa6b5; font-size: 12px; }
 .actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .album-note { color: #a4afbd; }
 .modal { position: fixed; inset: 0; z-index: 10030; display: grid; place-items: center; background: rgba(2,5,9,.82); padding: 20px; }
-.import-dialog { width: min(820px, 100%); max-height: 88vh; display: grid; gap: 14px; overflow: hidden; border: 1px solid #303948; border-radius: 12px; background: #141920; padding: 20px; }
+.import-dialog { width: min(820px, 100%); max-height: 88vh; min-height: 0; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: 14px; overflow: hidden; border: 1px solid #303948; border-radius: 12px; background: #141920; padding: 20px; }
 .import-dialog header { display: flex; justify-content: space-between; gap: 12px; }
 .import-dialog h2, .import-dialog p { margin: 0; }
 .import-dialog p { margin-top: 5px; color: #8f9bad; font-size: 12px; }
 .close { border: 0; background: transparent; color: #e5e7eb; font-size: 24px; cursor: pointer; }
-.import-list { display: grid; gap: 9px; overflow: auto; }
+.import-body { min-height: 0; display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 10px; overflow: hidden; }
+.import-list { min-height: 0; max-height: calc(88vh - 190px); display: grid; align-content: start; gap: 9px; overflow-y: auto; padding-right: 4px; }
 .import-list article { display: grid; grid-template-columns: minmax(120px, 1fr) minmax(180px, 1fr) auto; align-items: end; gap: 10px; border: 1px solid #29313d; border-radius: 8px; padding: 11px; }
 .import-list strong { overflow-wrap: anywhere; }
 .import-list small { color: #8f9bad; }
 .issue { color: #f1a8ad; font-size: 12px; }
+.import-actions { flex: none; }
 .empty-state { border: 1px dashed #303846; border-radius: 9px; padding: 32px; color: #8f9bad; text-align: center; }
-@media (max-width: 720px) { .form-panel { grid-template-columns: 1fr; } .wide { grid-column: auto; } .import-list article { grid-template-columns: 1fr; } }
+@media (max-width: 900px) { .filter-panel { grid-template-columns: repeat(2, minmax(0, 1fr)); } .album-card { grid-template-columns: 150px minmax(0, 1fr); padding-right: 0; } .album-photo-count { display: none; } }
+@media (max-width: 720px) { .filter-panel, .form-panel { grid-template-columns: 1fr; } .wide { grid-column: auto; } .album-card { grid-template-columns: 110px minmax(0, 1fr); height: 156px; } .album-body { padding: 14px; } .album-meta-lines { gap: 4px; margin-top: 8px; } .import-list article { grid-template-columns: 1fr; } }
 </style>

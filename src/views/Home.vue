@@ -60,7 +60,7 @@ onMounted(fetchDashboard)
       <RouterLink class="feature-card albums-feature" to="/albums">
         <span>数码影像</span>
         <strong>Albums</strong>
-        <small>整理 CR2 原件与 PNG 调色图 →</small>
+        <small>整理数码原图与调色图 →</small>
       </RouterLink>
     </div>
 
@@ -98,7 +98,7 @@ onMounted(fetchDashboard)
           <RouterLink v-for="camera in stats.cameras" :key="camera.id" to="/cameras" class="camera-list-item">
             <div>
               <strong>{{ camera.brand }} {{ camera.model }}</strong>
-              <span>{{ camera.format || '135' }} 画幅</span>
+              <span>{{ camera.cameraType === 'digital' ? (camera.sensorFormat || '未记录 CMOS 规格') : `${camera.format || '135'} 画幅` }}</span>
             </div>
             <small>{{ camera.status === 'active' ? '在用' : '闲置' }}</small>
           </RouterLink>

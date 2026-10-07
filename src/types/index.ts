@@ -3,7 +3,9 @@ export interface Camera {
   brand: string
   model: string
   status: string
+  cameraType: 'film' | 'digital'
   format?: string
+  sensorFormat?: string
   purchaseDate?: string
   note?: string
 }

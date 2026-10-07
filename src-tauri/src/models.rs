@@ -7,7 +7,9 @@ pub struct CameraResponse {
     pub brand: String,
     pub model: String,
     pub status: String,
+    pub camera_type: String,
     pub format: Option<String>,
+    pub sensor_format: Option<String>,
     pub purchase_date: Option<String>,
     pub note: Option<String>,
 }

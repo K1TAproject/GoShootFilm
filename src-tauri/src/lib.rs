@@ -99,6 +99,8 @@ type CameraRow = (
     String,
     String,
     String,
+    String,
+    Option<String>,
     Option<String>,
     Option<String>,
     Option<String>,
@@ -160,14 +162,16 @@ type CameraRollRow = (
 );
 
 fn camera_response(
-    (id, brand, model, status, format, purchase_date, note): CameraRow,
+    (id, brand, model, status, camera_type, format, sensor_format, purchase_date, note): CameraRow,
 ) -> CameraResponse {
     CameraResponse {
         id,
         brand,
         model,
         status,
+        camera_type,
         format,
+        sensor_format,
         purchase_date,
         note,
     }
@@ -175,7 +179,7 @@ fn camera_response(
 
 async fn dashboard_cameras(pool: &SqlitePool) -> Result<Vec<CameraResponse>, sqlx::Error> {
     let rows: Vec<CameraRow> = sqlx::query_as(
-        "SELECT id, brand, model, status, format, purchase_date, note FROM cameras ORDER BY created_at ASC, id ASC",
+        "SELECT id, brand, model, status, camera_type, format, sensor_format, purchase_date, note FROM cameras ORDER BY created_at ASC, id ASC",
     )
     .fetch_all(pool)
     .await?;
@@ -199,6 +203,31 @@ pub(crate) async fn validate_purchase_date(
         return Err("购买日期不能晚于今天".into());
     }
     Ok(purchase_date)
+}
+
+fn validate_camera_fields(
+    camera_type: Option<String>,
+    format: Option<String>,
+    sensor_format: Option<String>,
+) -> Result<(String, Option<String>, Option<String>), String> {
+    let camera_type = camera_type.unwrap_or_else(|| "film".to_string());
+    match camera_type.as_str() {
+        "film" => Ok((
+            camera_type,
+            clean_optional(format, "胶片画幅", 30)?.or_else(|| Some("135".to_string())),
+            None,
+        )),
+        "digital" => Ok((
+            camera_type,
+            None,
+            Some(clean_required(
+                sensor_format.unwrap_or_default(),
+                "CMOS 规格",
+                50,
+            )?),
+        )),
+        _ => Err("相机类型无效".into()),
+    }
 }
 
 fn film_display_name(brand: &str, name: &str) -> String {
@@ -258,7 +287,7 @@ fn resolve_stored_path_buf(media_dir: &Path, stored_path: &str) -> Option<PathBu
 #[tauri::command]
 async fn get_cameras(state: tauri::State<'_, AppState>) -> Result<Vec<CameraResponse>, String> {
     let rows: Vec<CameraRow> = sqlx::query_as(
-            "SELECT id, brand, model, status, format, purchase_date, note FROM cameras ORDER BY brand COLLATE NOCASE, model COLLATE NOCASE",
+            "SELECT id, brand, model, status, camera_type, format, sensor_format, purchase_date, note FROM cameras ORDER BY brand COLLATE NOCASE, model COLLATE NOCASE",
         )
         .fetch_all(&state.db)
         .await
@@ -503,25 +532,31 @@ async fn get_roll_detail(
 
 // 2. 新增相机
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 async fn add_camera(
     brand: String,
     model: String,
+    camera_type: Option<String>,
     format: Option<String>,
+    sensor_format: Option<String>,
     purchase_date: Option<String>,
     note: Option<String>,
     state: tauri::State<'_, AppState>,
 ) -> Result<String, String> {
     let brand = clean_required(brand, "品牌", 80)?;
     let model = clean_required(model, "型号", 120)?;
-    let fmt = clean_optional(format, "画幅", 30)?.unwrap_or_else(|| "135".to_string());
+    let (camera_type, format, sensor_format) =
+        validate_camera_fields(camera_type, format, sensor_format)?;
     let purchase_date = validate_purchase_date(&state.db, purchase_date).await?;
     let note = clean_optional(note, "备注", 2000)?;
     sqlx::query(
-        "INSERT INTO cameras (brand, model, format, purchase_date, note) VALUES (?, ?, ?, ?, ?)",
+        "INSERT INTO cameras (brand, model, camera_type, format, sensor_format, purchase_date, note) VALUES (?, ?, ?, ?, ?, ?, ?)",
     )
     .bind(brand)
     .bind(model)
-    .bind(fmt)
+    .bind(camera_type)
+    .bind(format)
+    .bind(sensor_format)
     .bind(purchase_date)
     .bind(note)
     .execute(&state.db)
@@ -579,13 +614,14 @@ async fn add_roll(
     let shot_month = validate_shot_month(shot_month)?;
     let city = clean_optional(city, "地点", 120)?;
     let note = clean_optional(note, "备注", 2000)?;
-    let camera_exists: Option<i64> = sqlx::query_scalar("SELECT id FROM cameras WHERE id = ?")
-        .bind(camera_id)
-        .fetch_optional(&state.db)
-        .await
-        .map_err(|e| format!("读取相机失败: {e}"))?;
+    let camera_exists: Option<i64> =
+        sqlx::query_scalar("SELECT id FROM cameras WHERE id = ? AND camera_type = 'film'")
+            .bind(camera_id)
+            .fetch_optional(&state.db)
+            .await
+            .map_err(|e| format!("读取相机失败: {e}"))?;
     if camera_exists.is_none() {
-        return Err("所选相机不存在".into());
+        return Err("所选胶片相机不存在".into());
     }
 
     let film_exists: Option<i64> = sqlx::query_scalar("SELECT id FROM film_stocks WHERE id = ?")
@@ -771,13 +807,14 @@ async fn update_roll(
         return Err("拍摄卷不存在".into());
     }
 
-    let camera_exists: Option<i64> = sqlx::query_scalar("SELECT id FROM cameras WHERE id = ?")
-        .bind(camera_id)
-        .fetch_optional(&state.db)
-        .await
-        .map_err(|e| format!("读取相机失败: {e}"))?;
+    let camera_exists: Option<i64> =
+        sqlx::query_scalar("SELECT id FROM cameras WHERE id = ? AND camera_type = 'film'")
+            .bind(camera_id)
+            .fetch_optional(&state.db)
+            .await
+            .map_err(|e| format!("读取相机失败: {e}"))?;
     if camera_exists.is_none() {
-        return Err("所选相机不存在".into());
+        return Err("所选胶片相机不存在".into());
     }
 
     let film_exists: Option<i64> = sqlx::query_scalar("SELECT id FROM film_stocks WHERE id = ?")
@@ -853,7 +890,9 @@ async fn update_camera(
     brand: String,
     model: String,
     status: String,
+    camera_type: Option<String>,
     format: Option<String>,
+    sensor_format: Option<String>,
     purchase_date: Option<String>,
     note: Option<String>,
     state: tauri::State<'_, AppState>,
@@ -864,16 +903,47 @@ async fn update_camera(
     if !matches!(status.as_str(), "active" | "inactive") {
         return Err("相机状态无效".into());
     }
-    let format = clean_optional(format, "画幅", 30)?.or_else(|| Some("135".to_string()));
+    let (camera_type, format, sensor_format) =
+        validate_camera_fields(camera_type, format, sensor_format)?;
+    let current_type: String = sqlx::query_scalar("SELECT camera_type FROM cameras WHERE id = ?")
+        .bind(id)
+        .fetch_optional(&state.db)
+        .await
+        .map_err(|e| database_error("读取相机类型", e))?
+        .ok_or_else(|| "相机不存在".to_string())?;
+    if current_type != camera_type {
+        let relation_count: i64 = if camera_type == "digital" {
+            sqlx::query_scalar("SELECT COUNT(*) FROM rolls WHERE camera_id = ?")
+                .bind(id)
+                .fetch_one(&state.db)
+                .await
+                .map_err(|e| database_error("检查关联拍摄卷", e))?
+        } else {
+            sqlx::query_scalar("SELECT COUNT(*) FROM digital_albums WHERE camera_id = ?")
+                .bind(id)
+                .fetch_one(&state.db)
+                .await
+                .map_err(|e| database_error("检查关联数码相册", e))?
+        };
+        if relation_count > 0 {
+            return Err(if camera_type == "digital" {
+                "该相机已有胶卷拍摄记录，不能改为数码相机".into()
+            } else {
+                "该相机已关联数码相册，不能改为胶片相机".into()
+            });
+        }
+    }
     let purchase_date = validate_purchase_date(&state.db, purchase_date).await?;
     let note = clean_optional(note, "备注", 2000)?;
     let result = sqlx::query(
-        "UPDATE cameras SET brand = ?, model = ?, status = ?, format = ?, purchase_date = ?, note = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?"
+        "UPDATE cameras SET brand = ?, model = ?, status = ?, camera_type = ?, format = ?, sensor_format = ?, purchase_date = ?, note = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?"
     )
         .bind(brand)
         .bind(model)
         .bind(status)
+    .bind(camera_type)
         .bind(format)
+    .bind(sensor_format)
         .bind(purchase_date)
         .bind(note)
         .bind(id)
@@ -936,7 +1006,7 @@ async fn get_camera_detail(
 ) -> Result<CameraDetailResponse, String> {
     ensure_positive_id(id, "相机编号")?;
     let camera_row: Option<CameraRow> = sqlx::query_as(
-        "SELECT id, brand, model, status, format, purchase_date, note FROM cameras WHERE id = ?",
+        "SELECT id, brand, model, status, camera_type, format, sensor_format, purchase_date, note FROM cameras WHERE id = ?",
     )
     .bind(id)
     .fetch_optional(&state.db)
@@ -944,15 +1014,7 @@ async fn get_camera_detail(
     .map_err(|e| e.to_string())?;
 
     let camera = match camera_row {
-        Some((id, brand, model, status, format, purchase_date, note)) => CameraResponse {
-            id,
-            brand,
-            model,
-            status,
-            format,
-            purchase_date,
-            note,
-        },
+        Some(row) => camera_response(row),
         None => return Err("未找到相机".into()),
     };
 
@@ -1915,6 +1977,29 @@ mod validation_tests {
     use super::*;
 
     #[test]
+    fn camera_fields_keep_film_and_sensor_formats_separate() {
+        assert_eq!(
+            validate_camera_fields(
+                Some("film".into()),
+                Some("120".into()),
+                Some("APS-C".into())
+            )
+            .unwrap(),
+            ("film".into(), Some("120".into()), None)
+        );
+        assert_eq!(
+            validate_camera_fields(
+                Some("digital".into()),
+                Some("135".into()),
+                Some("全画幅".into())
+            )
+            .unwrap(),
+            ("digital".into(), None, Some("全画幅".into()))
+        );
+        assert!(validate_camera_fields(Some("digital".into()), None, None).is_err());
+    }
+
+    #[test]
     fn required_text_is_trimmed_and_checked() {
         assert_eq!(
             clean_required("  Nikon  ".into(), "品牌", 80).unwrap(),
@@ -1969,7 +2054,7 @@ mod validation_tests {
             .await
             .expect("open test database");
         sqlx::query(
-            "CREATE TABLE cameras (id INTEGER PRIMARY KEY, brand TEXT NOT NULL, model TEXT NOT NULL, status TEXT NOT NULL, format TEXT, purchase_date TEXT, note TEXT, created_at DATETIME NOT NULL)",
+            "CREATE TABLE cameras (id INTEGER PRIMARY KEY, brand TEXT NOT NULL, model TEXT NOT NULL, status TEXT NOT NULL, camera_type TEXT NOT NULL DEFAULT 'film', format TEXT, sensor_format TEXT, purchase_date TEXT, note TEXT, created_at DATETIME NOT NULL)",
         )
         .execute(&pool)
         .await

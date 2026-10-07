@@ -99,7 +99,7 @@ const cameraRollCounts = computed(() => {
   return counts
 })
 
-const sortedCameras = computed(() => [...cameras.value].sort((a, b) =>
+const sortedCameras = computed(() => cameras.value.filter(camera => camera.cameraType === 'film').sort((a, b) =>
   (cameraRollCounts.value.get(b.id) ?? 0) - (cameraRollCounts.value.get(a.id) ?? 0)
   || a.brand.localeCompare(b.brand)
   || a.model.localeCompare(b.model)
@@ -352,8 +352,8 @@ function resetEditForm(roll: RollDetail) {
 }
 
 function openAddForm() {
-  if (cameras.value.length === 0) {
-    visibleError.value = '请先在 Cameras 页面添加至少一台相机'
+  if (sortedCameras.value.length === 0) {
+    visibleError.value = '请先在 Equipment 页面添加至少一台胶片相机'
     return
   }
   resetAddForm()
