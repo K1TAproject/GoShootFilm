@@ -15,6 +15,7 @@ const emit = defineEmits<{
 }>()
 
 const editing = ref<EquipmentItem | null>(null)
+const viewing = ref<EquipmentItem | null>(null)
 const adding = ref<'lens' | 'other' | null>(null)
 const busy = ref(false)
 const brand = ref('')
@@ -50,6 +51,7 @@ function startAdd(category: 'lens' | 'other') {
 }
 
 function startEdit(item: EquipmentItem) {
+  viewing.value = null
   adding.value = null
   editing.value = item
   brand.value = item.brand
@@ -59,6 +61,14 @@ function startEdit(item: EquipmentItem) {
   status.value = item.status
   purchaseDate.value = item.purchaseDate || ''
   note.value = item.note || ''
+}
+
+function openDetail(item: EquipmentItem) {
+  viewing.value = item
+}
+
+function closeDetail() {
+  viewing.value = null
 }
 
 function closeForm() {
@@ -112,6 +122,7 @@ async function remove(item: EquipmentItem) {
   busy.value = true
   try {
     await invoke('delete_equipment_item', { id: item.id })
+    closeDetail()
     closeForm()
     emit('refresh')
   } catch (error) {
@@ -128,7 +139,7 @@ async function remove(item: EquipmentItem) {
       <h2>{{ section.title }}</h2>
       <div class="equipment-grid">
         <div v-if="section.items.length === 0" class="empty-state">暂无器材</div>
-        <button v-for="item in section.items" :key="item.id" type="button" class="equipment-card" @click="startEdit(item)">
+        <button v-for="item in section.items" :key="item.id" type="button" class="equipment-card" @click="openDetail(item)">
           <span class="kind">{{ item.category === 'lens' ? '镜头' : (item.subtype || '其他器材') }}</span>
           <div class="name" :title="`${item.brand} ${item.model}`">
             <small>{{ item.brand }}</small>
@@ -145,6 +156,34 @@ async function remove(item: EquipmentItem) {
         </button>
       </div>
     </section>
+
+    <div v-if="viewing" class="modal" @click.self="closeDetail">
+      <section class="detail-panel" role="dialog" aria-modal="true" :aria-label="`${viewing.brand} ${viewing.model} 详情`">
+        <header>
+          <div>
+            <span class="kind">{{ viewing.category === 'lens' ? '镜头' : (viewing.subtype || '其他器材') }}</span>
+            <h2>{{ viewing.brand }} {{ viewing.model }}</h2>
+          </div>
+          <button type="button" class="close" aria-label="关闭" @click="closeDetail">×</button>
+        </header>
+        <dl>
+          <template v-if="viewing.category === 'lens'">
+            <dt>卡口</dt><dd>{{ viewing.mount || '未填写' }}</dd>
+          </template>
+          <template v-else>
+            <dt>器材类型</dt><dd>{{ viewing.subtype || '未填写' }}</dd>
+          </template>
+          <dt>状态</dt><dd>{{ viewing.status === 'active' ? '在用' : '闲置' }}</dd>
+          <dt>购入日期</dt><dd>{{ viewing.purchaseDate || '未填写' }}</dd>
+          <dt>备注</dt><dd class="detail-note">{{ viewing.note || '暂无备注' }}</dd>
+        </dl>
+        <div class="detail-actions">
+          <button class="primary-btn" type="button" @click="startEdit(viewing)">编辑</button>
+          <button class="danger-btn" type="button" :disabled="busy" @click="remove(viewing)">删除</button>
+          <button class="secondary-btn" type="button" @click="closeDetail">关闭</button>
+        </div>
+      </section>
+    </div>
 
     <div v-if="adding || editing" class="modal" @click.self="closeForm">
       <section class="form-panel" role="dialog" aria-modal="true">
@@ -184,6 +223,14 @@ footer { display: flex; gap: 8px; flex-wrap: wrap; }
 footer span { border-radius: 999px; background: #202735; padding: 5px 9px; color: #aeb8c7; font-size: 12px; }
 .modal { position: fixed; inset: 0; z-index: 10020; display: grid; place-items: center; background: rgba(2, 5, 9, .78); padding: 20px; }
 .form-panel { width: min(680px, 100%); display: grid; grid-template-columns: 1fr 1fr; gap: 14px; border: 1px solid #303948; border-radius: 12px; background: #141920; padding: 20px; }
+.detail-panel { width: min(560px, 100%); display: grid; gap: 20px; border: 1px solid #303948; border-radius: 12px; background: #141920; padding: 20px; }
+.detail-panel header > div { display: grid; gap: 12px; min-width: 0; }
+.detail-panel header h2 { overflow-wrap: anywhere; }
+.detail-panel dl { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 12px 20px; margin: 0; }
+.detail-panel dt { color: #8f9bad; }
+.detail-panel dd { margin: 0; overflow-wrap: anywhere; }
+.detail-note { white-space: pre-wrap; }
+.detail-actions { display: flex; flex-wrap: wrap; gap: 10px; }
 header { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; }
 header h2 { margin: 0; }
 .close { border: 0; background: transparent; color: #dfe5ec; font-size: 24px; cursor: pointer; }

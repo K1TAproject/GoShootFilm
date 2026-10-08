@@ -268,12 +268,20 @@ async function openLightbox(photo: Photo) {
 }
 
 async function toggleFavorite(photo: Photo) {
+  let next: boolean
   try {
-    const next = await invoke<boolean>('toggle_digital_photo_favorite', { photoId: photo.id })
-    const target = selected.value?.photos.find(item => item.id === photo.id)
-    if (target) target.isFavorite = next
+    next = await invoke<boolean>('toggle_digital_photo_favorite', { photoId: photo.id })
   } catch (cause) {
     error.value = errorMessage(cause, '更新收藏状态失败')
+    return
+  }
+  const target = selected.value?.photos.find(item => item.id === photo.id)
+  if (target) target.isFavorite = next
+  try {
+    // 相册列表的封面来源依赖标星状态，详情中切换后同步刷新列表摘要。
+    albums.value = await invoke<DigitalAlbum[]>('get_digital_albums')
+  } catch (cause) {
+    error.value = errorMessage(cause, '收藏已更新，但相册封面刷新失败')
   }
 }
 

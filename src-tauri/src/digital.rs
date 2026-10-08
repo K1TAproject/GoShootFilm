@@ -101,15 +101,24 @@ const ALBUM_SELECT: &str = r#"
            COUNT(p.id),
            COALESCE(SUM(CASE WHEN p.raw_path IS NOT NULL THEN 1 ELSE 0 END), 0),
            COALESCE(SUM(CASE WHEN p.edit_path IS NOT NULL THEN 1 ELSE 0 END), 0),
-           COALESCE(
-               (SELECT ep.id FROM digital_photos ep WHERE ep.album_id = a.id AND ep.edit_path IS NOT NULL ORDER BY ep.created_at, ep.id LIMIT 1),
-               (SELECT rp.id FROM digital_photos rp WHERE rp.album_id = a.id AND rp.raw_path IS NOT NULL ORDER BY rp.created_at, rp.id LIMIT 1)
+           (
+               SELECT cp.id
+               FROM digital_photos cp
+               WHERE cp.album_id = a.id AND (cp.edit_path IS NOT NULL OR cp.raw_path IS NOT NULL)
+               ORDER BY cp.is_favorite DESC,
+                        CASE WHEN cp.is_favorite = 0 AND cp.edit_path IS NULL THEN 1 ELSE 0 END,
+                        cp.created_at, cp.id
+               LIMIT 1
            ),
-           CASE
-               WHEN EXISTS(SELECT 1 FROM digital_photos ep WHERE ep.album_id = a.id AND ep.edit_path IS NOT NULL) THEN 'edit'
-               WHEN EXISTS(SELECT 1 FROM digital_photos rp WHERE rp.album_id = a.id AND rp.raw_path IS NOT NULL) THEN 'raw'
-               ELSE NULL
-           END
+           (
+               SELECT CASE WHEN cp.edit_path IS NOT NULL THEN 'edit' ELSE 'raw' END
+               FROM digital_photos cp
+               WHERE cp.album_id = a.id AND (cp.edit_path IS NOT NULL OR cp.raw_path IS NOT NULL)
+               ORDER BY cp.is_favorite DESC,
+                        CASE WHEN cp.is_favorite = 0 AND cp.edit_path IS NULL THEN 1 ELSE 0 END,
+                        cp.created_at, cp.id
+               LIMIT 1
+           )
     FROM digital_albums a
     LEFT JOIN cameras c ON c.id = a.camera_id
     LEFT JOIN digital_photos p ON p.album_id = a.id
@@ -1125,6 +1134,59 @@ mod tests {
         assert_eq!(album_display_title(Some("2026-10-18"), None), "2026年10月");
         assert_eq!(album_display_title(None, Some("北京")), "北京");
         assert_eq!(album_display_title(None, None), "未命名相册");
+    }
+
+    #[tokio::test]
+    async fn album_cover_prefers_first_favorite_and_its_edit_version() {
+        let root = std::env::temp_dir().join(format!(
+            "goshootfilm-album-cover-test-{}",
+            std::process::id()
+        ));
+        let _ = fs::remove_dir_all(&root);
+        let state = import_test_state(&root).await;
+        sqlx::query("ALTER TABLE cameras ADD COLUMN brand TEXT")
+            .execute(&state.db)
+            .await
+            .unwrap();
+        sqlx::query("ALTER TABLE cameras ADD COLUMN model TEXT")
+            .execute(&state.db)
+            .await
+            .unwrap();
+        sqlx::query(
+            "INSERT INTO digital_photos (album_id, pairing_key, raw_path, edit_path, is_favorite) VALUES
+             (1, 'IMG_1', 'digital/1/raw/IMG_1.jpg', NULL, 0),
+             (1, 'IMG_2', 'digital/1/raw/IMG_2.jpg', NULL, 1),
+             (1, 'IMG_3', 'digital/1/raw/IMG_3.jpg', 'digital/1/edit/IMG_3.png', 1)",
+        )
+        .execute(&state.db)
+        .await
+        .unwrap();
+
+        let sql = format!("{ALBUM_SELECT} WHERE a.id = 1 GROUP BY a.id");
+        let first = album_response(sqlx::query_as(&sql).fetch_one(&state.db).await.unwrap());
+        assert_eq!(first.cover_photo_id, Some(2));
+        assert_eq!(first.cover_version.as_deref(), Some("raw"));
+
+        sqlx::query(
+            "UPDATE digital_photos SET edit_path = 'digital/1/edit/IMG_2.png' WHERE id = 2",
+        )
+        .execute(&state.db)
+        .await
+        .unwrap();
+        let second = album_response(sqlx::query_as(&sql).fetch_one(&state.db).await.unwrap());
+        assert_eq!(second.cover_photo_id, Some(2));
+        assert_eq!(second.cover_version.as_deref(), Some("edit"));
+
+        sqlx::query("UPDATE digital_photos SET is_favorite = 0, edit_path = CASE WHEN id = 2 THEN NULL ELSE edit_path END")
+            .execute(&state.db)
+            .await
+            .unwrap();
+        let fallback = album_response(sqlx::query_as(&sql).fetch_one(&state.db).await.unwrap());
+        assert_eq!(fallback.cover_photo_id, Some(3));
+        assert_eq!(fallback.cover_version.as_deref(), Some("edit"));
+
+        state.db.close().await;
+        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]

@@ -379,10 +379,12 @@ async fn get_rolls(state: tauri::State<'_, AppState>) -> Result<Vec<RollSummaryR
             r.id, r.camera_id, r.film_stock_id, r.roll_index, r.shot_month, r.city, r.note,
             c.brand, c.model, f.brand, f.name, f.type,
             (
-                SELECT p.edit_scan_path
+                SELECT COALESCE(p.edit_scan_path, p.lab_scan_path)
                 FROM photos p
-                WHERE p.roll_id = r.id AND p.edit_scan_path IS NOT NULL
-                ORDER BY p.frame_number, p.id
+                WHERE p.roll_id = r.id AND (p.edit_scan_path IS NOT NULL OR p.lab_scan_path IS NOT NULL)
+                ORDER BY p.is_favorite DESC,
+                         CASE WHEN p.is_favorite = 0 AND p.edit_scan_path IS NULL THEN 1 ELSE 0 END,
+                         p.frame_number, p.id
                 LIMIT 1
             ) AS cover_path,
             (SELECT COUNT(*) FROM photos p WHERE p.roll_id = r.id) AS photo_count
@@ -431,7 +433,7 @@ async fn get_rolls(state: tauri::State<'_, AppState>) -> Result<Vec<RollSummaryR
                     film_brand,
                     film_name,
                     film_type,
-                    // 列表仅使用该值判断是否有调色封面，实际图片由按需缩略图命令提供。
+                    // 列表仅使用该值判断是否有可用封面，实际图片由按需缩略图命令提供。
                     cover_path,
                     photo_count,
                 }
@@ -1059,13 +1061,18 @@ async fn toggle_photo_favorite(
 ) -> Result<(), String> {
     ensure_positive_id(photo_id, "照片编号")?;
     let val = if is_favorite { 1 } else { 0 };
-    let result = sqlx::query("UPDATE photos SET is_favorite = ? WHERE id = ?")
-        .bind(val)
-        .bind(photo_id)
-        .execute(&state.db)
-        .await
-        .map_err(|e| e.to_string())?;
-    ensure_changed(result.rows_affected(), "照片")?;
+    let roll_id: Option<i64> =
+        sqlx::query_scalar("UPDATE photos SET is_favorite = ? WHERE id = ? RETURNING roll_id")
+            .bind(val)
+            .bind(photo_id)
+            .fetch_optional(&state.db)
+            .await
+            .map_err(|e| e.to_string())?;
+    let roll_id = roll_id.ok_or_else(|| "未找到要操作的照片".to_string())?;
+    // 封面来源会随标星变化；固定封面缓存必须失效，避免继续显示上一次选中的照片。
+    if let Ok((_, preview_dir)) = library_directories(&state) {
+        let _ = tokio::fs::remove_file(roll_cover_preview_path(&preview_dir, roll_id)).await;
+    }
     Ok(())
 }
 
@@ -1090,6 +1097,19 @@ fn roll_cover_preview_path(preview_dir: &Path, roll_id: i64) -> PathBuf {
         .join("rolls")
         .join(roll_id.to_string())
         .join("cover.png")
+}
+
+async fn preferred_roll_cover_path(
+    db: &SqlitePool,
+    roll_id: i64,
+) -> Result<Option<String>, sqlx::Error> {
+    sqlx::query_scalar(
+        "SELECT COALESCE(edit_scan_path, lab_scan_path) FROM photos WHERE roll_id = ? AND (edit_scan_path IS NOT NULL OR lab_scan_path IS NOT NULL) ORDER BY is_favorite DESC, CASE WHEN is_favorite = 0 AND edit_scan_path IS NULL THEN 1 ELSE 0 END, frame_number, id LIMIT 1",
+    )
+    .bind(roll_id)
+    .fetch_optional(db)
+    .await
+    .map(Option::flatten)
 }
 
 fn build_lab_preview(source: &Path, target: &Path) -> Result<(), String> {
@@ -1857,15 +1877,10 @@ async fn get_roll_cover_preview(
 ) -> Result<String, String> {
     ensure_positive_id(roll_id, "拍摄卷编号")?;
     let _gallery_guard = state.gallery_operation_lock.read().await;
-    let stored_path: Option<String> = sqlx::query_scalar(
-        "SELECT edit_scan_path FROM photos WHERE roll_id = ? AND edit_scan_path IS NOT NULL ORDER BY frame_number, id LIMIT 1",
-    )
-    .bind(roll_id)
-    .fetch_optional(&state.db)
-    .await
-    .map_err(|error| format!("读取拍摄卷封面失败: {error}"))?
-    .flatten();
-    let stored_path = stored_path.ok_or_else(|| "该拍摄卷没有可用的调色封面".to_string())?;
+    let stored_path = preferred_roll_cover_path(&state.db, roll_id)
+        .await
+        .map_err(|error| format!("读取拍摄卷封面失败: {error}"))?;
+    let stored_path = stored_path.ok_or_else(|| "该拍摄卷没有可用的封面图片".to_string())?;
     let (media_dir, preview_dir) = library_directories(&state)?;
     let original_path = resolve_stored_path_buf(&media_dir, &stored_path)
         .ok_or_else(|| "拍摄卷封面路径无效".to_string())?;
@@ -2082,6 +2097,60 @@ mod validation_tests {
             .map(|camera| camera.id)
             .collect();
         assert_eq!(ids, vec![10, 30, 20]);
+    }
+
+    #[tokio::test]
+    async fn roll_cover_prefers_first_favorite_and_its_edit_version() {
+        let pool = SqlitePool::connect("sqlite::memory:")
+            .await
+            .expect("open test database");
+        sqlx::query(
+            "CREATE TABLE photos (id INTEGER PRIMARY KEY, roll_id INTEGER NOT NULL, frame_number INTEGER, lab_scan_path TEXT, edit_scan_path TEXT, is_favorite INTEGER NOT NULL DEFAULT 0)",
+        )
+        .execute(&pool)
+        .await
+        .expect("create photos table");
+        sqlx::query(
+            "INSERT INTO photos (id, roll_id, frame_number, lab_scan_path, edit_scan_path, is_favorite) VALUES
+             (1, 1, 1, 'rolls/1/lab/01.tif', NULL, 0),
+             (2, 1, 2, 'rolls/1/lab/02.tif', NULL, 1),
+             (3, 1, 3, 'rolls/1/lab/03.tif', 'rolls/1/edit/03.jpg', 1)",
+        )
+        .execute(&pool)
+        .await
+        .expect("insert photos");
+
+        assert_eq!(
+            preferred_roll_cover_path(&pool, 1)
+                .await
+                .unwrap()
+                .as_deref(),
+            Some("rolls/1/lab/02.tif")
+        );
+        sqlx::query("UPDATE photos SET edit_scan_path = 'rolls/1/edit/02.jpg' WHERE id = 2")
+            .execute(&pool)
+            .await
+            .expect("add favorite edit version");
+        assert_eq!(
+            preferred_roll_cover_path(&pool, 1)
+                .await
+                .unwrap()
+                .as_deref(),
+            Some("rolls/1/edit/02.jpg")
+        );
+        sqlx::query(
+            "UPDATE photos SET is_favorite = 0, edit_scan_path = CASE WHEN id = 2 THEN NULL ELSE edit_scan_path END",
+        )
+        .execute(&pool)
+        .await
+        .expect("remove favorites");
+        assert_eq!(
+            preferred_roll_cover_path(&pool, 1)
+                .await
+                .unwrap()
+                .as_deref(),
+            Some("rolls/1/edit/03.jpg")
+        );
     }
 
     #[test]
