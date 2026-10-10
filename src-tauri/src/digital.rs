@@ -13,7 +13,7 @@ use sqlx::{Row, Sqlite, Transaction};
 use std::collections::HashSet;
 use std::ffi::OsStr;
 use std::fs;
-use std::io::Write;
+use std::io::{Cursor, Write};
 use std::path::{Component, Path, PathBuf};
 use tauri_plugin_opener::OpenerExt;
 
@@ -711,6 +711,11 @@ fn original_preview_path(
         .join(format!("{photo_id}.{extension}"))
 }
 
+fn cr2_preview_path(previews: &Path, album_id: i64, photo_id: i64) -> PathBuf {
+    // v2 会让旧版误选 160×120 缩略图的缓存自然失效，不需要触碰正式 CR2 原件。
+    original_preview_path(previews, album_id, photo_id, "cr2-v2.jpg")
+}
+
 fn thumb_path(previews: &Path, album_id: i64, photo_id: i64, version: &str) -> PathBuf {
     previews
         .join("digital")
@@ -780,6 +785,19 @@ fn tiff_entry_values(
             }
         })
         .collect()
+}
+
+fn highest_resolution_jpeg<'a>(candidates: impl Iterator<Item = &'a [u8]>) -> Option<&'a [u8]> {
+    candidates
+        .filter_map(|candidate| {
+            let (width, height) =
+                image::io::Reader::with_format(Cursor::new(candidate), ImageFormat::Jpeg)
+                    .into_dimensions()
+                    .ok()?;
+            Some((candidate, u64::from(width) * u64::from(height)))
+        })
+        .max_by_key(|(_, pixels)| *pixels)
+        .map(|(candidate, _)| candidate)
 }
 
 fn cr2_embedded_jpeg(bytes: &[u8]) -> Result<&[u8], String> {
@@ -868,14 +886,7 @@ fn cr2_embedded_jpeg(bytes: &[u8]) -> Result<&[u8], String> {
             pending.push(next);
         }
     }
-    jpeg_candidates
-        .into_iter()
-        .max_by_key(|candidate| candidate.len())
-        .or_else(|| {
-            strip_candidates
-                .into_iter()
-                .min_by_key(|candidate| candidate.len())
-        })
+    highest_resolution_jpeg(jpeg_candidates.into_iter().chain(strip_candidates))
         .ok_or_else(|| "CR2 中没有可识别的内嵌 JPEG 预览".into())
 }
 
@@ -972,9 +983,11 @@ pub(crate) async fn get_digital_photo_preview(
         if matches!(extension.as_str(), "jpg" | "jpeg") {
             formal_source.clone()
         } else {
-            let preview_extension = if extension == "cr2" { "jpg" } else { "png" };
-            let raw_preview =
-                original_preview_path(&previews, album_id, photo_id, preview_extension);
+            let raw_preview = if extension == "cr2" {
+                cr2_preview_path(&previews, album_id, photo_id)
+            } else {
+                original_preview_path(&previews, album_id, photo_id, "png")
+            };
             let lock = preview_task_lock(&state, format!("digital-raw:{photo_id}")).await;
             let _lock = lock.lock().await;
             let fresh = super::preview_is_fresh(&formal_source, &raw_preview).await;
@@ -1064,6 +1077,7 @@ pub(crate) async fn delete_digital_photo(
     let (_, previews) = library_directories(&state)?;
     for path in [
         original_preview_path(&previews, album_id, photo_id, "jpg"),
+        cr2_preview_path(&previews, album_id, photo_id),
         original_preview_path(&previews, album_id, photo_id, "png"),
         thumb_path(&previews, album_id, photo_id, "raw"),
         thumb_path(&previews, album_id, photo_id, "edit"),
@@ -1123,6 +1137,31 @@ mod tests {
         assert!(image::open(&target).is_ok());
         assert_eq!(fs::read(&source).unwrap(), before);
         fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn embedded_jpeg_selection_uses_resolution_not_file_size() {
+        fn jpeg(width: u32, height: u32, quality: u8) -> Vec<u8> {
+            let image = image::RgbImage::from_pixel(width, height, image::Rgb([20, 40, 60]));
+            let mut bytes = Vec::new();
+            image::codecs::jpeg::JpegEncoder::new_with_quality(&mut bytes, quality)
+                .encode_image(&image)
+                .unwrap();
+            bytes
+        }
+
+        let small_high_quality = jpeg(160, 120, 100);
+        let large_low_quality = jpeg(800, 600, 20);
+        let selected = highest_resolution_jpeg(
+            [small_high_quality.as_slice(), large_low_quality.as_slice()].into_iter(),
+        )
+        .unwrap();
+        assert_eq!(
+            image::io::Reader::with_format(Cursor::new(selected), ImageFormat::Jpeg)
+                .into_dimensions()
+                .unwrap(),
+            (800, 600)
+        );
     }
 
     #[test]
@@ -1241,7 +1280,13 @@ mod tests {
         let formal_raw = root.join("media").join(raw_path);
         let target = root.join("preview.jpg");
         extract_cr2_preview(&formal_raw, &target).expect("extract embedded JPEG from real CR2");
-        image::open(&target).expect("open extracted embedded JPEG");
+        let preview = image::open(&target).expect("open extracted embedded JPEG");
+        assert!(
+            preview.width() >= 640 && preview.height() >= 480,
+            "embedded preview is too small: {}x{}",
+            preview.width(),
+            preview.height()
+        );
         state.db.close().await;
         fs::remove_dir_all(root).expect("remove real CR2 test directory");
     }
