@@ -5,7 +5,7 @@ import { invoke } from '@tauri-apps/api/core'
 import { open } from '@tauri-apps/plugin-dialog'
 import { check, type Update } from '@tauri-apps/plugin-updater'
 import { relaunch } from '@tauri-apps/plugin-process'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import appIcon from './assets/app-icon.png'
 import AppTitleBar from './components/AppTitleBar.vue'
 import UpdateDialog from './components/UpdateDialog.vue'
@@ -13,6 +13,7 @@ import type { LibraryMigrationResult, LibraryStatus } from './types'
 import { errorMessage } from './utils/errors'
 
 const router = useRouter()
+const route = useRoute()
 const libraryStatus = ref<LibraryStatus>()
 const settingsDialogOpen = ref(false)
 const libraryBusy = ref(false)
@@ -30,11 +31,24 @@ const versionLoaded = ref(false)
 const versionLoading = ref(false)
 
 function openRollFromRelation(rollId: number) {
-  void router.push({ name: 'rolls', query: { roll: String(rollId) } })
+  const query: Record<string, string> = { roll: String(rollId) }
+  if (route.name === 'cameras' && route.query.camera) {
+    query.from = 'camera'
+    query.camera = String(route.query.camera)
+  } else if (route.name === 'films' && route.query.film) {
+    query.from = 'film'
+    query.film = String(route.query.film)
+  }
+  void router.push({ name: 'rolls', query })
 }
 
 function openAlbumFromRelation(albumId: number) {
-  void router.push({ name: 'albums', query: { album: String(albumId) } })
+  const query: Record<string, string> = { album: String(albumId) }
+  if (route.name === 'cameras' && route.query.camera) {
+    query.from = 'camera'
+    query.camera = String(route.query.camera)
+  }
+  void router.push({ name: 'albums', query })
 }
 
 async function loadAppVersion() {

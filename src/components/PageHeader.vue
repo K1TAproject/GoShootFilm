@@ -2,17 +2,21 @@
 withDefaults(defineProps<{
   title: string
   subtitle?: string
-  showHome?: boolean
+  showBack?: boolean
 }>(), {
   subtitle: '',
-  showHome: true,
+  showBack: false,
 })
+
+defineEmits<{
+  (event: 'back'): void
+}>()
 </script>
 
 <template>
   <header class="page-heading">
     <div>
-      <RouterLink v-if="showHome" class="home-link" to="/">← 首页</RouterLink>
+      <button v-if="showBack" class="back-button" type="button" @click="$emit('back')">← 返回</button>
       <h1>{{ title }}</h1>
       <p v-if="subtitle">{{ subtitle }}</p>
     </div>
@@ -30,16 +34,30 @@ withDefaults(defineProps<{
   gap: 20px;
 }
 
-.home-link {
-  display: inline-block;
+.back-button {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
   margin-bottom: 8px;
+  padding: 3px 9px;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.46);
   color: #93a4bd;
   font-size: 13px;
-  text-decoration: none;
+  cursor: pointer;
+  transition: border-color 0.16s ease, background 0.16s ease, color 0.16s ease;
 }
 
-.home-link:hover {
+.back-button:hover {
+  border-color: rgba(139, 123, 255, 0.5);
+  background: rgba(139, 123, 255, 0.1);
   color: #f8fafc;
+}
+
+.back-button:focus-visible {
+  outline: 2px solid rgba(95, 216, 198, 0.75);
+  outline-offset: 2px;
 }
 
 h1 {

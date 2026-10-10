@@ -35,7 +35,6 @@ onMounted(fetchDashboard)
     <PageHeader
       title="Photo Archive"
       subtitle="管理器材、胶卷与数码影像"
-      :show-home="false"
     />
 
     <div v-if="visibleError" class="feedback-error" role="alert">{{ visibleError }}</div>

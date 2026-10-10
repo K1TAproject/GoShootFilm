@@ -32,6 +32,8 @@ import { isSupportedPhotoPath, photoImageUrl, PHOTO_EXTENSIONS } from '../utils/
 
 const route = useRoute()
 const router = useRouter()
+const pageRoot = ref<HTMLElement>()
+const listScroll = ref(0)
 
 const rolls = ref<RollSummary[]>([])
 const cameras = ref<Camera[]>([])
@@ -356,11 +358,27 @@ function openAddForm() {
     visibleError.value = '请先在 Equipment 页面添加至少一台胶片相机'
     return
   }
+  if (currentView.value === 'grid') listScroll.value = scrollPosition()
   resetAddForm()
   currentView.value = 'add'
+  requestAnimationFrame(() => scrollContainer().scrollTo({ top: 0, behavior: 'auto' }))
+}
+
+function scrollContainer(): Window | HTMLElement {
+  return pageRoot.value?.closest('.main-content') as HTMLElement || window
+}
+
+function scrollPosition() {
+  const container = scrollContainer()
+  return container === window ? window.scrollY : (container as HTMLElement).scrollTop
+}
+
+function restoreListScroll() {
+  requestAnimationFrame(() => scrollContainer().scrollTo({ top: listScroll.value, behavior: 'auto' }))
 }
 
 async function openRollDetail(rollId: number, syncRoute = true) {
+  if (currentView.value === 'grid') listScroll.value = scrollPosition()
   isLoading.value = true
   visibleError.value = ''
   try {
@@ -374,8 +392,9 @@ async function openRollDetail(rollId: number, syncRoute = true) {
     isEditing.value = false
     currentView.value = 'detail'
     if (syncRoute && String(route.query.roll || '') !== String(rollId)) {
-      await router.replace({ name: 'rolls', query: { roll: String(rollId) } })
+      await router.push({ name: 'rolls', query: { ...route.query, roll: String(rollId) } })
     }
+    requestAnimationFrame(() => scrollContainer().scrollTo({ top: 0, behavior: 'auto' }))
   } catch (err) {
     console.error('Failed to fetch roll detail:', err)
     visibleError.value = formatError(err, '读取拍摄卷详情失败')
@@ -388,7 +407,7 @@ function viewDetail(roll: RollSummary) {
   void openRollDetail(roll.id)
 }
 
-function backToGrid(syncRoute = true) {
+async function backToGrid(syncRoute = true) {
   currentView.value = 'grid'
   selectedRoll.value = null
   labPreviews.value = {}
@@ -398,8 +417,23 @@ function backToGrid(syncRoute = true) {
   isEditing.value = false
   isDraggingFiles.value = false
   if (syncRoute && route.query.roll) {
-    void router.replace({ name: 'rolls' })
+    await router.replace({ name: 'rolls' })
   }
+  restoreListScroll()
+}
+
+async function backFromDetail() {
+  const cameraId = Number(route.query.camera)
+  if (route.query.from === 'camera' && Number.isInteger(cameraId) && cameraId > 0) {
+    await router.replace({ name: 'cameras', query: { camera: String(cameraId) } })
+    return
+  }
+  const filmId = Number(route.query.film)
+  if (route.query.from === 'film' && Number.isInteger(filmId) && filmId > 0) {
+    await router.replace({ name: 'films', query: { film: String(filmId) } })
+    return
+  }
+  await backToGrid()
 }
 
 async function handleAddRoll() {
@@ -471,8 +505,12 @@ async function handleDeleteRoll() {
   visibleError.value = ''
   try {
     await invoke('delete_roll', { id: selectedRoll.value.id })
-    backToGrid()
-    await fetchRolls()
+    const cameraId = Number(route.query.camera)
+    const filmId = Number(route.query.film)
+    const hasParent = (route.query.from === 'camera' && Number.isInteger(cameraId) && cameraId > 0)
+      || (route.query.from === 'film' && Number.isInteger(filmId) && filmId > 0)
+    await backFromDetail()
+    if (!hasParent) await fetchRolls()
     visibleInfo.value = '拍摄卷已删除，其余拍摄卷已按全局顺序重新编号。'
   } catch (err) {
     console.error('Failed to delete roll:', err)
@@ -773,7 +811,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <section class="page">
+  <section ref="pageRoot" class="page">
     <div v-if="visibleError" class="feedback-error" role="alert">{{ visibleError }}</div>
     <div v-else-if="visibleInfo" class="feedback-info" role="status">{{ visibleInfo }}</div>
     <div v-else-if="isLoading" class="feedback-info">正在读取拍摄卷数据…</div>
@@ -851,9 +889,7 @@ onUnmounted(() => {
     </div>
 
     <div v-else-if="currentView === 'add'" class="stack">
-      <PageHeader title="新增拍摄卷">
-        <button class="secondary-btn" @click="backToGrid()">返回</button>
-      </PageHeader>
+      <PageHeader title="新增拍摄卷" show-back @back="backToGrid()" />
 
       <div class="form-panel">
         <label>
@@ -888,11 +924,10 @@ onUnmounted(() => {
     </div>
 
     <div v-else-if="currentView === 'detail' && selectedRoll" class="stack">
-      <PageHeader title="卷详情">
+      <PageHeader title="卷详情" show-back @back="backFromDetail">
         <div class="actions">
           <button v-if="!isEditing" class="secondary-btn" @click="isEditing = true">编辑</button>
           <button v-if="!isEditing" class="danger-btn" :disabled="isBusy" @click="handleDeleteRoll">删除</button>
-          <button class="secondary-btn" @click="backToGrid()">返回</button>
         </div>
       </PageHeader>
 

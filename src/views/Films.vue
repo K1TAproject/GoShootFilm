@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
+import { useRoute, useRouter } from 'vue-router'
 import PageHeader from '../components/PageHeader.vue'
 import type { Film, RollSummary } from '../types'
 import { errorMessage as formatError } from '../utils/errors'
@@ -16,10 +17,12 @@ import {
 
 const filmTypes = FILM_TYPES
 const targetStatuses = FILM_TARGET_STATUSES
+const route = useRoute()
+const router = useRouter()
 
 const films = ref<Film[]>([])
 const rolls = ref<RollSummary[]>([])
-const currentView = ref<'grid' | 'add' | 'detail'>('grid')
+const currentView = ref<'grid' | 'detail'>('grid')
 
 const draftBrand = ref('')
 const draftType = ref('')
@@ -27,13 +30,6 @@ const draftShotStatus = ref('')
 const activeBrand = ref('')
 const activeType = ref('')
 const activeShotStatus = ref('')
-
-const formBrand = ref('')
-const formName = ref('')
-const formIso = ref<number | null>(null)
-const formType = ref('Color Negative')
-const formTargetStatus = ref('unshot')
-const formNote = ref('')
 
 const selectedFilm = ref<Film | null>(null)
 const editSnapshot = ref<Film | null>(null)
@@ -144,59 +140,18 @@ async function scrollContentTo(position: number) {
   scrollContainer().scrollTo({ top: position, behavior: 'auto' })
 }
 
-function openSubview(view: 'add' | 'detail') {
+function openSubview(view: 'detail') {
   listScrollPosition.value = currentScrollPosition()
   currentView.value = view
   void scrollContentTo(0)
 }
 
-function openAddForm() {
-  resetFilmForm()
-  openSubview('add')
-}
-
-function resetFilmForm() {
-  formBrand.value = ''
-  formName.value = ''
-  formIso.value = null
-  formType.value = 'Color Negative'
-  formTargetStatus.value = 'unshot'
-  formNote.value = ''
-}
-
-async function handleAddFilm() {
-  if (!formBrand.value.trim() || !formName.value.trim() || !formIso.value || !formType.value) {
-    visibleError.value = '请填写品牌、名称、ISO 和类型'
-    return
-  }
-
-  isBusy.value = true
-  visibleError.value = ''
-  try {
-    await invoke('add_film_stock', {
-      brand: formBrand.value,
-      name: formName.value,
-      iso: Number(formIso.value),
-      filmType: formType.value,
-      targetStatus: formTargetStatus.value || 'unshot',
-      note: formNote.value || null
-    })
-    resetFilmForm()
-    await fetchData()
-    await backToGrid()
-  } catch (err) {
-    console.error('Failed to add film:', err)
-    visibleError.value = formatError(err, '新增胶片型号失败')
-  } finally {
-    isBusy.value = false
-  }
-}
-
-function viewFilmDetail(film: Film) {
+async function viewFilmDetail(film: Film, updateRoute = true) {
   selectedFilm.value = { ...film }
   relatedRolls.value = rolls.value.filter(roll => roll.filmId === film.id)
   isEditing.value = false
   openSubview('detail')
+  if (updateRoute) await router.push({ name: 'films', query: { film: String(film.id) } })
 }
 
 async function handleUpdateFilm() {
@@ -259,17 +214,31 @@ function cancelEditing() {
   isEditing.value = false
 }
 
-async function backToGrid() {
+async function backToGrid(updateRoute = true) {
   currentView.value = 'grid'
   selectedFilm.value = null
   relatedRolls.value = []
   isEditing.value = false
+  if (updateRoute && route.query.film) await router.replace({ name: 'films' })
   await scrollContentTo(listScrollPosition.value)
 }
 
-onMounted(() => {
+watch(() => route.query.film, value => {
+  const id = Number(value)
+  if (Number.isInteger(id) && id > 0 && selectedFilm.value?.id !== id) {
+    const film = films.value.find(item => item.id === id)
+    if (film) void viewFilmDetail(film, false)
+  } else if (!value && currentView.value === 'detail') {
+    void backToGrid(false)
+  }
+})
+
+onMounted(async () => {
   void scrollContentTo(0)
-  fetchData()
+  await fetchData()
+  const id = Number(route.query.film)
+  const film = films.value.find(item => item.id === id)
+  if (film) await viewFilmDetail(film, false)
 })
 </script>
 
@@ -324,64 +293,16 @@ onMounted(() => {
           </div>
         </button>
 
-        <button class="add-card" @click="openAddForm">
-          <span class="plus-mark">+</span>
-          <span>添加新卷</span>
-        </button>
       </div>
 
       <div v-if="filteredFilms.length === 0" class="empty-state">没有符合条件的胶卷。</div>
     </div>
 
-    <div v-else-if="currentView === 'add'" class="stack">
-      <PageHeader title="新增胶卷">
-        <button class="secondary-btn" @click="backToGrid">返回</button>
-      </PageHeader>
-
-      <div class="form-panel">
-        <label>
-          <span>品牌 *</span>
-          <input v-model="formBrand" placeholder="Kodak" />
-        </label>
-        <label>
-          <span>名称 *</span>
-          <input v-model="formName" placeholder="Gold 200" />
-        </label>
-        <label>
-          <span>ISO *</span>
-          <input v-model.number="formIso" type="number" min="1" step="1" placeholder="200" />
-        </label>
-        <label>
-          <span>类型 *</span>
-          <select v-model="formType">
-            <option v-for="type in filmTypes" :key="type" :value="type">{{ type }}</option>
-          </select>
-        </label>
-        <label>
-          <span>手动状态</span>
-          <select v-model="formTargetStatus">
-            <option v-for="status in targetStatuses" :key="status" :value="status">
-              {{ filmTargetStatusLabel(status) }}
-            </option>
-          </select>
-        </label>
-        <label class="full-width">
-          <span>备注</span>
-          <textarea v-model="formNote"></textarea>
-        </label>
-        <div class="form-actions full-width">
-          <button class="primary-btn" :disabled="isBusy" @click="handleAddFilm">保存</button>
-          <button class="secondary-btn" @click="backToGrid">取消</button>
-        </div>
-      </div>
-    </div>
-
     <div v-else-if="currentView === 'detail' && selectedFilm" class="stack">
-      <PageHeader title="胶卷详情">
+      <PageHeader title="胶卷详情" show-back @back="backToGrid">
         <div class="actions">
           <button v-if="!isEditing" class="secondary-btn" @click="startEditing">编辑</button>
           <button v-if="!isEditing" class="danger-btn" :disabled="isBusy" @click="handleDeleteFilm">删除</button>
-          <button class="secondary-btn" @click="backToGrid">返回</button>
         </div>
       </PageHeader>
 
@@ -533,8 +454,7 @@ h2 {
   min-width: 0;
 }
 
-.film-card,
-.add-card {
+.film-card {
   min-width: 0;
   height: auto;
   min-height: 0;
@@ -569,8 +489,7 @@ h2 {
   filter: brightness(0.88) saturate(0.9);
 }
 
-.film-card:hover,
-.add-card:hover {
+.film-card:hover {
   border-color: #4b5563;
   background: #1a202b;
   transform: translateY(-2px);
@@ -648,10 +567,6 @@ h2 {
   padding: 4px 8px;
   font-size: 11px;
   white-space: nowrap;
-}
-
-.add-card {
-  min-height: 242px;
 }
 
 .detail-layout {

@@ -146,9 +146,11 @@ async function fetchAlbums() {
 }
 
 function openCreate() {
+  if (view.value === 'grid') listScroll.value = scrollPosition()
   resetForm()
   editing.value = false
   view.value = 'form'
+  requestAnimationFrame(() => scrollContainer().scrollTo({ top: 0, behavior: 'auto' }))
 }
 
 async function saveAlbum() {
@@ -183,7 +185,8 @@ async function openDetail(id: number, updateRoute = true) {
     previews.value = {}
     imageErrors.value = {}
     view.value = 'detail'
-    if (updateRoute) await router.push({ name: 'albums', query: { album: String(id) } })
+    if (updateRoute) await router.push({ name: 'albums', query: { ...route.query, album: String(id) } })
+    requestAnimationFrame(() => scrollContainer().scrollTo({ top: 0, behavior: 'auto' }))
   } catch (cause) {
     error.value = errorMessage(cause, '无法读取相册详情')
   } finally {
@@ -194,8 +197,25 @@ async function openDetail(id: number, updateRoute = true) {
 async function backToGrid(updateRoute = true) {
   selected.value = null
   view.value = 'grid'
-  if (updateRoute) await router.push({ name: 'albums' })
+  if (updateRoute) await router.replace({ name: 'albums' })
   requestAnimationFrame(() => scrollContainer().scrollTo({ top: listScroll.value, behavior: 'auto' }))
+}
+
+async function backFromDetail() {
+  const cameraId = Number(route.query.camera)
+  if (route.query.from === 'camera' && Number.isInteger(cameraId) && cameraId > 0) {
+    await router.replace({ name: 'cameras', query: { camera: String(cameraId) } })
+    return
+  }
+  await backToGrid()
+}
+
+function backFromForm() {
+  if (editing.value && selected.value) {
+    void openDetail(selected.value.id, false)
+    return
+  }
+  void backToGrid()
 }
 
 function scrollContainer(): Window | HTMLElement {
@@ -215,6 +235,7 @@ function startEdit() {
   note.value = selected.value.note || ''
   editing.value = true
   view.value = 'form'
+  requestAnimationFrame(() => scrollContainer().scrollTo({ top: 0, behavior: 'auto' }))
 }
 
 async function removeAlbum() {
@@ -222,8 +243,10 @@ async function removeAlbum() {
   busy.value = true
   try {
     await invoke('delete_digital_album', { id: selected.value.id })
-    await fetchAlbums()
-    await backToGrid()
+    const cameraId = Number(route.query.camera)
+    const hasParent = route.query.from === 'camera' && Number.isInteger(cameraId) && cameraId > 0
+    await backFromDetail()
+    if (!hasParent) await fetchAlbums()
     info.value = '相册记录已删除；正式图库文件已保留。'
   } catch (cause) {
     error.value = errorMessage(cause, '删除相册失败')
@@ -444,9 +467,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKey))
     </div>
 
     <div v-else-if="view === 'form'" class="stack">
-      <PageHeader :title="editing ? '编辑相册' : '新建相册'">
-        <button class="secondary-btn" type="button" @click="editing && selected ? openDetail(selected.id, false) : backToGrid()">取消</button>
-      </PageHeader>
+      <PageHeader :title="editing ? '编辑相册' : '新建相册'" show-back @back="backFromForm" />
       <div class="form-panel">
         <label><span>拍摄月份</span><input v-model="shotDate" type="month" /></label>
         <label><span>数码相机</span><select v-model="cameraId"><option :value="null">未指定</option><option v-for="camera in albumCameraOptions" :key="camera.id" :value="camera.id">{{ camera.brand }} {{ camera.model }}</option></select></label>
@@ -457,8 +478,8 @@ onUnmounted(() => window.removeEventListener('keydown', handleKey))
     </div>
 
     <div v-else-if="view === 'detail' && selected" class="stack">
-      <PageHeader :title="selected.title" :subtitle="selected.cameraBrand && selected.cameraModel ? `${selected.cameraBrand} ${selected.cameraModel}` : '未指定相机'">
-        <div class="actions"><button class="secondary-btn" @click="startEdit">编辑</button><button class="danger-btn" :disabled="busy" @click="removeAlbum">删除</button><button class="secondary-btn" @click="backToGrid()">返回相册</button></div>
+      <PageHeader :title="selected.title" :subtitle="selected.cameraBrand && selected.cameraModel ? `${selected.cameraBrand} ${selected.cameraModel}` : '未指定相机'" show-back @back="backFromDetail">
+        <div class="actions"><button class="secondary-btn" @click="startEdit">编辑</button><button class="danger-btn" :disabled="busy" @click="removeAlbum">删除</button></div>
       </PageHeader>
       <p v-if="selected.note" class="album-note">{{ selected.note }}</p>
       <section class="gallery-panel">

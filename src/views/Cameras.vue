@@ -127,8 +127,10 @@ function resetCameraForm() {
 }
 
 function openAddForm() {
+  if (currentView.value === 'grid') gridScroll.value = scrollPosition()
   resetCameraForm()
   currentView.value = 'add'
+  requestAnimationFrame(() => scrollContainer().scrollTo({ top: 0, behavior: 'auto' }))
 }
 
 async function handleAddCamera() {
@@ -184,6 +186,7 @@ async function viewDetail(camera: Camera, updateRoute = true) {
     isEditing.value = false
     currentView.value = 'detail'
     if (updateRoute) await router.push({ name: 'cameras', query: { camera: String(camera.id) } })
+    requestAnimationFrame(() => scrollContainer().scrollTo({ top: 0, behavior: 'auto' }))
   } catch (err) {
     console.error('Failed to fetch camera detail:', err)
     visibleError.value = formatError(err, '读取相机详情失败')
@@ -254,7 +257,7 @@ async function backToGrid(updateRoute = true) {
   selectedCamera.value = null
   relatedRolls.value = []
   isEditing.value = false
-  if (updateRoute) await router.push({ name: 'cameras' })
+  if (updateRoute) await router.replace({ name: 'cameras' })
   requestAnimationFrame(() => scrollContainer().scrollTo({ top: gridScroll.value, behavior: 'auto' }))
 }
 
@@ -334,9 +337,7 @@ onMounted(async () => {
     </div>
 
     <div v-else-if="currentView === 'add'" class="stack">
-      <PageHeader title="新增相机机身">
-        <button class="secondary-btn" @click="backToGrid()">返回</button>
-      </PageHeader>
+      <PageHeader title="新增相机机身" show-back @back="backToGrid()" />
 
       <div class="form-panel">
         <label>
@@ -375,11 +376,10 @@ onMounted(async () => {
     </div>
 
     <div v-else-if="currentView === 'detail' && selectedCamera" class="stack">
-      <PageHeader title="机身详情">
+      <PageHeader title="机身详情" show-back @back="backToGrid()">
         <div class="actions">
           <button v-if="!isEditing" class="secondary-btn" @click="startEditing">编辑</button>
           <button v-if="!isEditing" class="danger-btn" :disabled="isBusy" @click="handleDeleteCamera(selectedCamera.id)">删除</button>
-          <button class="secondary-btn" @click="backToGrid()">返回</button>
         </div>
       </PageHeader>
 
