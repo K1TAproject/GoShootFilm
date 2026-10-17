@@ -1,17 +1,51 @@
-* text=auto
+# 统一文本文件的换行符，避免 Windows 与 CI 产生仅换行符不同的 diff。
+* text=auto eol=lf
 
+# 源码与文档显式指定 LF，便于跨平台协作。
 *.ts text eol=lf
 *.vue text eol=lf
 *.rs text eol=lf
 *.sql text eol=lf
 *.toml text eol=lf
 *.json text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.css text eol=lf
+*.html text eol=lf
 *.md text eol=lf
+*.csv text eol=lf
+*.ps1 text eol=lf
+*.py text eol=lf
 *.svg text eol=lf
+*.lock text eol=lf
 
+# 二进制资源：不做文本归一化或行尾转换。
 *.png binary
 *.jpg binary
 *.jpeg binary
+*.webp binary
+*.gif binary
+*.bmp binary
 *.ico binary
 *.icns binary
+*.tif binary
+*.tiff binary
+*.pdf binary
 *.db binary
+*.sqlite binary
+*.sqlite3 binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+*.eot binary
+*.psd binary
+*.ai binary
+*.zip binary
+*.7z binary
+*.rar binary
+*.exe binary
+*.dll binary
+*.msi binary
+*.dylib binary
+*.so binary

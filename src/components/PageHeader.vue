@@ -14,9 +14,9 @@ defineEmits<{
 </script>
 
 <template>
+  <button v-if="showBack" class="back-button" type="button" @click="$emit('back')">← 返回</button>
   <header class="page-heading">
     <div>
-      <button v-if="showBack" class="back-button" type="button" @click="$emit('back')">← 返回</button>
       <h1>{{ title }}</h1>
       <p v-if="subtitle">{{ subtitle }}</p>
     </div>
@@ -35,16 +35,22 @@ defineEmits<{
 }
 
 .back-button {
+  position: sticky;
+  z-index: 20;
+  top: 12px;
+  align-self: flex-start;
   display: inline-flex;
   align-items: center;
-  min-height: 28px;
-  margin-bottom: 8px;
-  padding: 3px 9px;
+  min-height: 38px;
+  padding: 7px 14px;
   border: 1px solid rgba(148, 163, 184, 0.24);
   border-radius: 8px;
-  background: rgba(15, 23, 42, 0.46);
+  background: rgba(15, 23, 42, 0.92);
   color: #93a4bd;
-  font-size: 13px;
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
+  backdrop-filter: blur(12px);
   cursor: pointer;
   transition: border-color 0.16s ease, background 0.16s ease, color 0.16s ease;
 }

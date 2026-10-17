@@ -1,5 +1,22 @@
-# Logs
-logs
+# GoShootFilm
+# 仓库只保留源码、配置和运行所需的静态资源。
+# 本地数据库、图库、构建产物、个人草稿和密钥都不要提交。
+
+# ---------- 依赖与构建产物 ----------
+node_modules/
+dist/
+dist-ssr/
+*.tsbuildinfo
+.vite/
+.turbo/
+coverage/
+
+# Tauri / Rust
+src-tauri/target/
+src-tauri/gen/
+
+# ---------- 日志 ----------
+logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
@@ -7,40 +24,69 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-*.local
-
-# Environment files and local secrets
+# ---------- 环境变量与本地密钥 ----------
 .env
 .env.*
 *.env
 !.env.example
 *.key
 *.key.password
+*.pem
+*.p12
+*.pfx
 
-# Tauri / Rust build artifacts
-src-tauri/target/
-src-tauri/gen/
-
-# Local SQLite databases
+# ---------- 本地数据库 ----------
 *.db
 *.db-shm
 *.db-wal
+*.db-journal
+*.sqlite
+*.sqlite3
 
-# Editor directories and files
+# ---------- 本地图库（避免误提交照片） ----------
+/library/
+/GoShootFilmLibrary/
+/media/
+/previews/
+
+# ---------- 个人草稿 / 临时资料 ----------
+# work/ 是本地个人资料，不属于应用源码。
+work/
+
+# ---------- 编辑器与系统文件 ----------
 .vscode/*
 !.vscode/extensions.json
-.idea
+.idea/
 .DS_Store
 Thumbs.db
+desktop.ini
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
 
-# Local code analysis tools
+# ---------- 本地代码分析与 AI 工具缓存 ----------
 .codegraph/
 .serena/
+.agents/
+.claude/
+
+# ---------- Python 工具缓存 ----------
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+
+# ---------- 临时文件与发布产物 ----------
+*.tmp
+*.temp
+*.bak
+*.orig
+*.rej
+*.zip
+*.7z
+*.rar
+*.msi
+*.exe
+*.sig
