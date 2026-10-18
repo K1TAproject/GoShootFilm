@@ -8,6 +8,7 @@ import { relaunch } from '@tauri-apps/plugin-process'
 import { useRoute, useRouter } from 'vue-router'
 import appIcon from './assets/app-icon.png'
 import AppTitleBar from './components/AppTitleBar.vue'
+import MobileSyncSettings from './components/MobileSyncSettings.vue'
 import UpdateDialog from './components/UpdateDialog.vue'
 import type { LibraryMigrationResult, LibraryStatus } from './types'
 import { errorMessage } from './utils/errors'
@@ -222,6 +223,7 @@ onMounted(() => {
               </button>
             </div>
           </section>
+          <MobileSyncSettings />
           <section class="settings-section">
             <h3>软件更新</h3>
             <p>检查并安装 GoShootFilm 的最新版本</p>

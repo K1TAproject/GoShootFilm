@@ -68,7 +68,7 @@ fn album_response(row: AlbumRow) -> DigitalAlbumResponse {
     }
 }
 
-fn album_display_title(shot_month: Option<&str>, city: Option<&str>) -> String {
+pub(crate) fn album_display_title(shot_month: Option<&str>, city: Option<&str>) -> String {
     let month = shot_month
         .map(|value| value.get(..7).unwrap_or(value))
         .map(|value| {
@@ -800,7 +800,7 @@ fn highest_resolution_jpeg<'a>(candidates: impl Iterator<Item = &'a [u8]>) -> Op
         .map(|(candidate, _)| candidate)
 }
 
-fn cr2_embedded_jpeg(bytes: &[u8]) -> Result<&[u8], String> {
+pub(crate) fn cr2_embedded_jpeg(bytes: &[u8]) -> Result<&[u8], String> {
     let endian = match bytes.get(0..2) {
         Some(b"II") => TiffEndian::Little,
         Some(b"MM") => TiffEndian::Big,
@@ -924,7 +924,7 @@ fn build_thumbnail(source: &Path, target: &Path) -> Result<(), String> {
     library::atomic_replace(&temporary, target).map_err(|error| format!("保存缩略图失败: {error}"))
 }
 
-fn build_tiff_preview(source: &Path, target: &Path) -> Result<(), String> {
+pub(crate) fn build_tiff_preview(source: &Path, target: &Path) -> Result<(), String> {
     let image = image::open(source)
         .map_err(|error| format!("TIFF 无法读取（{}）: {error}", source.display()))?;
     let preview = image.thumbnail(2048, 2048);

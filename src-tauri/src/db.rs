@@ -29,6 +29,11 @@ const MIGRATION_SOURCES: &[(i64, &[u8])] = &[
         include_bytes!("../migrations/0005_equipment_digital.sql"),
     ),
     (6, include_bytes!("../migrations/0006_camera_types.sql")),
+    (7, include_bytes!("../migrations/0007_mobile_sync.sql")),
+    (
+        8,
+        include_bytes!("../migrations/0008_mobile_sync_parent_updates.sql"),
+    ),
 ];
 
 #[derive(Debug)]
@@ -66,6 +71,11 @@ async fn init_db_at(app_dir: PathBuf) -> Result<DatabaseResources, Box<dyn std::
         .await?;
 
     repair_crlf_migration_checksums(&pool).await?;
+    // Older releases could have a cameras table without all columns used by
+    // migration 0007's triggers. Repair those columns before running
+    // migrations; fresh databases are left alone because the table does not
+    // exist yet.
+    repair_legacy_camera_schema(&pool).await?;
     MIGRATOR.run(&pool).await?;
     repair_legacy_camera_schema(&pool).await?;
     sync_film_catalog(&pool).await?;
@@ -331,6 +341,15 @@ pub(crate) async fn next_roll_index(
 }
 
 async fn repair_legacy_camera_schema(pool: &SqlitePool) -> Result<(), sqlx::Error> {
+    let cameras_exists: i64 = sqlx::query_scalar(
+        "SELECT EXISTS(SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'cameras')",
+    )
+    .fetch_one(pool)
+    .await?;
+    if cameras_exists == 0 {
+        return Ok(());
+    }
+
     let rows = sqlx::query("PRAGMA table_info(cameras)")
         .fetch_all(pool)
         .await?;
@@ -369,7 +388,8 @@ async fn repair_legacy_camera_schema(pool: &SqlitePool) -> Result<(), sqlx::Erro
     }
 
     sqlx::query(
-        "UPDATE cameras SET updated_at = COALESCE(updated_at, created_at, CURRENT_TIMESTAMP)",
+        "UPDATE cameras SET updated_at = COALESCE(updated_at, created_at, CURRENT_TIMESTAMP)
+         WHERE updated_at IS NULL",
     )
     .execute(pool)
     .await?;
@@ -390,6 +410,8 @@ mod tests {
             include_bytes!("../migrations/0004_sync_film_catalog.sql").as_slice(),
             include_bytes!("../migrations/0005_equipment_digital.sql").as_slice(),
             include_bytes!("../migrations/0006_camera_types.sql").as_slice(),
+            include_bytes!("../migrations/0007_mobile_sync.sql").as_slice(),
+            include_bytes!("../migrations/0008_mobile_sync_parent_updates.sql").as_slice(),
         ] {
             assert!(!migration.windows(2).any(|bytes| bytes == b"\r\n"));
         }
@@ -418,6 +440,183 @@ mod tests {
                 .await
                 .expect("read camera type");
         assert_eq!(row, ("film".into(), None));
+    }
+
+    #[tokio::test]
+    async fn mobile_sync_migration_backfills_stable_ids_and_tombstones() {
+        let pool = memory_pool().await;
+        MIGRATOR.run(&pool).await.expect("run migrations");
+
+        let base_entities: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM sync_entities")
+            .fetch_one(&pool)
+            .await
+            .expect("count seeded sync entities");
+        let base_changes: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM sync_changes")
+            .fetch_one(&pool)
+            .await
+            .expect("count seeded changes");
+
+        sqlx::query("INSERT INTO cameras (brand, model) VALUES ('Nikon', 'F2')")
+            .execute(&pool)
+            .await
+            .expect("insert camera");
+        sqlx::query(
+            "INSERT INTO equipment_items (category, brand, model, mount, status) VALUES ('lens', 'Nikon', '50mm', 'F', 'active')",
+        )
+        .execute(&pool)
+        .await
+        .expect("insert equipment");
+        sqlx::query(
+            "INSERT INTO film_stocks (brand, name, iso, type) VALUES ('Kodak', 'Portra 400', 400, 'Color Negative')",
+        )
+        .execute(&pool)
+        .await
+        .expect("insert film");
+        sqlx::query("INSERT INTO rolls (camera_id, film_stock_id, roll_index) VALUES (1, 1, 1)")
+            .execute(&pool)
+            .await
+            .expect("insert roll");
+        sqlx::query("INSERT INTO photos (roll_id, frame_number) VALUES (1, 1)")
+            .execute(&pool)
+            .await
+            .expect("insert photo");
+        sqlx::query("INSERT INTO digital_albums (title, camera_id) VALUES ('Album', 1)")
+            .execute(&pool)
+            .await
+            .expect("insert album");
+        sqlx::query(
+            "INSERT INTO digital_photos (album_id, pairing_key, raw_path) VALUES (1, 'IMG_1', 'digital/1/raw/IMG_1.jpg')",
+        )
+        .execute(&pool)
+        .await
+        .expect("insert digital photo");
+
+        let entity_count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM sync_entities")
+            .fetch_one(&pool)
+            .await
+            .expect("count sync entities");
+        assert_eq!(entity_count, base_entities + 7);
+
+        let initial_changes: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM sync_changes")
+            .fetch_one(&pool)
+            .await
+            .expect("count initial changes");
+        // Photo and digital-photo inserts also bump their parent roll/album.
+        assert_eq!(initial_changes, base_changes + 9);
+
+        let roll_sync_id: String = sqlx::query_scalar(
+            "SELECT sync_id FROM sync_entities WHERE entity_type = 'roll' AND local_id = 1",
+        )
+        .fetch_one(&pool)
+        .await
+        .expect("read roll sync id");
+
+        // Startup reindexing writes the same value; this must not inflate
+        // revisions or the change log.
+        sqlx::query("UPDATE rolls SET roll_index = 1 WHERE id = 1")
+            .execute(&pool)
+            .await
+            .expect("no-op reindex");
+        let changes_after_reindex: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM sync_changes")
+            .fetch_one(&pool)
+            .await
+            .expect("count changes");
+        assert_eq!(changes_after_reindex, initial_changes);
+
+        let roll_revision_before_favorite: i64 = sqlx::query_scalar(
+            "SELECT revision FROM sync_entities WHERE entity_type = 'roll' AND local_id = 1",
+        )
+        .fetch_one(&pool)
+        .await
+        .expect("read roll revision");
+        sqlx::query("UPDATE photos SET is_favorite = 1 WHERE id = 1")
+            .execute(&pool)
+            .await
+            .expect("favorite photo");
+        let (photo_sync_id, photo_revision, photo_deleted): (String, i64, i64) = sqlx::query_as(
+            "SELECT sync_id, revision, deleted FROM sync_entities WHERE entity_type = 'film_photo' AND local_id = 1",
+        )
+        .fetch_one(&pool)
+        .await
+        .expect("read photo sync row");
+        assert_eq!(photo_revision, 2);
+        assert_eq!(photo_deleted, 0);
+        let roll_revision_after_favorite: i64 = sqlx::query_scalar(
+            "SELECT revision FROM sync_entities WHERE entity_type = 'roll' AND local_id = 1",
+        )
+        .fetch_one(&pool)
+        .await
+        .expect("read bumped roll revision");
+        assert_eq!(
+            roll_revision_after_favorite,
+            roll_revision_before_favorite + 1
+        );
+
+        let album_revision_before_camera: i64 = sqlx::query_scalar(
+            "SELECT revision FROM sync_entities WHERE entity_type = 'digital_album' AND local_id = 1",
+        )
+        .fetch_one(&pool)
+        .await
+        .expect("read album revision");
+        sqlx::query("UPDATE cameras SET model = 'F3' WHERE id = 1")
+            .execute(&pool)
+            .await
+            .expect("rename camera");
+        let roll_revision_after_camera: i64 = sqlx::query_scalar(
+            "SELECT revision FROM sync_entities WHERE entity_type = 'roll' AND local_id = 1",
+        )
+        .fetch_one(&pool)
+        .await
+        .expect("read roll revision after camera change");
+        assert_eq!(roll_revision_after_camera, roll_revision_after_favorite + 1);
+        let album_revision_after_camera: i64 = sqlx::query_scalar(
+            "SELECT revision FROM sync_entities WHERE entity_type = 'digital_album' AND local_id = 1",
+        )
+        .fetch_one(&pool)
+        .await
+        .expect("read album revision after camera change");
+        assert_eq!(
+            album_revision_after_camera,
+            album_revision_before_camera + 1
+        );
+
+        sqlx::query("DELETE FROM cameras WHERE id = 1")
+            .execute(&pool)
+            .await
+            .expect("delete camera and cascade");
+        let deleted_counts: i64 = sqlx::query_scalar(
+            "SELECT COUNT(*) FROM sync_entities WHERE deleted = 1 AND entity_type IN ('camera', 'roll', 'film_photo')",
+        )
+        .fetch_one(&pool)
+        .await
+        .expect("count tombstones");
+        assert_eq!(deleted_counts, 3);
+        assert_eq!(
+            sqlx::query_scalar::<_, String>(
+                "SELECT sync_id FROM sync_entities WHERE entity_type = 'roll' AND local_id = 1"
+            )
+            .fetch_one(&pool)
+            .await
+            .expect("roll sync id stable"),
+            roll_sync_id
+        );
+
+        let tombstone_changes: i64 = sqlx::query_scalar(
+            "SELECT COUNT(*) FROM sync_changes WHERE deleted = 1 AND entity_type IN ('camera', 'roll', 'film_photo')",
+        )
+        .fetch_one(&pool)
+        .await
+        .expect("count tombstone changes");
+        assert_eq!(tombstone_changes, 3);
+        assert_eq!(
+            sqlx::query_scalar::<_, String>(
+                "SELECT sync_id FROM sync_entities WHERE entity_type = 'film_photo' AND local_id = 1"
+            )
+            .fetch_one(&pool)
+            .await
+            .expect("photo sync id stable"),
+            photo_sync_id
+        );
     }
 
     #[tokio::test]

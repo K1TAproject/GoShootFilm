@@ -6,6 +6,7 @@
 node_modules/
 dist/
 dist-ssr/
+dist-mobile/
 *.tsbuildinfo
 .vite/
 .turbo/

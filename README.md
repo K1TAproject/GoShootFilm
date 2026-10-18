@@ -10,7 +10,7 @@
 
 GoShootFilm 把相机机身、镜头、胶卷、拍摄卷、数码相册和照片整理在同一个本地资料库中。它不需要注册账号，也不会把照片上传到云端：记录保存在本机 SQLite 数据库，原始影像保存在你指定的图库目录。
 
-> 当前版本 **0.2.6**，官方构建面向 **Windows x64**。安装后的日常操作见 [GoShootFilm 使用说明](./GoShootFilm-使用说明.md)。
+> 当前版本 **0.3.0**，官方构建面向 **Windows x64**。安装后的日常操作见 [GoShootFilm 使用说明](./GoShootFilm-使用说明.md)。
 
 ## 功能
 
@@ -37,6 +37,15 @@ GoShootFilm 把相机机身、镜头、胶卷、拍摄卷、数码相册和照�
 - **本地优先**：数据库、设置和日志位于应用数据目录，照片位于你选择的图库目录，不依赖在线账户。
 - **图库迁移**：在设置中可以更换图库位置；迁移会先复制并校验文件，成功后切换设置，旧图库不会自动删除。
 - **应用更新**：启动后自动检查更新，也可以在设置中手动检查；更新包使用 Tauri Updater 签名校验。
+
+### 移动端只读同步（第一版）
+
+- **局域网只读**：桌面端作为唯一权威数据源；手机通过二维码配对后，在同一局域网内只读浏览档案。
+- **增量同步**：稳定同步 ID、修订号、删除墓碑和同步游标；手机使用 IndexedDB 事务应用元数据，中断不会留下半更新状态。
+- **设备管理**：设置中可启动/停止同步服务、批准配对、查看设备名称和最近同步时间，并立即撤销设备。
+- **移动端图片**：缩略图默认同步，调色图和原图预览按需下载；不传输 RAW、CR2 或正式 TIFF 原件。
+- **手机界面**：`src-mobile/` 移动优先 PWA，提供首页、器材、Films、Rolls、Albums、已加载数据离线浏览、仅 Wi-Fi 同步和缓存上限设置。局域网 HTTP 下浏览器可能不注册 Service Worker，冷启动离线应用壳需要 Android 原生壳或 HTTPS。
+- **当前限制**：Android 原生 APK 构建和真实设备验证尚未完成；浏览器在局域网 HTTP 下可能无法调用摄像头，可使用电脑端“复制配对信息”手动粘贴。详见 [MOBILE_SYNC.md](./MOBILE_SYNC.md)。
 
 ### 支持的图片格式
 
@@ -84,6 +93,8 @@ GoShootFilm_<版本号>_x64-setup.exe
   previews\
     rolls\...                  可再生的胶片预览
     digital\...                可再生的数码预览
+    mobile\thumbs\             移动端缩略图
+    mobile\display\            移动端查看图
 ```
 
 `media/` 保存正式文件，`previews/` 只是可再生的预览缓存。不要在应用外随意移动或重命名 `media/` 中的目录，否则数据库记录会找不到对应文件。
@@ -96,6 +107,7 @@ GoShootFilm_<版本号>_x64-setup.exe
 - Tauri 2、Rust
 - SQLite、SQLx
 - `image` crate（TIFF / CR2 预览）
+- 移动端 PWA：Vue 3、IndexedDB、Web Crypto
 - GitHub Actions（Windows 构建、测试与发布）
 
 ## 本地开发
@@ -127,6 +139,16 @@ npm run dev
 npm run tauri build
 ```
 
+手机端 PWA：
+
+```powershell
+npm run dev:mobile       # 手机访问电脑 IP:1422
+npm run build:mobile     # 输出 dist-mobile/
+npm run preview:mobile
+```
+
+> 当前仓库提供手机 PWA，不包含 Android 原生 APK 工程；Android SDK、Keystore 桥接和真实设备验证仍是后续工作，详见 [MOBILE_SYNC.md](./MOBILE_SYNC.md)。
+
 提交前检查：
 
 ```powershell
@@ -141,12 +163,14 @@ git diff --check
 
 ```text
 .github/workflows/release.yml   Windows 发布、测试与 Updater 构建
+MOBILE_SYNC.md                  移动端同步协议、安全边界与未完成项
 design/                         应用图标概念稿
 public/film-stocks/             胶卷封面图与占位图
 scripts/sync-film-images.ps1    同步胶卷封面资源
 src/
-  components/                   通用界面组件（标题栏、照片墙、导入对话框等）
+  components/                   通用界面组件（含 MobileSyncSettings.vue）
   data/film-catalog.csv         内置胶卷目录
+  shared/                       桌面与手机共用的同步协议和实体类型
   types/index.ts                前端类型定义
   utils/                        胶卷、照片与错误处理工具
   views/
@@ -156,8 +180,12 @@ src/
     Rolls.vue                   胶片拍摄卷
     Albums.vue                  数码相册
   App.vue / main.ts / router.ts / style.css
+src-mobile/                     移动优先 PWA（IndexedDB + 增量同步）
+  src/lib/                      本地数据库、同步状态、HTTP 客户端、哈希与凭证桥接
+  src/views/                    首页、器材、Films、Rolls、Albums、详情、设置、配对
+  public/                       PWA manifest、Service Worker、图标
 src-tauri/
-  migrations/                   SQLite 迁移（0001–0006）
+  migrations/                   SQLite 迁移（0001–0008）
   src/db.rs                     数据库初始化与胶卷目录同步
   src/digital.rs                数码相册、原图/调色图导入与预览
   src/equipment.rs              镜头与其他器材
@@ -165,10 +193,13 @@ src-tauri/
   src/library.rs                图库路径、迁移与校验
   src/models.rs                 后端数据模型
   src/startup.rs                启动日志与错误提示
+  src/sync/                     局域网同步服务、配对、增量数据与移动端派生图
   src/validation.rs             输入校验
+  tests/                        HTTP 同步与配对集成测试
   capabilities/default.json     权限配置
   icons/                        应用图标
   windows/hooks.nsh             NSIS 安装钩子
+  build.rs / tests.manifest     Windows 测试二进制 manifest
   Cargo.toml / tauri.conf.json
 tools/                          维护辅助脚本（胶卷封面背景、文档内容提取）
 allfims_official.txt            官方胶卷目录原始清单
@@ -189,10 +220,11 @@ Updater 依赖 `tauri.conf.json` 中的公钥，以及 GitHub Actions 中的以�
 
 - 文本文件统一使用 LF；`.gitattributes` 会在提交和检出时执行规范化。
 - 在 Windows 上建议设置 `core.autocrlf=false`；当前工作区已设置，减少仅换行符不同的改动。
-- `node_modules/`、`dist/`、`src-tauri/target/`、`*.db`、`.env`、本地图库和 `work/` 不进入版本库。
+- `node_modules/`、`dist/`、`dist-mobile/`、`src-tauri/target/`、`*.db`、`.env`、本地图库和 `work/` 不进入版本库。
 - 提交前先运行 `git status`，确认没有把本地数据库、照片、构建产物或个人草稿加入暂存区。
 
 ## 文档
 
 - [GoShootFilm 使用说明](./GoShootFilm-使用说明.md)
+- [移动端同步说明](./MOBILE_SYNC.md)
 - [Releases](https://github.com/K1TAproject/GoShootFilm/releases)

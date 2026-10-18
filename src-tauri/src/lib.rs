@@ -4,6 +4,7 @@ mod equipment;
 mod library;
 mod models;
 mod startup;
+pub mod sync;
 mod validation;
 
 use models::{
@@ -230,7 +231,7 @@ fn validate_camera_fields(
     }
 }
 
-fn film_display_name(brand: &str, name: &str) -> String {
+pub(crate) fn film_display_name(brand: &str, name: &str) -> String {
     let brand = brand.split_whitespace().collect::<Vec<_>>().join(" ");
     let name = name.split_whitespace().collect::<Vec<_>>().join(" ");
     let lower_brand = brand.to_lowercase();
@@ -1927,6 +1928,7 @@ pub fn run() {
             };
             startup::record("setup", "database ready");
             let library = library::load_runtime(&resources.app_data_dir);
+            let sync_db = resources.pool.clone();
             app.manage(AppState {
                 db: resources.pool,
                 app_data_dir: resources.app_data_dir,
@@ -1935,6 +1937,7 @@ pub fn run() {
                 preview_locks: tokio::sync::Mutex::new(HashMap::new()),
                 preview_generation_limit: tokio::sync::Semaphore::new(PREVIEW_MAX_CONCURRENCY),
             });
+            app.manage(sync::SyncManager::new(app.handle().clone(), sync_db));
             startup::record("setup", "application state ready");
             startup::mark_startup_complete();
             Ok(())
@@ -1979,7 +1982,16 @@ pub fn run() {
             get_photo_thumbnail,
             get_roll_cover_preview,
             get_library_status,
-            set_library_path
+            set_library_path,
+            sync::get_mobile_sync_status,
+            sync::start_mobile_sync,
+            sync::stop_mobile_sync,
+            sync::create_mobile_pairing,
+            sync::get_mobile_pairing_requests,
+            sync::approve_mobile_pairing,
+            sync::deny_mobile_pairing,
+            sync::get_mobile_devices,
+            sync::revoke_mobile_device
         ])
         .run(tauri::generate_context!());
     if let Err(error) = result {
