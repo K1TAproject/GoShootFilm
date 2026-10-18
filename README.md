@@ -139,6 +139,20 @@ npm run dev
 npm run tauri build
 ```
 
+如果要在本地生成 Updater 签名和 `.sig`，构建前必须让签名环境变量生效；只构建安装包时可以不设置，但不会有 `.sig`：
+
+```powershell
+$env:TAURI_SIGNING_PRIVATE_KEY = Get-Content "$env:USERPROFILE\.tauri\goshootfilm.key" -Raw
+$env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD = (Get-Content "$env:USERPROFILE\.tauri\goshootfilm.key.password" -Raw).Trim()
+npm run tauri build
+```
+
+签名失败或漏签时，可以对已生成的安装包补签：
+
+```powershell
+npm run tauri -- signer sign -f "$env:USERPROFILE\.tauri\goshootfilm.key" -p $env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD "src-tauri\target\release\bundle\nsis\GoShootFilm_0.3.0_x64-setup.exe"
+```
+
 手机端 PWA：
 
 ```powershell
