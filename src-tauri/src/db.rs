@@ -34,6 +34,10 @@ const MIGRATION_SOURCES: &[(i64, &[u8])] = &[
         8,
         include_bytes!("../migrations/0008_mobile_sync_parent_updates.sql"),
     ),
+    (
+        9,
+        include_bytes!("../migrations/0009_mobile_edit_originals.sql"),
+    ),
 ];
 
 #[derive(Debug)]
@@ -412,6 +416,7 @@ mod tests {
             include_bytes!("../migrations/0006_camera_types.sql").as_slice(),
             include_bytes!("../migrations/0007_mobile_sync.sql").as_slice(),
             include_bytes!("../migrations/0008_mobile_sync_parent_updates.sql").as_slice(),
+            include_bytes!("../migrations/0009_mobile_edit_originals.sql").as_slice(),
         ] {
             assert!(!migration.windows(2).any(|bytes| bytes == b"\r\n"));
         }

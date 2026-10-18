@@ -183,6 +183,33 @@ async fn http_pairing_sync_and_revocation_flow() {
         .expect("thumbnail descriptor");
     let thumbnail_id = thumbnail["id"].as_str().expect("thumbnail id");
 
+    let edit_original = photo_change["editOriginal"]
+        .as_object()
+        .expect("edit original descriptor");
+    let edit_original_id = edit_original["id"].as_str().expect("edit original id");
+    assert_eq!(edit_original["mimeType"], "image/jpeg");
+    assert_eq!(edit_original["available"], true);
+
+    let edit_original_response = client
+        .get(format!("{base}/api/v1/edit-originals/{edit_original_id}"))
+        .bearer_auth(&credential)
+        .send()
+        .await
+        .expect("download edit original");
+    assert!(edit_original_response.status().is_success());
+    let edit_original_hash = edit_original_response
+        .headers()
+        .get("x-goshootfilm-sha256")
+        .and_then(|value| value.to_str().ok())
+        .expect("edit original hash")
+        .to_string();
+    assert_eq!(edit_original_hash.len(), 64);
+    let edit_original_bytes = edit_original_response
+        .bytes()
+        .await
+        .expect("edit original bytes");
+    assert_eq!(edit_original_bytes.as_ref(), source_bytes.as_slice());
+
     let resource = client
         .get(format!("{base}/api/v1/resources/{thumbnail_id}"))
         .bearer_auth(&credential)

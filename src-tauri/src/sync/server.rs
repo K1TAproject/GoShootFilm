@@ -1,5 +1,6 @@
 use super::assets;
 use super::data;
+use super::edit_originals;
 use super::{now_epoch, PairState, SyncManager, PROTOCOL_VERSION};
 use axum::body::Body;
 use axum::extract::{DefaultBodyLimit, Path, Query, State};
@@ -10,6 +11,7 @@ use axum::{Json, Router};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::sync::Arc;
+use tokio_util::io::ReaderStream;
 use tower_http::cors::CorsLayer;
 
 #[derive(Debug)]
@@ -73,6 +75,7 @@ pub fn router(manager: Arc<SyncManager>) -> Router {
         .route("/api/v1/pair/status/{request_id}", get(pair_status))
         .route("/api/v1/sync/changes", get(sync_changes))
         .route("/api/v1/resources/{asset_id}", get(resource))
+        .route("/api/v1/edit-originals/{asset_id}", get(edit_original))
         .layer(DefaultBodyLimit::max(64 * 1024))
         .layer(CorsLayer::permissive())
         .with_state(manager)
@@ -359,4 +362,52 @@ async fn resource(
         response_headers.insert(header::CONTENT_LENGTH, length);
     }
     Ok((response_headers, Body::from(bytes)).into_response())
+}
+
+async fn edit_original(
+    State(manager): State<Arc<SyncManager>>,
+    headers: HeaderMap,
+    Path(asset_id): Path<String>,
+) -> Result<Response, ApiError> {
+    let _device = authenticate(&manager, &headers).await?;
+    let (media, _) = manager
+        .media_directories()
+        .await
+        .map_err(|_| ApiError::not_found("图库暂不可用"))?;
+    let original = edit_originals::prepare_download(manager.db(), &media, &asset_id)
+        .await
+        .map_err(|error| {
+            if error.contains("not found")
+                || error.contains("no longer exists")
+                || error.contains("missing")
+            {
+                ApiError::not_found("调色原图不存在或已失效")
+            } else if error.contains("invalid") || error.contains("must stay") {
+                ApiError::bad_request("调色原图路径无效")
+            } else {
+                ApiError::internal()
+            }
+        })?;
+    let file = tokio::fs::File::open(&original.path)
+        .await
+        .map_err(|_| ApiError::internal())?;
+    let stream = ReaderStream::new(file);
+    let mut response_headers = HeaderMap::new();
+    let content_type =
+        HeaderValue::from_str(&original.mime_type).map_err(|_| ApiError::internal())?;
+    response_headers.insert(header::CONTENT_TYPE, content_type);
+    response_headers.insert(
+        header::CACHE_CONTROL,
+        HeaderValue::from_static("private, no-store"),
+    );
+    if let Ok(etag) = HeaderValue::from_str(&format!("\"{}\"", original.sha256)) {
+        response_headers.insert(header::ETAG, etag);
+    }
+    if let Ok(hash) = HeaderValue::from_str(&original.sha256) {
+        response_headers.insert("x-goshootfilm-sha256", hash);
+    }
+    if let Ok(length) = HeaderValue::from_str(&original.byte_size.to_string()) {
+        response_headers.insert(header::CONTENT_LENGTH, length);
+    }
+    Ok((response_headers, Body::from_stream(stream)).into_response())
 }

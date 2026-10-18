@@ -5,11 +5,11 @@
 ## 1. 当前状态
 
 - 桌面端局域网同步服务、二维码配对、设备撤销、增量元数据同步和移动端派生图片：已实现。
-- 手机界面：以 `src-mobile/` 的移动优先 PWA 实现，可在 Android Chrome 中打开。
-- Android 原生 APK：**未完成**。当前开发环境没有 Android SDK、NDK、ADB，Java 只有 1.8，无法完成 Tauri/Capacitor Android 的 debug/release 构建和真实设备验证。
-- 浏览器在局域网 HTTP 下通常不允许摄像头，因此 PWA 提供“手动粘贴配对信息”作为扫码替代。原生壳接入相机插件后才能稳定扫码。
-- 浏览器在局域网 HTTP 下通常也不会注册 Service Worker，因此 PWA 的冷启动离线应用壳不可用；已打开的页面可以继续使用 IndexedDB 数据。完整冷启动离线浏览需要 Android 原生壳或 HTTPS。
-- 配对凭证在浏览器中退化为 localStorage；原生壳需要注入 `window.GoShootFilmSecure` 桥接 Android Keystore 后才属于系统安全存储。
+- PWA：`src-mobile/` 保留为设计/调试参考，可在 Android Chrome 中打开。
+- Android 原生客户端：`android/` 下的 Kotlin + Compose 工程已实现并可构建 debug/release APK；包名 `com.k1taproject.goshootfilm`，应用名 `GSFMobile`。
+- 原生客户端使用 CameraX + ZXing 扫码、Android Keystore 保存凭证、Room 保存元数据，并可从 `/edit-originals/{assetId}` 下载正式调色原图。
+- 原生客户端仍需真实 Android 设备验证；模拟器没有摄像头，无法验证扫码和弱网/存储边界。
+- PWA 仍受局域网 HTTP 限制：摄像头、Service Worker 冷启动离线可能不可用。原生 APK 不受这些限制。
 
 ## 2. 代码组织
 
@@ -20,21 +20,27 @@ src/
     entities.ts          手机端实体数据类型
   components/
     MobileSyncSettings.vue   桌面设置中的移动端同步面板
-src-mobile/               移动优先 PWA
+src-mobile/               移动优先 PWA（保留）
   src/lib/db.ts           IndexedDB 本地数据库与事务
   src/lib/store.ts        同步状态、实体查询、按需下载、缓存 LRU
   src/lib/api.ts          配对、增量同步、资源下载 HTTP 客户端
   src/lib/secure.ts       凭证存储桥接（原生 Keystore / 浏览器回退）
   src/lib/hash.ts         SHA-256 校验（WebCrypto + 纯 JS 回退）
   src/views/              首页、器材、Films、Rolls、Albums、详情、设置、配对
+android/                  Kotlin + Compose 原生客户端
+  app/src/main/java/...   Room、同步、Keystore、CameraX/ZXing、Compose UI
+  app/src/main/assets/    胶卷目录与优化后的 WebP 封面
+  tools/                  胶卷资源生成、签名 release 构建脚本
 src-tauri/src/sync/
   mod.rs                  服务生命周期、配对状态、设备凭证、Tauri 命令
   server.rs               axum 路由、鉴权、同步与资源接口
   data.rs                 增量 payload、统计、删除墓碑
   assets.rs               移动端缩略图/查看图生成与哈希
+  edit_originals.rs       正式调色原图描述、SHA-256 缓存和流式下载
 src-tauri/migrations/
   0007_mobile_sync.sql
   0008_mobile_sync_parent_updates.sql
+  0009_mobile_edit_originals.sql
 ```
 
 ## 3. 数据库迁移
@@ -55,6 +61,15 @@ src-tauri/migrations/
 
 当照片收藏、路径、Frame 变化，或照片新增/删除时，会同步提升所属拍摄卷/数码相册的修订号。相机或胶卷改名时也会刷新关联拍摄卷/相册的摘要。这样手机拿到的封面、照片数量和相机/胶卷显示名不会滞后。
 
+### 0009：正式调色原图
+
+新增 `mobile_edit_originals`，只记录 `edit` 目录中的正式调色文件（PNG/JPEG/WebP）：
+
+- `entity_type + entity_sync_id` 唯一；
+- 保存源相对路径、MIME、字节数、SHA-256、源修改时间；
+- 不修改 `mobile_assets` 的 CHECK 约束，PWA 的 `edit_display` 行为不变；
+- 原生客户端通过 `/edit-originals/{assetId}` 按需下载；服务端只允许 `rolls/<id>/edit` 和 `digital/<id>/edit` 路径。
+
 ## 4. 同步协议
 
 所有接口均在 `http://<局域网地址>:<端口>/api/v1/` 下，协议版本为 `1`。
@@ -66,12 +81,13 @@ src-tauri/migrations/
 | GET | `/pair/status/{requestId}` | 请求 ID | 轮询 pending/approved/denied/expired，批准后一次性返回设备凭证 |
 | GET | `/sync/changes?cursor=&limit=` | Bearer 设备凭证 | 返回增量变更、统计、下一游标、是否有更多 |
 | GET | `/resources/{assetId}` | Bearer 设备凭证 | 下载派生 JPEG，响应带 `x-goshootfilm-sha256` |
+| GET | `/edit-originals/{assetId}` | Bearer 设备凭证 | 下载正式调色原文件（PNG/JPEG/WebP），流式返回并带 `x-goshootfilm-sha256` |
 
 同步实体类型：
 
 - `camera`、`equipment`、`film`、`roll`、`film_photo`、`digital_album`、`digital_photo`
 
-删除以 `{ deleted: true, syncId, revision }` 墓碑返回，手机在同一 IndexedDB 事务中删除旧实体和资源记录。
+删除以 `{ deleted: true, syncId, revision }` 墓碑返回；原生客户端在 Room 事务中删除旧实体和资源记录，PWA 在 IndexedDB 事务中执行相同语义。
 
 `GET /sync/changes` 的关键字段：
 
@@ -92,13 +108,22 @@ src-tauri/migrations/
       "data": { "rollSyncId": "…", "frameNumber": 8, "...": null },
       "assets": [
         { "id": "…", "assetType": "thumbnail", "version": "edit", "sha256": null, "available": false }
-      ]
+      ],
+      "editOriginal": {
+        "id": "…",
+        "entityType": "film_photo",
+        "entitySyncId": "…",
+        "mimeType": "image/png",
+        "byteSize": 12345678,
+        "sha256": null,
+        "available": true
+      }
     }
   ]
 }
 ```
 
-服务端只返回派生资源 ID，不返回桌面图库绝对路径。
+服务端只返回资源 ID 和描述符，不返回桌面图库绝对路径。`editOriginal.sha256` 可能暂为空；首次通过 `/edit-originals/{id}` 下载时服务端计算并缓存哈希，手机仍以响应头为准校验。
 
 ## 5. 二维码与设备凭证
 
@@ -141,24 +166,28 @@ src-tauri/migrations/
 | `thumbnail` | 调色图或原图 | 384 px | JPEG 82 |
 | `edit_display` | 正式调色图 | 2400 px | JPEG 88 |
 | `original_preview` | 原始扫描/原图 | 2400 px | JPEG 88 |
+| `edit_original` | 正式调色原文件 | 原尺寸 | PNG/JPEG/WebP |
 
+- PWA 继续使用 `edit_display`；原生 `GSFMobile` 查看大图时使用 `edit_original`。
+- `edit_original` 只允许正式调色文件，不复制、不修改源文件；下载时流式返回并缓存 SHA-256。
 - CR2 只读取内嵌 JPEG，不解析 RAW 像素。
 - TIFF 复用现有 TIFF 预览流程生成独立预览。
 - JPG/JPEG 原图生成独立移动查看副本。
 - 资源生成不修改、覆盖或删除正式图库文件。
-- 不提供 RAW、CR2、正式 TIFF 的下载接口。
+- 不提供 RAW、CR2、胶片扫描、正式 TIFF 的下载接口。
 - 每个资源保存 SHA-256；手机下载后校验 `x-goshootfilm-sha256` 与本地哈希，失败不写入缓存。
 
 ## 7. 手机端缓存
 
-- 元数据、全部缩略图、最新 `cursor` 和统计保存在 IndexedDB。
-- 调色图/原图查看图按需下载。
+- 原生 `GSFMobile`：元数据、缩略图、`cursor` 和统计保存在 Room；正式调色原图保存在 App 私有目录。
+- PWA：元数据、缩略图、`cursor` 和统计保存在 IndexedDB。
+- 原生和 PWA 的查看图都按需下载；原生查看大图下载 `edit_original`。
 - 缓存上限：2 GB、5 GB、10 GB、不自动清理，默认 5 GB。
 - 超限时按 `lastAccess` 最近最少使用清理查看图；缩略图永不参与自动清理。
 - 正在查看的资源加入活跃集合，不会被清理。
 - “清理查看图缓存”只删除查看图，保留元数据和缩略图。
 - 离线时继续展示已缓存内容；网络失败显示错误/离线提示，不显示为空数据。
-- 注意：局域网 HTTP 下浏览器可能不注册 Service Worker，冷启动离线应用壳不可用；此限制需要 Android 原生壳或 HTTPS 解决。
+- 原生 APK 自带界面资源，不依赖 `4173` 静态服务器；PWA 仍受局域网 HTTP 的 Service Worker 限制。
 
 ## 8. 本地运行
 
@@ -188,12 +217,13 @@ npm run preview:mobile
 ```
 
 1. 记下 `preview` 输出的局域网地址（例如 `http://10.151.113.147:4173/`），不要使用 198.18.x.x 代理/VPN 地址。
-2. 手机与电脑连接同一 Wi-Fi，在 Android Chrome 打开该地址。
-3. 浏览器菜单可“添加到主屏幕”；局域网 HTTP 下可能只是快捷方式，不是完整独立 PWA。
-4. 电脑端启动同步服务并生成二维码；手机浏览器若无法调用摄像头，可用 Android 系统相机/扫码工具读取二维码文本，或把电脑端“复制配对信息”的内容发送到手机后粘贴。
-5. 电脑端批准后，手机即可同步。
+2. 注意：`4173` 是手机页面，`47821` 是同步 API。直接在手机打开 `http://电脑IP:47821/` 会看到 404，这是正常的；API 健康检查地址是 `/api/v1/health`。
+3. 手机与电脑连接同一 Wi-Fi，在 Android Chrome 打开该地址。
+4. 浏览器菜单可“添加到主屏幕”；局域网 HTTP 下可能只是快捷方式，不是完整独立 PWA。
+5. 电脑端启动同步服务并生成二维码；手机浏览器若无法调用摄像头，可用 Android 系统相机/扫码工具读取二维码文本，或把电脑端“复制配对信息”的内容发送到手机后粘贴。
+6. 电脑端批准后，手机即可同步。
 
-当前没有 APK。若要像普通 Android 应用一样安装、使用系统安全存储和原生扫码，需要 Android SDK/Java 17 并增加原生壳；否则 HTTP PWA 的摄像头、Service Worker 和冷启动离线能力会受限。
+原生 APK 位于 `android/`，构建和发布步骤见 `android/README.md`。安装后应用名为 `GSFMobile`，不再依赖 `4173` 页面服务，也不需要手机浏览器扫码。
 
 ## 9. 验证结果
 
@@ -202,17 +232,17 @@ npm run preview:mobile
 - `npm run build`
 - `cargo fmt --manifest-path src-tauri/Cargo.toml --check`
 - `cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings`
-- `cargo test --manifest-path src-tauri/Cargo.toml`：40 个单元测试 + 1 个 HTTP 集成测试 + 2 个配对集成测试
+- `cargo test --manifest-path src-tauri/Cargo.toml`：42 个单元测试 + 1 个 HTTP 集成测试 + 2 个配对集成测试；HTTP 测试覆盖 `/edit-originals/{assetId}` 和正式调色原图字节校验
 - `npm run build:mobile`
-- Tauri 桌面开发启动，确认迁移 0007/0008 应用到现有数据库
-- headless Edge（Android UA）加载手机 PWA、注入模拟数据并检查首页、Rolls、器材、Films、Albums、设置和照片查看器布局
-- 手机端数据层与冷启动离线的区别已记录：IndexedDB 数据可离线使用，但 HTTP PWA 的 Service Worker 冷启动不可保证
+- `:app:testDebugUnitTest`：7 个 Android 单元测试通过；`FilmCatalogInstrumentedTest` 在 API 35 模拟器上通过
+- `:app:assembleDebug` 和 `:app:assembleRelease` 通过
+- 签名 release APK 通过 `apksigner verify`，manifest 显示 `com.k1taproject.goshootfilm`、`versionCode 30001`、`versionName 0.3.1`、label `GSFMobile`
+- Android 模拟器安装并启动 release APK 成功
 
 未完成：
 
-- Android debug/release APK 构建
 - 真实 Android 设备扫码、配对、同步、增量、中断恢复、离线浏览、缓存清理、设备撤销验证
-- Android Keystore 原生桥接
+- 真机上的正式调色原图大文件下载、低存储和弱网测试
 - HTTPS/TLS 与公网隔离之外的更强传输安全
 
 ## 10. 当前不实现

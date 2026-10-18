@@ -1,7 +1,7 @@
 {
   "name": "goshootfilm",
   "private": true,
-  "version": "0.3.0",
+  "version": "0.3.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -10,6 +10,7 @@
     "dev:mobile": "vite --config vite.mobile.config.ts --host",
     "build:mobile": "vue-tsc --noEmit -p tsconfig.mobile.json && vite build --config vite.mobile.config.ts",
     "preview:mobile": "vite preview --config vite.mobile.config.ts --host",
+    "build:android": "powershell -NoProfile -ExecutionPolicy Bypass -File android/tools/build-release.ps1",
     "tauri": "tauri"
   },
   "dependencies": {

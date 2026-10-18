@@ -79,6 +79,21 @@ __pycache__/
 .venv/
 .pytest_cache/
 
+# ---------- Android / GSFMobile ----------
+android/.gradle/
+android/.gradle-home/
+android/.kotlin/
+android/.local/
+android/.tools/
+android/build/
+android/dist/
+android/local.properties
+android/**/build/
+android/**/*.apk
+android/**/*.aab
+*.jks
+*.keystore
+
 # ---------- 临时文件与发布产物 ----------
 *.tmp
 *.temp

@@ -1,4 +1,5 @@
 use super::assets::{self, AssetDescriptor};
+use super::edit_originals::{self, EditOriginalDescriptor};
 use crate::digital;
 use crate::film_display_name;
 use serde::Serialize;
@@ -33,6 +34,8 @@ pub struct SyncChange {
     pub data: Option<Value>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub assets: Vec<AssetDescriptor>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub edit_original: Option<EditOriginalDescriptor>,
 }
 
 #[derive(Debug, Clone)]
@@ -506,6 +509,7 @@ pub async fn materialize(db: &SqlitePool, media_dir: Option<&Path>, row: ChangeR
             deleted: true,
             data: None,
             assets: Vec::new(),
+            edit_original: None,
         };
     };
     if row.deleted || deleted {
@@ -516,6 +520,7 @@ pub async fn materialize(db: &SqlitePool, media_dir: Option<&Path>, row: ChangeR
             deleted: true,
             data: None,
             assets: Vec::new(),
+            edit_original: None,
         };
     }
     let data = match payload(db, row.entity_type, local_id).await {
@@ -528,15 +533,31 @@ pub async fn materialize(db: &SqlitePool, media_dir: Option<&Path>, row: ChangeR
                 deleted: true,
                 data: None,
                 assets: Vec::new(),
+                edit_original: None,
             };
         }
     };
+    let mut edit_original = None;
     let assets = if matches!(row.entity_type, "film_photo" | "digital_photo") {
         match media_dir {
             Some(media_dir) => {
                 let versions = photo_versions(db, row.entity_type, local_id)
                     .await
                     .unwrap_or_default();
+                if let Some((_, edit_path)) = versions
+                    .iter()
+                    .find(|(version, _)| version.as_str() == "edit")
+                {
+                    edit_original = edit_originals::ensure_descriptor(
+                        db,
+                        media_dir,
+                        row.entity_type,
+                        &row.sync_id,
+                        edit_path,
+                    )
+                    .await
+                    .ok();
+                }
                 if versions.is_empty() {
                     Vec::new()
                 } else {
@@ -563,6 +584,7 @@ pub async fn materialize(db: &SqlitePool, media_dir: Option<&Path>, row: ChangeR
         deleted: false,
         data: Some(data),
         assets,
+        edit_original,
     }
 }
 

@@ -10,7 +10,7 @@
 
 GoShootFilm 把相机机身、镜头、胶卷、拍摄卷、数码相册和照片整理在同一个本地资料库中。它不需要注册账号，也不会把照片上传到云端：记录保存在本机 SQLite 数据库，原始影像保存在你指定的图库目录。
 
-> 当前版本 **0.3.0**，官方构建面向 **Windows x64**。安装后的日常操作见 [GoShootFilm 使用说明](./GoShootFilm-使用说明.md)。
+> 当前版本 **0.3.1**，官方构建面向 **Windows x64**。安装后的日常操作见 [GoShootFilm 使用说明](./GoShootFilm-使用说明.md)。
 
 ## 功能
 
@@ -41,11 +41,11 @@ GoShootFilm 把相机机身、镜头、胶卷、拍摄卷、数码相册和照�
 ### 移动端只读同步（第一版）
 
 - **局域网只读**：桌面端作为唯一权威数据源；手机通过二维码配对后，在同一局域网内只读浏览档案。
-- **增量同步**：稳定同步 ID、修订号、删除墓碑和同步游标；手机使用 IndexedDB 事务应用元数据，中断不会留下半更新状态。
+- **增量同步**：稳定同步 ID、修订号、删除墓碑和同步游标；原生客户端使用 Room 事务、PWA 使用 IndexedDB 事务应用元数据，中断不会留下半更新状态。
 - **设备管理**：设置中可启动/停止同步服务、批准配对、查看设备名称和最近同步时间，并立即撤销设备。
-- **移动端图片**：缩略图默认同步，调色图和原图预览按需下载；不传输 RAW、CR2 或正式 TIFF 原件。
-- **手机界面**：`src-mobile/` 移动优先 PWA，提供首页、器材、Films、Rolls、Albums、已加载数据离线浏览、仅 Wi-Fi 同步和缓存上限设置。局域网 HTTP 下浏览器可能不注册 Service Worker，冷启动离线应用壳需要 Android 原生壳或 HTTPS。
-- **当前限制**：Android 原生 APK 构建和真实设备验证尚未完成；浏览器在局域网 HTTP 下可能无法调用摄像头，可使用电脑端“复制配对信息”手动粘贴。详见 [MOBILE_SYNC.md](./MOBILE_SYNC.md)。
+- **移动端图片**：缩略图默认同步；原生客户端查看大图时按需下载正式调色原文件，PWA 使用 2400px 查看版；不传输胶片扫描、RAW、CR2 或正式 TIFF。
+- **手机界面**：`android/` 的 GSFMobile 原生客户端提供首页、器材、Films、Rolls、Albums、图片查看、仅 Wi-Fi 同步和缓存上限设置；`src-mobile/` PWA 保留为参考/调试实现。原生客户端可扫码、使用 Keystore 保存凭证，并按需下载正式调色原图。
+- **当前限制**：GSFMobile 已可构建 debug/release APK 并通过模拟器启动，但真实 Android 设备上的扫码、同步、弱网和大文件下载仍待验证；PWA 仍受局域网 HTTP 的摄像头/Service Worker 限制。详见 [MOBILE_SYNC.md](./MOBILE_SYNC.md)。
 
 ### 支持的图片格式
 
@@ -150,10 +150,10 @@ npm run tauri build
 签名失败或漏签时，可以对已生成的安装包补签：
 
 ```powershell
-npm run tauri -- signer sign -f "$env:USERPROFILE\.tauri\goshootfilm.key" -p $env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD "src-tauri\target\release\bundle\nsis\GoShootFilm_0.3.0_x64-setup.exe"
+npm run tauri -- signer sign -f "$env:USERPROFILE\.tauri\goshootfilm.key" -p $env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD "src-tauri\target\release\bundle\nsis\GoShootFilm_0.3.1_x64-setup.exe"
 ```
 
-手机端 PWA：
+手机端 PWA（保留为参考/调试）：
 
 ```powershell
 npm run dev:mobile       # 手机访问电脑 IP:1422
@@ -161,7 +161,14 @@ npm run build:mobile     # 输出 dist-mobile/
 npm run preview:mobile
 ```
 
-> 当前仓库提供手机 PWA，不包含 Android 原生 APK 工程；Android SDK、Keystore 桥接和真实设备验证仍是后续工作，详见 [MOBILE_SYNC.md](./MOBILE_SYNC.md)。
+Android 原生客户端（GSFMobile）：
+
+```powershell
+cd android
+powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\build-release.ps1
+```
+
+输出 `android\dist\GSFMobile-0.3.1.apk` 和 `mobile-update.json`。需要 JDK 17+（含 `jlink`）和 Android SDK 35；本机路径配置在 `android/.local/`，不进入版本库。详见 [android/README.md](./android/README.md) 和 [MOBILE_SYNC.md](./MOBILE_SYNC.md)。
 
 提交前检查：
 
@@ -178,6 +185,7 @@ git diff --check
 ```text
 .github/workflows/release.yml   Windows 发布、测试与 Updater 构建
 MOBILE_SYNC.md                  移动端同步协议、安全边界与未完成项
+android/                        GSFMobile Kotlin + Compose 原生客户端
 design/                         应用图标概念稿
 public/film-stocks/             胶卷封面图与占位图
 scripts/sync-film-images.ps1    同步胶卷封面资源
@@ -194,12 +202,16 @@ src/
     Rolls.vue                   胶片拍摄卷
     Albums.vue                  数码相册
   App.vue / main.ts / router.ts / style.css
-src-mobile/                     移动优先 PWA（IndexedDB + 增量同步）
+src-mobile/                     移动优先 PWA（IndexedDB + 增量同步，保留）
   src/lib/                      本地数据库、同步状态、HTTP 客户端、哈希与凭证桥接
   src/views/                    首页、器材、Films、Rolls、Albums、详情、设置、配对
   public/                       PWA manifest、Service Worker、图标
+android/                        GSFMobile Kotlin + Compose 原生客户端
+  app/src/main/java/...         Room、同步、Keystore、CameraX/ZXing、Compose UI
+  app/src/main/assets/          胶卷目录与优化后的 WebP 封面
+  tools/                        胶卷资源生成、签名 release 构建脚本
 src-tauri/
-  migrations/                   SQLite 迁移（0001–0008）
+  migrations/                   SQLite 迁移（0001–0009）
   src/db.rs                     数据库初始化与胶卷目录同步
   src/digital.rs                数码相册、原图/调色图导入与预览
   src/equipment.rs              镜头与其他器材
@@ -207,7 +219,7 @@ src-tauri/
   src/library.rs                图库路径、迁移与校验
   src/models.rs                 后端数据模型
   src/startup.rs                启动日志与错误提示
-  src/sync/                     局域网同步服务、配对、增量数据与移动端派生图
+  src/sync/                     局域网同步服务、配对、增量数据、移动端派生图与正式调色原图
   src/validation.rs             输入校验
   tests/                        HTTP 同步与配对集成测试
   capabilities/default.json     权限配置
@@ -241,4 +253,6 @@ Updater 依赖 `tauri.conf.json` 中的公钥，以及 GitHub Actions 中的以�
 
 - [GoShootFilm 使用说明](./GoShootFilm-使用说明.md)
 - [移动端同步说明](./MOBILE_SYNC.md)
+- [GSFMobile Android 构建说明](./android/README.md)
+- [GSFMobile 合并发布清单](./android/RELEASE.md)
 - [Releases](https://github.com/K1TAproject/GoShootFilm/releases)

@@ -1,5 +1,6 @@
 pub mod assets;
 pub mod data;
+pub mod edit_originals;
 pub mod server;
 
 use crate::startup;
