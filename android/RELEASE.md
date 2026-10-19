@@ -2,6 +2,16 @@
 
 桌面端和 Android 端必须发布在**同一个 GitHub Release**，否则 `releases/latest` 可能指向缺少 `latest.json` 的 Android-only Release，破坏桌面 Updater。
 
+## 0.3.3 安装器修复
+
+0.3.0/0.3.1 的桌面 Updater 存在 Vue Proxy 包裹 Tauri `Update` 对象的问题，应用内更新会在下载/安装阶段报：
+
+```text
+Cannot read private member from an object whose class did not declare it
+```
+
+0.3.3 已改用 `shallowRef`，但从 0.3.0/0.3.1 **不能自动更新**到 0.3.3；必须先手动运行 0.3.3 安装包覆盖安装。完成一次手动安装后，0.3.3 及后续版本的应用内更新才可用。
+
 ## 1. 升版本
 
 同时修改：
@@ -12,7 +22,7 @@
 - `README.md`
 - `android/app/build.gradle.kts` 的 `versionName` 和 `versionCode`
 
-沿用当前 scheme：`0.3.0 -> 30000`，`0.3.1 -> 30001`。
+沿用当前 scheme：`0.3.0 -> 30000`，`0.3.1 -> 30001`，`0.3.3 -> 30003`。
 
 ## 2. 验证
 
@@ -45,17 +55,17 @@ npm run build:android
 产物：
 
 ```text
-src-tauri\target\release\bundle\nsis\GoShootFilm_0.3.1_x64-setup.exe
-src-tauri\target\release\bundle\nsis\GoShootFilm_0.3.1_x64-setup.exe.sig
+src-tauri\target\release\bundle\nsis\GoShootFilm_0.3.3_x64-setup.exe
+src-tauri\target\release\bundle\nsis\GoShootFilm_0.3.3_x64-setup.exe.sig
 src-tauri\target\release\bundle\nsis\latest.json
 
-android\dist\GSFMobile-0.3.1.apk
+android\dist\GSFMobile-0.3.3.apk
 android\dist\mobile-update.json
 ```
 
 ## 4. 创建 Release
 
-1. 推送代码，再创建并推送与桌面版本一致的 tag，例如 `v0.3.1`。
+1. 推送代码，再创建并推送与桌面版本一致的 tag，例如 `v0.3.3`。
 2. 等待桌面 Release 草稿生成。
 3. 把 Android APK 和 `mobile-update.json` 上传到同一个草稿。
 4. 核对：

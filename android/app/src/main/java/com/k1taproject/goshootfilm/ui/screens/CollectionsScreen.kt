@@ -96,7 +96,7 @@ fun AlbumsScreen(vm: GsfViewModel, onAlbum: (String) -> Unit) {
 }
 
 @Composable
-private fun RollCard(roll: EntityRecord, vm: GsfViewModel, onClick: () -> Unit) {
+fun RollCard(roll: EntityRecord, vm: GsfViewModel, onClick: () -> Unit) {
     val data = roll.obj()
     GsfCard(modifier = Modifier.fillMaxWidth(), onClick = onClick) {
         Row(verticalAlignment = Alignment.CenterVertically) {

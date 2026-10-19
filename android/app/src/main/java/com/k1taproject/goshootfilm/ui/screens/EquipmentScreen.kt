@@ -60,12 +60,16 @@ fun EquipmentScreen(
 ) {
     var cameras by remember { mutableStateOf<List<EntityRecord>>(emptyList()) }
     var equipment by remember { mutableStateOf<List<EntityRecord>>(emptyList()) }
+    var rolls by remember { mutableStateOf<List<EntityRecord>>(emptyList()) }
     var filter by remember { mutableStateOf(EquipmentFilter.All) }
 
     LaunchedEffect(Unit) {
         cameras = vm.entities("camera")
         equipment = vm.entities("equipment")
+        rolls = vm.entities("roll")
     }
+
+    val rollCountByCamera = rolls.groupingBy { it.obj().text("cameraSyncId") }.eachCount()
 
     val rows = buildList {
         if (filter == EquipmentFilter.All || filter == EquipmentFilter.Camera) {
@@ -111,7 +115,15 @@ fun EquipmentScreen(
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 items(rows, key = { it.first.entityType + it.first.syncId }) { (record, type) ->
-                    EquipmentCard(record, type) { onDetail(type, record.syncId) }
+                    EquipmentCard(
+                        record = record,
+                        type = type,
+                        rollCount = if (type == "camera") {
+                            rollCountByCamera[record.syncId] ?: 0
+                        } else {
+                            null
+                        },
+                    ) { onDetail(type, record.syncId) }
                 }
             }
         }
@@ -140,7 +152,12 @@ private fun FilterPill(text: String, selected: Boolean, onClick: () -> Unit) {
 }
 
 @Composable
-private fun EquipmentCard(record: EntityRecord, type: String, onClick: () -> Unit) {
+private fun EquipmentCard(
+    record: EntityRecord,
+    type: String,
+    rollCount: Int?,
+    onClick: () -> Unit,
+) {
     val data = record.obj()
     val isCamera = type == "camera"
     val accent = if (isCamera) GsfPurple else GsfCyan
@@ -169,6 +186,9 @@ private fun EquipmentCard(record: EntityRecord, type: String, onClick: () -> Uni
                         if (data.text("status") == "active") "在用" else "闲置",
                         GsfMuted,
                     )
+                    if (rollCount != null) {
+                        StatusChip("$rollCount 卷", GsfCyan)
+                    }
                 }
                 Spacer(Modifier.height(6.dp))
                 Text(

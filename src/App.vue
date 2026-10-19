@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, shallowRef } from 'vue'
 import { getVersion } from '@tauri-apps/api/app'
 import { invoke } from '@tauri-apps/api/core'
 import { open } from '@tauri-apps/plugin-dialog'
@@ -20,7 +20,10 @@ const settingsDialogOpen = ref(false)
 const libraryBusy = ref(false)
 const libraryError = ref('')
 const libraryInfo = ref('')
-const updateHandle = ref<Update>()
+// The updater Update object owns private Tauri Resource fields and must not be
+// wrapped in Vue's reactive proxy, otherwise `download`/`install` throw
+// "Cannot read private member from an object whose class did not declare it".
+const updateHandle = shallowRef<Update>()
 const updateDialogOpen = ref(false)
 const updateBusy = ref(false)
 const updateError = ref('')

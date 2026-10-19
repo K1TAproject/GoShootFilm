@@ -22,6 +22,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.k1taproject.goshootfilm.GsfViewModel
 import com.k1taproject.goshootfilm.data.EntityRecord
+import com.k1taproject.goshootfilm.data.int
 import com.k1taproject.goshootfilm.data.obj
 import com.k1taproject.goshootfilm.data.optionalText
 import com.k1taproject.goshootfilm.data.text
@@ -37,9 +38,21 @@ fun EntityDetailScreen(
     type: String,
     syncId: String,
     onBack: () -> Unit,
+    onRoll: (String) -> Unit,
 ) {
     var entity by remember { mutableStateOf<EntityRecord?>(null) }
-    LaunchedEffect(type, syncId) { entity = vm.entity(type, syncId) }
+    var rolls by remember { mutableStateOf<List<EntityRecord>>(emptyList()) }
+    LaunchedEffect(type, syncId) {
+        entity = vm.entity(type, syncId)
+        if (type == "camera") {
+            rolls = vm.entities("roll")
+                .filter { it.obj().text("cameraSyncId") == syncId }
+                .sortedWith(
+                    compareByDescending<EntityRecord> { it.obj().text("shotMonth") }
+                        .thenByDescending { it.obj().int("index") ?: 0 },
+                )
+        }
+    }
     val data = entity?.obj()
 
     Column(
@@ -81,8 +94,32 @@ fun EntityDetailScreen(
                     }
                 }
                 InfoLine("状态", if (data.text("status") == "active") "在用" else "闲置")
+                if (type == "camera") {
+                    InfoLine("拍摄卷", "${rolls.size} 卷")
+                }
                 data.optionalText("purchaseDate")?.let { InfoLine("购入日期", it) }
                 data.optionalText("note")?.let { InfoLine("备注", it) }
+            }
+        }
+        if (type == "camera") {
+            Spacer(Modifier.height(14.dp))
+            Text(
+                text = "关联 Rolls",
+                color = GsfMuted,
+                style = MaterialTheme.typography.labelMedium,
+            )
+            Spacer(Modifier.height(8.dp))
+            if (rolls.isEmpty()) {
+                Text(
+                    "这台相机还没有拍摄卷",
+                    color = GsfMuted,
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            } else {
+                rolls.forEach { roll ->
+                    RollCard(roll, vm) { onRoll(roll.syncId) }
+                    Spacer(Modifier.height(8.dp))
+                }
             }
         }
         Spacer(Modifier.height(16.dp))

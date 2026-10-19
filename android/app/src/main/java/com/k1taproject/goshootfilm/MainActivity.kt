@@ -38,6 +38,7 @@ import com.k1taproject.goshootfilm.ui.screens.AlbumsScreen
 import com.k1taproject.goshootfilm.ui.screens.CollectionDetailScreen
 import com.k1taproject.goshootfilm.ui.screens.EntityDetailScreen
 import com.k1taproject.goshootfilm.ui.screens.EquipmentScreen
+import com.k1taproject.goshootfilm.ui.screens.FilmRollsScreen
 import com.k1taproject.goshootfilm.ui.screens.FilmsScreen
 import com.k1taproject.goshootfilm.ui.screens.HomeScreen
 import com.k1taproject.goshootfilm.ui.screens.PairScreen
@@ -149,7 +150,11 @@ private fun MainScaffold(vm: GsfViewModel) {
                     navController.navigate("entity/$type/$id")
                 }
             }
-            composable("films") { FilmsScreen(vm) }
+            composable("films") {
+                FilmsScreen(vm) { filmSyncId ->
+                    navController.navigate("film/$filmSyncId")
+                }
+            }
             composable("rolls") {
                 RollsScreen(vm) { navController.navigate("roll/$it") }
             }
@@ -181,6 +186,15 @@ private fun MainScaffold(vm: GsfViewModel) {
                     type = entry.arguments?.getString("type").orEmpty(),
                     syncId = entry.arguments?.getString("id").orEmpty(),
                     onBack = { navController.popBackStack() },
+                    onRoll = { navController.navigate("roll/$it") },
+                )
+            }
+            composable("film/{id}") { entry ->
+                FilmRollsScreen(
+                    vm = vm,
+                    filmSyncId = entry.arguments?.getString("id").orEmpty(),
+                    onBack = { navController.popBackStack() },
+                    onRoll = { navController.navigate("roll/$it") },
                 )
             }
         }

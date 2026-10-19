@@ -6,7 +6,7 @@ GSFMobile is the native Android read-only client for GoShootFilm.
 - Launcher label: `GSFMobile`
 - Min SDK: 26
 - Target SDK: 35
-- Version: aligned with the desktop release (`0.3.1`, versionCode `30001`)
+- Version: aligned with the desktop release (`0.3.3`, versionCode `30003`)
 - Sync: LAN only, desktop is the source of truth
 - Originals: only formal edited files (PNG/JPEG/WebP), never RAW/CR2/lab scans/TIFF
 
@@ -40,7 +40,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\build-release.ps1
 Output:
 
 ```text
-dist\GSFMobile-0.3.1.apk
+dist\GSFMobile-0.3.3.apk
 dist\mobile-update.json
 ```
 
@@ -56,7 +56,7 @@ Back both up offline. Never reuse the SPSir signing key, and never commit the ke
 Upload these to the same GitHub Release as the desktop installer:
 
 ```text
-GSFMobile-0.3.1.apk
+GSFMobile-0.3.3.apk
 mobile-update.json
 ```
 

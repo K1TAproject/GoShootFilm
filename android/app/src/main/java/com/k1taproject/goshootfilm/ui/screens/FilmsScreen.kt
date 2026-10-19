@@ -55,7 +55,10 @@ import com.k1taproject.goshootfilm.ui.GsfText
 import com.k1taproject.goshootfilm.ui.components.ScreenHeader
 
 @Composable
-fun FilmsScreen(vm: GsfViewModel) {
+fun FilmsScreen(
+    vm: GsfViewModel,
+    onFilmRolls: (String) -> Unit,
+) {
     var query by remember { mutableStateOf("") }
     var selected by remember { mutableStateOf<FilmEntry?>(null) }
     var syncedFilms by remember { mutableStateOf<List<EntityRecord>>(emptyList()) }
@@ -109,8 +112,15 @@ fun FilmsScreen(vm: GsfViewModel) {
             ) {
                 items(entries, key = { "${it.brand}|${it.name}" }) { entry ->
                     val synced = filmByKey["${entry.brand}|${entry.name}".lowercase()]
-                    val isShot = synced?.syncId?.let { it in shotFilmIds } == true
-                    FilmCard(entry, isShot) { selected = entry }
+                    val filmSyncId = synced?.syncId
+                    val isShot = filmSyncId?.let { it in shotFilmIds } == true
+                    FilmCard(entry, isShot) {
+                        if (isShot) {
+                            filmSyncId?.let(onFilmRolls)
+                        } else {
+                            selected = entry
+                        }
+                    }
                 }
             }
         }
@@ -218,6 +228,16 @@ private fun FilmCard(entry: FilmEntry, isShot: Boolean, onClick: () -> Unit) {
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
+                if (isShot) {
+                    Spacer(Modifier.height(3.dp))
+                    Text(
+                        text = "已拍摄 · 点击查看 Rolls",
+                        color = GsfCyan,
+                        style = MaterialTheme.typography.labelSmall,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
             }
         }
     }
