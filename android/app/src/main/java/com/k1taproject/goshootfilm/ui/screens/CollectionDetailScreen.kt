@@ -24,8 +24,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import android.widget.Toast
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -44,6 +46,7 @@ import com.k1taproject.goshootfilm.ui.components.InfoLine
 import com.k1taproject.goshootfilm.ui.components.ScreenHeader
 import com.k1taproject.goshootfilm.ui.components.ThumbnailFor
 import kotlinx.coroutines.launch
+import java.io.File
 
 @Composable
 fun CollectionDetailScreen(
@@ -54,9 +57,9 @@ fun CollectionDetailScreen(
 ) {
     var parent by remember { mutableStateOf<EntityRecord?>(null) }
     var photos by remember { mutableStateOf<List<EntityRecord>>(emptyList()) }
-    var viewerAssetId by remember { mutableStateOf<String?>(null) }
-    var message by remember { mutableStateOf<String?>(null) }
+    var viewerFile by remember { mutableStateOf<File?>(null) }
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
 
     LaunchedEffect(kind, syncId) {
         parent = vm.entity(kind, syncId)
@@ -115,10 +118,6 @@ fun CollectionDetailScreen(
             style = MaterialTheme.typography.labelSmall,
         )
         Spacer(Modifier.height(8.dp))
-        message?.let {
-            Text(it, color = GsfCyan, style = MaterialTheme.typography.bodySmall)
-            Spacer(Modifier.height(6.dp))
-        }
         if (photos.isEmpty()) {
             EmptyState("这个集合还没有照片")
         } else {
@@ -134,11 +133,15 @@ fun CollectionDetailScreen(
                         modifier = Modifier.clickable {
                             scope.launch {
                                 val asset = vm.editOriginal(photoType, photo.syncId)
-                                if (asset == null) {
-                                    message = "这张照片没有可用的正式调色原图"
+                                val local = asset?.let { vm.localEditFile(it.id) }
+                                if (local == null) {
+                                    Toast.makeText(
+                                        context,
+                                        "该图片无本地缓存",
+                                        Toast.LENGTH_SHORT,
+                                    ).show()
                                 } else {
-                                    message = null
-                                    viewerAssetId = asset.id
+                                    viewerFile = local
                                 }
                             }
                         },
@@ -169,11 +172,10 @@ fun CollectionDetailScreen(
         }
     }
 
-    viewerAssetId?.let { assetId ->
+    viewerFile?.let { file ->
         PhotoViewerDialog(
-            vm = vm,
-            assetId = assetId,
-            onDismiss = { viewerAssetId = null },
+            file = file,
+            onDismiss = { viewerFile = null },
         )
     }
 }

@@ -43,7 +43,10 @@ interface AppDao {
     @Query("SELECT * FROM assets WHERE assetType = 'edit_original' ORDER BY lastAccess ASC")
     suspend fun allEditOriginals(): List<AssetRecord>
 
-    @Query("SELECT * FROM assets WHERE localPath IS NOT NULL AND assetType = 'edit_original' ORDER BY lastAccess ASC")
+    @Query("SELECT * FROM assets WHERE assetType = 'edit_original' AND pinned = 1")
+    suspend fun pinnedEditOriginals(): List<AssetRecord>
+
+    @Query("SELECT * FROM assets WHERE localPath IS NOT NULL AND assetType = 'edit_original' AND pinned = 0 ORDER BY lastAccess ASC")
     suspend fun cachedEditOriginals(): List<AssetRecord>
 
     @Upsert
@@ -55,6 +58,9 @@ interface AppDao {
     @Query("UPDATE assets SET lastAccess = :now WHERE id = :id")
     suspend fun markAccessed(id: String, now: Long)
 
+    @Query("UPDATE assets SET pinned = :pinned WHERE id = :id")
+    suspend fun setPinned(id: String, pinned: Boolean)
+
     @Query("UPDATE assets SET localPath = NULL WHERE id = :id")
     suspend fun clearLocalPath(id: String)
 
@@ -64,8 +70,11 @@ interface AppDao {
     @Query("DELETE FROM assets")
     suspend fun clearAssets()
 
-    @Query("SELECT COALESCE(SUM(byteSize), 0) FROM assets WHERE localPath IS NOT NULL AND assetType != 'thumbnail'")
+    @Query("SELECT COALESCE(SUM(byteSize), 0) FROM assets WHERE localPath IS NOT NULL AND assetType = 'edit_original' AND pinned = 0")
     suspend fun cachedViewBytes(): Long
+
+    @Query("SELECT COALESCE(SUM(byteSize), 0) FROM assets WHERE localPath IS NOT NULL AND assetType = 'edit_original' AND pinned = 1")
+    suspend fun cachedPinnedBytes(): Long
 
     @Query("SELECT * FROM meta WHERE `key` = :key LIMIT 1")
     suspend fun meta(key: String): MetaRecord?

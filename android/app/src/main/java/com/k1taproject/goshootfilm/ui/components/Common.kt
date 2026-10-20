@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -31,6 +32,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import kotlin.math.roundToInt
 import com.k1taproject.goshootfilm.GsfViewModel
 import com.k1taproject.goshootfilm.data.AssetRecord
 import com.k1taproject.goshootfilm.ui.GsfBorder
@@ -196,6 +198,38 @@ fun InfoLine(label: String, value: String) {
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
+    }
+}
+
+@Composable
+fun SyncProgressBar(progress: Float?, modifier: Modifier = Modifier) {
+    Column(modifier = modifier.fillMaxWidth()) {
+        if (progress == null) {
+            LinearProgressIndicator(
+                modifier = Modifier.fillMaxWidth(),
+                color = GsfCyan,
+                trackColor = GsfBorder.copy(alpha = 0.6f),
+            )
+        } else {
+            val value = progress.coerceIn(0f, 1f)
+            LinearProgressIndicator(
+                progress = { value },
+                modifier = Modifier.fillMaxWidth(),
+                color = GsfCyan,
+                trackColor = GsfBorder.copy(alpha = 0.6f),
+            )
+            Spacer(Modifier.height(4.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+            ) {
+                Text(
+                    text = "${(value * 100).roundToInt()}%",
+                    color = GsfCyan,
+                    style = MaterialTheme.typography.labelSmall,
+                )
+            }
+        }
     }
 }
 

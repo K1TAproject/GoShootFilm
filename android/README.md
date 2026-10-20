@@ -6,9 +6,13 @@ GSFMobile is the native Android read-only client for GoShootFilm.
 - Launcher label: `GSFMobile`
 - Min SDK: 26
 - Target SDK: 35
-- Version: aligned with the desktop release (`0.3.3`, versionCode `30003`)
+- Version: aligned with the desktop release (`0.3.5`, versionCode `30005`)
 - Sync: LAN only, desktop is the source of truth
+- Starred edited originals are pre-cached during sync; other photos are not downloaded on tap
 - Originals: only formal edited files (PNG/JPEG/WebP), never RAW/CR2/lab scans/TIFF
+- Tapping a photo with no local file shows `该图片无本地缓存`
+- Local edited images can be saved to the Android gallery (`Pictures/GSFMobile`) or shared
+- Android 8/9 asks for storage permission on first save; Android 10+ uses MediaStore
 
 ## Requirements
 
@@ -40,7 +44,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\build-release.ps1
 Output:
 
 ```text
-dist\GSFMobile-0.3.3.apk
+dist\GSFMobile-0.3.5.apk
 dist\mobile-update.json
 ```
 
@@ -56,7 +60,7 @@ Back both up offline. Never reuse the SPSir signing key, and never commit the ke
 Upload these to the same GitHub Release as the desktop installer:
 
 ```text
-GSFMobile-0.3.3.apk
+GSFMobile-0.3.5.apk
 mobile-update.json
 ```
 

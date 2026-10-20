@@ -21,8 +21,8 @@ android {
         applicationId = "com.k1taproject.goshootfilm"
         minSdk = 26
         targetSdk = 35
-        versionCode = 30003
-        versionName = "0.3.3"
+        versionCode = 30005
+        versionName = "0.3.5"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 

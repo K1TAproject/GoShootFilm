@@ -8,6 +8,7 @@
 - PWA：`src-mobile/` 保留为设计/调试参考，可在 Android Chrome 中打开。
 - Android 原生客户端：`android/` 下的 Kotlin + Compose 工程已实现并可构建 debug/release APK；包名 `com.k1taproject.goshootfilm`，应用名 `GSFMobile`。
 - 原生客户端使用 CameraX + ZXing 扫码、Android Keystore 保存凭证、Room 保存元数据，并可从 `/edit-originals/{assetId}` 下载正式调色原图。
+- 同步下载阶段在 Home/Settings 显示进度条和百分比；元数据阶段使用不确定进度条。
 - Films 的已拍摄名片可进入该胶卷的关联 Rolls；Equipment 的相机名片显示拍摄卷数，详情中可进入具体 Rolls。
 - 原生客户端仍需真实 Android 设备验证；模拟器没有摄像头，无法验证扫码和弱网/存储边界。
 - PWA 仍受局域网 HTTP 限制：摄像头、Service Worker 冷启动离线可能不可用。原生 APK 不受这些限制。
@@ -180,9 +181,9 @@ src-tauri/migrations/
 
 ## 7. 手机端缓存
 
-- 原生 `GSFMobile`：元数据、缩略图、`cursor` 和统计保存在 Room；正式调色原图保存在 App 私有目录。
-- PWA：元数据、缩略图、`cursor` 和统计保存在 IndexedDB。
-- 原生和 PWA 的查看图都按需下载；原生查看大图下载 `edit_original`。
+- 原生 `GSFMobile`：元数据、缩略图、`cursor` 和统计保存在 Room；标星照片的正式调色原图在同步时自动预缓存到 App 私有目录，并标记为 pinned。
+- 原生客户端不再在点击大图时联网下载；无本地缓存时提示“该图片无本地缓存”。长按本地图片可保存到系统相册或分享。
+- PWA：元数据、缩略图、`cursor` 和统计保存在 IndexedDB；查看图按需下载。
 - 缓存上限：2 GB、5 GB、10 GB、不自动清理，默认 5 GB。
 - 超限时按 `lastAccess` 最近最少使用清理查看图；缩略图永不参与自动清理。
 - 正在查看的资源加入活跃集合，不会被清理。
@@ -235,9 +236,9 @@ npm run preview:mobile
 - `cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings`
 - `cargo test --manifest-path src-tauri/Cargo.toml`：42 个单元测试 + 1 个 HTTP 集成测试 + 2 个配对集成测试；HTTP 测试覆盖 `/edit-originals/{assetId}` 和正式调色原图字节校验
 - `npm run build:mobile`
-- `:app:testDebugUnitTest`：7 个 Android 单元测试通过；`FilmCatalogInstrumentedTest` 在 API 35 模拟器上通过
+- `:app:testDebugUnitTest`：7 个 Android 单元测试通过；`FilmCatalogInstrumentedTest` 和 `GallerySaverInstrumentedTest` 在 API 35 模拟器上通过
 - `:app:assembleDebug` 和 `:app:assembleRelease` 通过
-- 签名 release APK 通过 `apksigner verify`，manifest 显示 `com.k1taproject.goshootfilm`、`versionCode 30003`、`versionName 0.3.3`、label `GSFMobile`
+- 签名 release APK 通过 `apksigner verify`，manifest 显示 `com.k1taproject.goshootfilm`、`versionCode 30005`、`versionName 0.3.5`、label `GSFMobile`
 - Android 模拟器安装并启动 release APK 成功
 
 未完成：

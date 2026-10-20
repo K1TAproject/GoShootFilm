@@ -22,7 +22,7 @@ Cannot read private member from an object whose class did not declare it
 - `README.md`
 - `android/app/build.gradle.kts` 的 `versionName` 和 `versionCode`
 
-沿用当前 scheme：`0.3.0 -> 30000`，`0.3.1 -> 30001`，`0.3.3 -> 30003`。
+沿用当前 scheme：`0.3.0 -> 30000`，`0.3.1 -> 30001`，`0.3.3 -> 30003`，`0.3.4 -> 30004`，`0.3.5 -> 30005`。
 
 ## 2. 验证
 
@@ -55,17 +55,17 @@ npm run build:android
 产物：
 
 ```text
-src-tauri\target\release\bundle\nsis\GoShootFilm_0.3.3_x64-setup.exe
-src-tauri\target\release\bundle\nsis\GoShootFilm_0.3.3_x64-setup.exe.sig
+src-tauri\target\release\bundle\nsis\GoShootFilm_0.3.5_x64-setup.exe
+src-tauri\target\release\bundle\nsis\GoShootFilm_0.3.5_x64-setup.exe.sig
 src-tauri\target\release\bundle\nsis\latest.json
 
-android\dist\GSFMobile-0.3.3.apk
+android\dist\GSFMobile-0.3.5.apk
 android\dist\mobile-update.json
 ```
 
 ## 4. 创建 Release
 
-1. 推送代码，再创建并推送与桌面版本一致的 tag，例如 `v0.3.3`。
+1. 推送代码，再创建并推送与桌面版本一致的 tag，例如 `v0.3.5`。
 2. 等待桌面 Release 草稿生成。
 3. 把 Android APK 和 `mobile-update.json` 上传到同一个草稿。
 4. 核对：

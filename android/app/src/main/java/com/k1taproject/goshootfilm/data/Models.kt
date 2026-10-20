@@ -43,6 +43,7 @@ data class AssetRecord(
     val available: Boolean,
     val localPath: String?,
     val lastAccess: Long,
+    val pinned: Boolean = false,
 )
 
 @Entity(tableName = "meta", primaryKeys = ["key"])

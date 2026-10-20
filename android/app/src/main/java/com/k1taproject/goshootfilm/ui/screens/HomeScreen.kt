@@ -45,6 +45,7 @@ import com.k1taproject.goshootfilm.ui.components.EmptyState
 import com.k1taproject.goshootfilm.ui.components.GsfCard
 import com.k1taproject.goshootfilm.ui.components.ScreenHeader
 import com.k1taproject.goshootfilm.ui.components.SectionLabel
+import com.k1taproject.goshootfilm.ui.components.SyncProgressBar
 import com.k1taproject.goshootfilm.ui.components.ThumbnailFor
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -120,14 +121,17 @@ fun HomeScreen(
                         )
                     }
                     if (syncState is SyncState.Running) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(28.dp),
-                            strokeWidth = 2.dp,
-                            color = GsfCyan,
-                        )
+                        TextButton(onClick = { vm.cancelSync() }) {
+                            Text("取消", color = GsfMuted)
+                        }
                     } else {
                         Button(onClick = { vm.sync() }) { Text("同步") }
                     }
+                }
+                if (syncState is SyncState.Running) {
+                    val running = syncState as SyncState.Running
+                    Spacer(Modifier.height(10.dp))
+                    SyncProgressBar(running.progress)
                 }
                 if (settings.lastSync > 0) {
                     Spacer(Modifier.height(10.dp))

@@ -10,7 +10,7 @@
 
 GoShootFilm 把相机机身、镜头、胶卷、拍摄卷、数码相册和照片整理在同一个本地资料库中。它不需要注册账号，也不会把照片上传到云端：记录保存在本机 SQLite 数据库，原始影像保存在你指定的图库目录。
 
-> 当前版本 **0.3.3**，官方构建面向 **Windows x64**。安装后的日常操作见 [GoShootFilm 使用说明](./GoShootFilm-使用说明.md)。
+> 当前版本 **0.3.5**，官方构建面向 **Windows x64**。安装后的日常操作见 [GoShootFilm 使用说明](./GoShootFilm-使用说明.md)。
 
 ## 功能
 
@@ -43,8 +43,8 @@ GoShootFilm 把相机机身、镜头、胶卷、拍摄卷、数码相册和照�
 - **局域网只读**：桌面端作为唯一权威数据源；手机通过二维码配对后，在同一局域网内只读浏览档案。
 - **增量同步**：稳定同步 ID、修订号、删除墓碑和同步游标；原生客户端使用 Room 事务、PWA 使用 IndexedDB 事务应用元数据，中断不会留下半更新状态。
 - **设备管理**：设置中可启动/停止同步服务、批准配对、查看设备名称和最近同步时间，并立即撤销设备。
-- **移动端图片**：缩略图默认同步；原生客户端查看大图时按需下载正式调色原文件，PWA 使用 2400px 查看版；不传输胶片扫描、RAW、CR2 或正式 TIFF。
-- **手机界面**：`android/` 的 GSFMobile 原生客户端提供首页、器材、Films、Rolls、Albums、图片查看、仅 Wi-Fi 同步和缓存上限设置；`src-mobile/` PWA 保留为参考/调试实现。原生客户端可扫码、使用 Keystore 保存凭证，并按需下载正式调色原图。已拍摄胶卷名片可进入关联 Rolls；Equipment 中的相机会显示拍摄卷数并可进入具体 Rolls。
+- **移动端图片**：缩略图默认同步；原生客户端在同步时自动预缓存所有标星照片的正式调色原图，其他照片不自动下载；无本地缓存时点击提示，长按可保存到系统相册。PWA 使用 2400px 查看版；不传输胶片扫描、RAW、CR2 或正式 TIFF。
+- **手机界面**：`android/` 的 GSFMobile 原生客户端提供首页、器材、Films、Rolls、Albums、图片查看、仅 Wi-Fi 同步和缓存上限设置；同步下载阶段显示进度条和百分比。`src-mobile/` PWA 保留为参考/调试实现。原生客户端可扫码、使用 Keystore 保存凭证，并预缓存标星照片的正式调色原图。已拍摄胶卷名片可进入关联 Rolls；Equipment 中的相机会显示拍摄卷数并可进入具体 Rolls。
 - **当前限制**：GSFMobile 已可构建 debug/release APK 并通过模拟器启动，但真实 Android 设备上的扫码、同步、弱网和大文件下载仍待验证；PWA 仍受局域网 HTTP 的摄像头/Service Worker 限制。详见 [MOBILE_SYNC.md](./MOBILE_SYNC.md)。
 
 ### 支持的图片格式
@@ -150,7 +150,7 @@ npm run tauri build
 签名失败或漏签时，可以对已生成的安装包补签：
 
 ```powershell
-npm run tauri -- signer sign -f "$env:USERPROFILE\.tauri\goshootfilm.key" -p $env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD "src-tauri\target\release\bundle\nsis\GoShootFilm_0.3.3_x64-setup.exe"
+npm run tauri -- signer sign -f "$env:USERPROFILE\.tauri\goshootfilm.key" -p $env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD "src-tauri\target\release\bundle\nsis\GoShootFilm_0.3.5_x64-setup.exe"
 ```
 
 手机端 PWA（保留为参考/调试）：
@@ -168,7 +168,7 @@ cd android
 powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\build-release.ps1
 ```
 
-输出 `android\dist\GSFMobile-0.3.3.apk` 和 `mobile-update.json`。需要 JDK 17+（含 `jlink`）和 Android SDK 35；本机路径配置在 `android/.local/`，不进入版本库。详见 [android/README.md](./android/README.md) 和 [MOBILE_SYNC.md](./MOBILE_SYNC.md)。
+输出 `android\dist\GSFMobile-0.3.5.apk` 和 `mobile-update.json`。需要 JDK 17+（含 `jlink`）和 Android SDK 35；本机路径配置在 `android/.local/`，不进入版本库。详见 [android/README.md](./android/README.md) 和 [MOBILE_SYNC.md](./MOBILE_SYNC.md)。
 
 提交前检查：
 

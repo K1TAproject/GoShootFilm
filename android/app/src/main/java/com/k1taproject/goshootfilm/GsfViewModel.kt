@@ -22,7 +22,7 @@ import java.io.File
 
 sealed interface SyncState {
     data object Idle : SyncState
-    data class Running(val message: String) : SyncState
+    data class Running(val message: String, val progress: Float? = null) : SyncState
     data class Done(val at: Long) : SyncState
     data class Failed(val message: String) : SyncState
 }
@@ -70,7 +70,9 @@ class GsfViewModel(application: Application) : AndroidViewModel(application) {
         _syncState.value = SyncState.Running("准备同步…")
         viewModelScope.launch {
             try {
-                repository.sync { message -> _syncState.value = SyncState.Running(message) }
+                repository.sync { progress ->
+                    _syncState.value = SyncState.Running(progress.message, progress.fraction)
+                }
                 _syncState.value = SyncState.Done(System.currentTimeMillis())
             } catch (error: Exception) {
                 _syncState.value = SyncState.Failed(error.message ?: "同步失败")
@@ -121,9 +123,19 @@ class GsfViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun cancelSync() {
+        repository.cancelSync()
+    }
+
     fun clearViewCache() {
         viewModelScope.launch {
             repository.clearViewCache()
+        }
+    }
+
+    fun clearPinnedCache() {
+        viewModelScope.launch {
+            repository.clearPinnedEditOriginals()
         }
     }
 
@@ -152,6 +164,8 @@ class GsfViewModel(application: Application) : AndroidViewModel(application) {
     suspend fun editOriginal(type: String, syncId: String): AssetRecord? =
         repository.editOriginal(type, syncId)
 
+    suspend fun localEditFile(assetId: String): File? = repository.localEditFile(assetId)
+
     suspend fun downloadEditOriginal(
         assetId: String,
         onProgress: (Long, Long) -> Unit,
@@ -162,6 +176,8 @@ class GsfViewModel(application: Application) : AndroidViewModel(application) {
     suspend fun entity(type: String, syncId: String) = repository.entity(type, syncId)
 
     suspend fun cachedBytes() = repository.cachedBytes()
+
+    suspend fun cachedPinnedBytes() = repository.cachedPinnedBytes()
 
     fun consumePairError() {
         if (_pairState.value is PairState.Failed) _pairState.value = PairState.Idle

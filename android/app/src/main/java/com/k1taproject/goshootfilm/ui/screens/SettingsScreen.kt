@@ -47,6 +47,7 @@ import com.k1taproject.goshootfilm.ui.components.InfoLine
 import com.k1taproject.goshootfilm.ui.components.ScreenHeader
 import com.k1taproject.goshootfilm.ui.components.SectionLabel
 import com.k1taproject.goshootfilm.ui.components.StatusChip
+import com.k1taproject.goshootfilm.ui.components.SyncProgressBar
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -59,6 +60,7 @@ fun SettingsScreen(vm: GsfViewModel, onBack: () -> Unit) {
     val updateState by vm.updateState.collectAsStateWithLifecycle()
     var confirmUnpair by remember { mutableStateOf(false) }
     var confirmClear by remember { mutableStateOf(false) }
+    var confirmPinned by remember { mutableStateOf(false) }
     var cacheVersion by remember { mutableStateOf(0) }
     val cachedBytes by produceState(
         initialValue = 0L,
@@ -67,6 +69,13 @@ fun SettingsScreen(vm: GsfViewModel, onBack: () -> Unit) {
         settings.cacheLimitMb,
     ) {
         value = vm.cachedBytes()
+    }
+    val pinnedBytes by produceState(
+        initialValue = 0L,
+        cacheVersion,
+        syncState,
+    ) {
+        value = vm.cachedPinnedBytes()
     }
 
     Column(
@@ -118,7 +127,11 @@ fun SettingsScreen(vm: GsfViewModel, onBack: () -> Unit) {
                 }
                 Spacer(Modifier.height(10.dp))
                 when (val state = syncState) {
-                    is SyncState.Running -> Text(state.message, color = GsfCyan)
+                    is SyncState.Running -> {
+                        Text(state.message, color = GsfCyan)
+                        Spacer(Modifier.height(8.dp))
+                        SyncProgressBar(state.progress)
+                    }
                     is SyncState.Failed -> Text(state.message, color = GsfDanger)
                     is SyncState.Done -> Text("同步完成：${formatTime(state.at)}", color = GsfMuted)
                     SyncState.Idle -> Text("尚未同步", color = GsfMuted)
@@ -134,6 +147,10 @@ fun SettingsScreen(vm: GsfViewModel, onBack: () -> Unit) {
         SectionLabel("缓存")
         GsfCard(modifier = Modifier.fillMaxWidth()) {
             Column {
+                Text(
+                    "标星原图：${formatBytes(pinnedBytes)}",
+                    color = GsfText,
+                )
                 Text(
                     "查看图缓存：${formatBytes(cachedBytes)}",
                     color = GsfText,
@@ -161,8 +178,12 @@ fun SettingsScreen(vm: GsfViewModel, onBack: () -> Unit) {
                     Text("清理查看图缓存")
                 }
                 Spacer(Modifier.height(4.dp))
+                OutlinedButton(onClick = { confirmPinned = true }) {
+                    Text("清理标星原图", color = GsfDanger)
+                }
+                Spacer(Modifier.height(4.dp))
                 Text(
-                    "缩略图和元数据会保留",
+                    "缩略图和元数据会保留；标星原图下次同步会重新下载",
                     color = GsfMuted,
                     style = MaterialTheme.typography.labelSmall,
                 )
@@ -266,6 +287,26 @@ fun SettingsScreen(vm: GsfViewModel, onBack: () -> Unit) {
             },
             dismissButton = {
                 TextButton(onClick = { confirmClear = false }) { Text("取消") }
+            },
+            containerColor = com.k1taproject.goshootfilm.ui.GsfSurface,
+        )
+    }
+    if (confirmPinned) {
+        AlertDialog(
+            onDismissRequest = { confirmPinned = false },
+            title = { Text("清理标星原图？") },
+            text = { Text("将删除所有标星调色原图；下次同步会重新下载。") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        confirmPinned = false
+                        vm.clearPinnedCache()
+                        cacheVersion++
+                    },
+                ) { Text("清理", color = GsfDanger) }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmPinned = false }) { Text("取消") }
             },
             containerColor = com.k1taproject.goshootfilm.ui.GsfSurface,
         )
