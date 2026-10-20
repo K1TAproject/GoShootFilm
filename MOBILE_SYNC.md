@@ -8,7 +8,7 @@
 - PWA：`src-mobile/` 保留为设计/调试参考，可在 Android Chrome 中打开。
 - Android 原生客户端：`android/` 下的 Kotlin + Compose 工程已实现并可构建 debug/release APK；包名 `com.k1taproject.goshootfilm`，应用名 `GSFMobile`。
 - 原生客户端使用 CameraX + ZXing 扫码、Android Keystore 保存凭证、Room 保存元数据，并可从 `/edit-originals/{assetId}` 下载正式调色原图。
-- 同步下载阶段在 Home/Settings 显示进度条和百分比；元数据阶段使用不确定进度条。
+- 同步显示分为“检查更新”和“下载数据”两个阶段：检查阶段使用不确定进度条，下载阶段显示进度条和百分比；没有新变更或缺失文件时显示“已是最新”。
 - Films 的已拍摄名片可进入该胶卷的关联 Rolls；Equipment 的相机名片显示拍摄卷数，详情中可进入具体 Rolls。
 - 原生客户端仍需真实 Android 设备验证；模拟器没有摄像头，无法验证扫码和弱网/存储边界。
 - PWA 仍受局域网 HTTP 限制：摄像头、Service Worker 冷启动离线可能不可用。原生 APK 不受这些限制。
@@ -238,7 +238,7 @@ npm run preview:mobile
 - `npm run build:mobile`
 - `:app:testDebugUnitTest`：7 个 Android 单元测试通过；`FilmCatalogInstrumentedTest` 和 `GallerySaverInstrumentedTest` 在 API 35 模拟器上通过
 - `:app:assembleDebug` 和 `:app:assembleRelease` 通过
-- 签名 release APK 通过 `apksigner verify`，manifest 显示 `com.k1taproject.goshootfilm`、`versionCode 30005`、`versionName 0.3.5`、label `GSFMobile`
+- 签名 release APK 通过 `apksigner verify`，manifest 显示 `com.k1taproject.goshootfilm`、`versionCode 30006`、`versionName 0.3.6`、label `GSFMobile`
 - Android 模拟器安装并启动 release APK 成功
 
 未完成：

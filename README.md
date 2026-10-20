@@ -10,7 +10,7 @@
 
 GoShootFilm 把相机机身、镜头、胶卷、拍摄卷、数码相册和照片整理在同一个本地资料库中。它不需要注册账号，也不会把照片上传到云端：记录保存在本机 SQLite 数据库，原始影像保存在你指定的图库目录。
 
-> 当前版本 **0.3.5**，官方构建面向 **Windows x64**。安装后的日常操作见 [GoShootFilm 使用说明](./GoShootFilm-使用说明.md)。
+> 当前版本 **0.3.6**，官方构建面向 **Windows x64**。安装后的日常操作见 [GoShootFilm 使用说明](./GoShootFilm-使用说明.md)。
 
 ## 功能
 
@@ -150,7 +150,7 @@ npm run tauri build
 签名失败或漏签时，可以对已生成的安装包补签：
 
 ```powershell
-npm run tauri -- signer sign -f "$env:USERPROFILE\.tauri\goshootfilm.key" -p $env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD "src-tauri\target\release\bundle\nsis\GoShootFilm_0.3.5_x64-setup.exe"
+npm run tauri -- signer sign -f "$env:USERPROFILE\.tauri\goshootfilm.key" -p $env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD "src-tauri\target\release\bundle\nsis\GoShootFilm_0.3.6_x64-setup.exe"
 ```
 
 手机端 PWA（保留为参考/调试）：
@@ -168,7 +168,7 @@ cd android
 powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\build-release.ps1
 ```
 
-输出 `android\dist\GSFMobile-0.3.5.apk` 和 `mobile-update.json`。需要 JDK 17+（含 `jlink`）和 Android SDK 35；本机路径配置在 `android/.local/`，不进入版本库。详见 [android/README.md](./android/README.md) 和 [MOBILE_SYNC.md](./MOBILE_SYNC.md)。
+输出 `android\dist\GSFMobile-0.3.6.apk` 和 `mobile-update.json`。需要 JDK 17+（含 `jlink`）和 Android SDK 35；本机路径配置在 `android/.local/`，不进入版本库。详见 [android/README.md](./android/README.md) 和 [MOBILE_SYNC.md](./MOBILE_SYNC.md)。
 
 提交前检查：
 

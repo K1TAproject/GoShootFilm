@@ -37,6 +37,7 @@ import com.k1taproject.goshootfilm.BuildConfig
 import com.k1taproject.goshootfilm.GsfViewModel
 import com.k1taproject.goshootfilm.SyncState
 import com.k1taproject.goshootfilm.UpdateState
+import com.k1taproject.goshootfilm.data.SyncPhase
 import com.k1taproject.goshootfilm.ui.GsfCyan
 import com.k1taproject.goshootfilm.ui.GsfDanger
 import com.k1taproject.goshootfilm.ui.GsfMuted
@@ -128,12 +129,20 @@ fun SettingsScreen(vm: GsfViewModel, onBack: () -> Unit) {
                 Spacer(Modifier.height(10.dp))
                 when (val state = syncState) {
                     is SyncState.Running -> {
-                        Text(state.message, color = GsfCyan)
+                        Text(
+                            text = when (state.phase) {
+                                SyncPhase.Checking -> "检查更新"
+                                SyncPhase.Downloading -> "下载数据"
+                            },
+                            color = GsfCyan,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                        Text(state.message, color = GsfMuted)
                         Spacer(Modifier.height(8.dp))
                         SyncProgressBar(state.progress)
                     }
                     is SyncState.Failed -> Text(state.message, color = GsfDanger)
-                    is SyncState.Done -> Text("同步完成：${formatTime(state.at)}", color = GsfMuted)
+                    is SyncState.Done -> Text("${state.message}：${formatTime(state.at)}", color = GsfMuted)
                     SyncState.Idle -> Text("尚未同步", color = GsfMuted)
                 }
                 Spacer(Modifier.height(8.dp))

@@ -18,7 +18,13 @@ import java.util.concurrent.TimeUnit
 
 class SyncException(message: String) : Exception(message)
 
+enum class SyncPhase {
+    Checking,
+    Downloading,
+}
+
 data class SyncProgress(
+    val phase: SyncPhase,
     val message: String,
     val fraction: Float? = null,
 )
@@ -88,9 +94,10 @@ class SyncRepository(
         }
         var cursor = current.cursor
         var pageCount = 0
+        var changed = false
         while (pageCount++ < 500) {
             if (cancelRequested) throw SyncException("同步已取消")
-            onProgress(SyncProgress("正在同步元数据…"))
+            onProgress(SyncProgress(SyncPhase.Checking, "正在检查桌面端更新…"))
             val response = withContext(Dispatchers.IO) {
                 api.changes(current.serverUrl, credential, cursor)
             }
@@ -107,11 +114,12 @@ class SyncRepository(
                 deleteTree(editRoot)
                 cursor = 0
                 settings.setCursor(0)
-                onProgress(SyncProgress("电脑端要求重新同步…"))
+                onProgress(SyncProgress(SyncPhase.Checking, "电脑端要求重新同步…"))
                 continue
             }
             val changes = response["changes"]?.jsonArray
                 ?: throw SyncException("同步响应缺少 changes")
+            if (changes.isNotEmpty()) changed = true
             db.withTransaction {
                 for (element in changes) {
                     applyChange(element.jsonObject)
@@ -150,13 +158,13 @@ class SyncRepository(
                 return
             }
             lastReportedFraction = fraction ?: -1f
-            onProgress(SyncProgress(message, fraction))
+            onProgress(SyncProgress(SyncPhase.Downloading, message, fraction))
         }
 
         if (thumbnailJobs.isNotEmpty()) {
-            onProgress(SyncProgress("正在下载缩略图…", 0f))
+            onProgress(SyncProgress(SyncPhase.Downloading, "正在下载数据…", 0f))
             downloadedBytes = downloadThumbnails(thumbnailJobs) { totalSoFar ->
-                report("正在下载缩略图…", totalSoFar)
+                report("正在下载数据…", totalSoFar)
             }
         }
         if (cancelRequested) throw SyncException("同步已取消")
@@ -167,19 +175,26 @@ class SyncRepository(
             } else {
                 0f
             }
-            onProgress(SyncProgress("正在下载标星调色图…", startFraction))
+            onProgress(SyncProgress(SyncPhase.Downloading, "正在下载数据…", startFraction))
             val baseBytes = downloadedBytes
             val result = downloadPinnedEditOriginals(pinnedJobs) { currentBytes ->
-                report("正在下载标星调色图…", baseBytes + currentBytes)
+                report("正在下载数据…", baseBytes + currentBytes)
             }
             downloadedBytes = baseBytes + result.first
             failedPinned = result.second
         }
         settings.setLastSync(System.currentTimeMillis())
         cleanupCache(settings.current().cacheLimitMb)
+        val hasDownloads = thumbnailJobs.isNotEmpty() || pinnedJobs.isNotEmpty()
+        val finalMessage = when {
+            failedPinned > 0 -> "同步完成，部分标星原图下载失败"
+            !changed && !hasDownloads -> "已是最新"
+            else -> "同步完成"
+        }
         onProgress(
             SyncProgress(
-                if (failedPinned > 0) "同步完成，部分标星原图下载失败" else "同步完成",
+                if (hasDownloads) SyncPhase.Downloading else SyncPhase.Checking,
+                finalMessage,
                 1f,
             ),
         )

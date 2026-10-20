@@ -32,6 +32,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.k1taproject.goshootfilm.GsfViewModel
 import com.k1taproject.goshootfilm.SyncState
 import com.k1taproject.goshootfilm.data.EntityRecord
+import com.k1taproject.goshootfilm.data.SyncPhase
 import com.k1taproject.goshootfilm.data.int
 import com.k1taproject.goshootfilm.data.obj
 import com.k1taproject.goshootfilm.data.text
@@ -99,8 +100,11 @@ fun HomeScreen(
                     Column {
                         Text(
                             text = when (val state = syncState) {
-                                is SyncState.Running -> "正在同步"
-                                is SyncState.Done -> "同步完成"
+                                is SyncState.Running -> when (state.phase) {
+                                    SyncPhase.Checking -> "正在检查更新"
+                                    SyncPhase.Downloading -> "正在下载数据"
+                                }
+                                is SyncState.Done -> state.message
                                 is SyncState.Failed -> "同步失败"
                                 SyncState.Idle -> "尚未同步"
                             },
