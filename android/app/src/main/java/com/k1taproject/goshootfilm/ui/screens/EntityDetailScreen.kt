@@ -39,12 +39,21 @@ fun EntityDetailScreen(
     syncId: String,
     onBack: () -> Unit,
     onRoll: (String) -> Unit,
+    onAlbum: (String) -> Unit,
 ) {
     var entity by remember { mutableStateOf<EntityRecord?>(null) }
     var rolls by remember { mutableStateOf<List<EntityRecord>>(emptyList()) }
+    var albums by remember { mutableStateOf<List<EntityRecord>>(emptyList()) }
     LaunchedEffect(type, syncId) {
-        entity = vm.entity(type, syncId)
-        if (type == "camera") {
+        rolls = emptyList()
+        albums = emptyList()
+        val loaded = vm.entity(type, syncId)
+        entity = loaded
+        if (type == "camera" && loaded?.obj()?.text("cameraType") == "digital") {
+            albums = vm.entities("digital_album")
+                .filter { it.obj().text("cameraSyncId") == syncId }
+                .sortedByDescending { it.obj().text("shotDate") }
+        } else if (type == "camera") {
             rolls = vm.entities("roll")
                 .filter { it.obj().text("cameraSyncId") == syncId }
                 .sortedWith(
@@ -95,13 +104,37 @@ fun EntityDetailScreen(
                 }
                 InfoLine("状态", if (data.text("status") == "active") "在用" else "闲置")
                 if (type == "camera") {
-                    InfoLine("拍摄卷", "${rolls.size} 卷")
+                    if (data.text("cameraType") == "digital") {
+                        InfoLine("相册", "${albums.size} 个")
+                    } else {
+                        InfoLine("拍摄卷", "${rolls.size} 卷")
+                    }
                 }
                 data.optionalText("purchaseDate")?.let { InfoLine("购入日期", it) }
                 data.optionalText("note")?.let { InfoLine("备注", it) }
             }
         }
-        if (type == "camera") {
+        if (type == "camera" && data.text("cameraType") == "digital") {
+            Spacer(Modifier.height(14.dp))
+            Text(
+                text = "关联 Albums",
+                color = GsfMuted,
+                style = MaterialTheme.typography.labelMedium,
+            )
+            Spacer(Modifier.height(8.dp))
+            if (albums.isEmpty()) {
+                Text(
+                    "这台数码相机还没有相册",
+                    color = GsfMuted,
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            } else {
+                albums.forEach { album ->
+                    AlbumCard(album, vm) { onAlbum(album.syncId) }
+                    Spacer(Modifier.height(8.dp))
+                }
+            }
+        } else if (type == "camera") {
             Spacer(Modifier.height(14.dp))
             Text(
                 text = "关联 Rolls",

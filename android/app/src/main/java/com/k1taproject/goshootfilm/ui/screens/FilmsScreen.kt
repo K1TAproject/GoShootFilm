@@ -54,12 +54,19 @@ import com.k1taproject.goshootfilm.ui.GsfSurface
 import com.k1taproject.goshootfilm.ui.GsfText
 import com.k1taproject.goshootfilm.ui.components.ScreenHeader
 
+private enum class FilmFilter(val label: String) {
+    All("全部"),
+    Shot("已拍摄"),
+    Unshot("未拍摄"),
+}
+
 @Composable
 fun FilmsScreen(
     vm: GsfViewModel,
     onFilmRolls: (String) -> Unit,
 ) {
     var query by remember { mutableStateOf("") }
+    var filter by remember { mutableStateOf(FilmFilter.All) }
     var selected by remember { mutableStateOf<FilmEntry?>(null) }
     var syncedFilms by remember { mutableStateOf<List<EntityRecord>>(emptyList()) }
     var rolls by remember { mutableStateOf<List<EntityRecord>>(emptyList()) }
@@ -74,8 +81,18 @@ fun FilmsScreen(
         "${data.text("brand")}|${data.text("name")}".lowercase()
     }
     val shotFilmIds = rolls.mapNotNull { it.obj().optionalText("filmSyncId") }.toSet()
+    fun isShot(entry: FilmEntry): Boolean {
+        val synced = filmByKey["${entry.brand}|${entry.name}".lowercase()] ?: return false
+        return synced.syncId in shotFilmIds
+    }
     val entries = vm.filmCatalog.entries
-        .filter { it.matches(query) }
+        .filter { entry ->
+            entry.matches(query) && when (filter) {
+                FilmFilter.All -> true
+                FilmFilter.Shot -> isShot(entry)
+                FilmFilter.Unshot -> !isShot(entry)
+            }
+        }
 
     Column(
         modifier = Modifier
@@ -92,6 +109,16 @@ fun FilmsScreen(
             placeholder = { Text("搜索品牌、型号或种类") },
             shape = RoundedCornerShape(12.dp),
         )
+        Spacer(Modifier.height(10.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FilmFilter.entries.forEach { option ->
+                FilmFilterPill(
+                    text = option.label,
+                    selected = filter == option,
+                    onClick = { filter = option },
+                )
+            }
+        }
         Spacer(Modifier.height(12.dp))
         Text(
             text = "共 ${entries.size} 种",
@@ -113,9 +140,9 @@ fun FilmsScreen(
                 items(entries, key = { "${it.brand}|${it.name}" }) { entry ->
                     val synced = filmByKey["${entry.brand}|${entry.name}".lowercase()]
                     val filmSyncId = synced?.syncId
-                    val isShot = filmSyncId?.let { it in shotFilmIds } == true
-                    FilmCard(entry, isShot) {
-                        if (isShot) {
+                    val entryIsShot = isShot(entry)
+                    FilmCard(entry, entryIsShot) {
+                        if (entryIsShot) {
                             filmSyncId?.let(onFilmRolls)
                         } else {
                             selected = entry
@@ -162,6 +189,23 @@ fun FilmsScreen(
                 }
             },
             containerColor = GsfSurface,
+        )
+    }
+}
+
+@Composable
+private fun FilmFilterPill(text: String, selected: Boolean, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(999.dp),
+        color = if (selected) GsfPurple.copy(alpha = 0.18f) else GsfSurface,
+        contentColor = if (selected) GsfPurple else GsfMuted,
+    ) {
+        Text(
+            text = text,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
         )
     }
 }

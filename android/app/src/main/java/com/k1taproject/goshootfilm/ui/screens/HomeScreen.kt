@@ -151,18 +151,30 @@ fun HomeScreen(
         Spacer(Modifier.height(18.dp))
         SectionLabel("概览")
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            StatBox("相机", counts["camera"] ?: 0, Modifier.weight(1f))
-            StatBox("器材", counts["equipment"] ?: 0, Modifier.weight(1f))
+            StatBox("相机", counts["camera"] ?: 0, Modifier.weight(1f)) {
+                onOpenTab("equipment")
+            }
+            StatBox("器材", counts["equipment"] ?: 0, Modifier.weight(1f)) {
+                onOpenTab("equipment")
+            }
         }
         Spacer(Modifier.height(10.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            StatBox("Rolls", counts["roll"] ?: 0, Modifier.weight(1f))
-            StatBox("Albums", counts["digital_album"] ?: 0, Modifier.weight(1f))
+            StatBox("Rolls", counts["roll"] ?: 0, Modifier.weight(1f)) {
+                onOpenTab("rolls")
+            }
+            StatBox("Albums", counts["digital_album"] ?: 0, Modifier.weight(1f)) {
+                onOpenTab("albums")
+            }
         }
         Spacer(Modifier.height(10.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            StatBox("胶片照片", counts["film_photo"] ?: 0, Modifier.weight(1f))
-            StatBox("数码照片", counts["digital_photo"] ?: 0, Modifier.weight(1f))
+            StatBox("胶片照片", counts["film_photo"] ?: 0, Modifier.weight(1f)) {
+                onOpenTab("rolls")
+            }
+            StatBox("数码照片", counts["digital_photo"] ?: 0, Modifier.weight(1f)) {
+                onOpenTab("albums")
+            }
         }
 
         Spacer(Modifier.height(20.dp))
@@ -205,8 +217,13 @@ fun HomeScreen(
 }
 
 @Composable
-private fun StatBox(label: String, value: Int, modifier: Modifier = Modifier) {
-    GsfCard(modifier = modifier) {
+private fun StatBox(
+    label: String,
+    value: Int,
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
+) {
+    GsfCard(modifier = modifier, onClick = onClick) {
         Column {
             Text(value.toString(), color = GsfText, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
             Text(label, color = GsfMuted, style = MaterialTheme.typography.labelSmall)

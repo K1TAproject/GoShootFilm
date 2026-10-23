@@ -150,7 +150,7 @@ fun RollCard(roll: EntityRecord, vm: GsfViewModel, onClick: () -> Unit) {
 }
 
 @Composable
-private fun AlbumCard(album: EntityRecord, vm: GsfViewModel, onClick: () -> Unit) {
+fun AlbumCard(album: EntityRecord, vm: GsfViewModel, onClick: () -> Unit) {
     val data = album.obj()
     GsfCard(modifier = Modifier.fillMaxWidth(), onClick = onClick) {
         Row(verticalAlignment = Alignment.CenterVertically) {

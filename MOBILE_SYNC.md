@@ -238,7 +238,7 @@ npm run preview:mobile
 - `npm run build:mobile`
 - `:app:testDebugUnitTest`：7 个 Android 单元测试通过；`FilmCatalogInstrumentedTest` 和 `GallerySaverInstrumentedTest` 在 API 35 模拟器上通过
 - `:app:assembleDebug` 和 `:app:assembleRelease` 通过
-- 签名 release APK 通过 `apksigner verify`，manifest 显示 `com.k1taproject.goshootfilm`、`versionCode 30006`、`versionName 0.3.6`、label `GSFMobile`
+- 签名 release APK 通过 `apksigner verify`，manifest 显示 `com.k1taproject.goshootfilm`、`versionCode 30007`、`versionName 0.3.7`、label `GSFMobile`
 - Android 模拟器安装并启动 release APK 成功
 
 未完成：

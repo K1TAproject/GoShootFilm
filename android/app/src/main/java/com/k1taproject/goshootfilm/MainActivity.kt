@@ -187,6 +187,7 @@ private fun MainScaffold(vm: GsfViewModel) {
                     syncId = entry.arguments?.getString("id").orEmpty(),
                     onBack = { navController.popBackStack() },
                     onRoll = { navController.navigate("roll/$it") },
+                    onAlbum = { navController.navigate("album/$it") },
                 )
             }
             composable("film/{id}") { entry ->
