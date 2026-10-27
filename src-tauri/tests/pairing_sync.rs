@@ -89,3 +89,30 @@ async fn expired_pairing_token_is_rejected_without_creating_request() {
     assert_eq!(count, 0);
     pool.close().await;
 }
+
+#[tokio::test]
+async fn persisted_device_auth_survives_manager_restart() {
+    let pool = test_pool().await;
+    let first = SyncManager::new_without_app(pool.clone());
+    let token = "c".repeat(64);
+    first
+        .begin_pairing_for_test(&token, now_epoch() + 120)
+        .await;
+    let request_id = first
+        .create_pair_request(&token, "Restart Phone", "android")
+        .await
+        .expect("create pair request");
+    first
+        .approve_pairing(&request_id)
+        .await
+        .expect("approve pairing");
+    let credential = match first.pair_state(&request_id).await.unwrap() {
+        PairState::Approved { credential, .. } => credential,
+        _ => panic!("pairing should return a credential"),
+    };
+    drop(first);
+
+    let restarted = SyncManager::new_without_app(pool.clone());
+    assert!(restarted.authenticate(&credential).await.is_some());
+    pool.close().await;
+}

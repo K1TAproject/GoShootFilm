@@ -121,7 +121,7 @@ CR2 使用内嵌 JPEG 生成预览，TIFF 会生成独立预览。预览生成�
 
 手机端同步元数据和缩略图，并自动下载所有**标星照片**的正式调色原图。其他照片不会自动下载；点击没有本地缓存的照片会提示“该图片无本地缓存”。本地图片可长按保存到系统相册或分享。不会下载胶片扫描、数码 RAW/CR2 或正式 TIFF。电脑端可以随时撤销设备，撤销后该设备立即失去同步权限。
 
-Android 客户端为 `android/` 下的 GSFMobile，安装包通过 GitHub Release 或直接发送 APK 分发。`src-mobile/` PWA 保留为参考实现；原生客户端仍需真实设备验证。详细说明见 [MOBILE_SYNC.md](./MOBILE_SYNC.md) 和 [android/README.md](./android/README.md)。
+Android 客户端为 `android/` 下的 GSFMobile，安装包通过 GitHub Release 或直接发送 APK 分发；原生客户端仍需真实设备验证。详细说明见 [MOBILE_SYNC.md](./MOBILE_SYNC.md) 和 [android/README.md](./android/README.md)。
 
 ## 10. 备份数据
 

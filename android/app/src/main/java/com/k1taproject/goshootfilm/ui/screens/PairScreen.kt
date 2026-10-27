@@ -16,6 +16,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -52,7 +53,7 @@ import com.k1taproject.goshootfilm.ui.components.GsfCard
 import com.k1taproject.goshootfilm.ui.components.StatusChip
 
 @Composable
-fun PairScreen(vm: GsfViewModel) {
+fun PairScreen(vm: GsfViewModel, onBack: () -> Unit) {
     val context = LocalContext.current
     val clipboard = LocalClipboardManager.current
     val pairState by vm.pairState.collectAsStateWithLifecycle()
@@ -72,6 +73,12 @@ fun PairScreen(vm: GsfViewModel) {
     LaunchedEffect(Unit) {
         if (!hasCamera) permissionLauncher.launch(Manifest.permission.CAMERA)
     }
+    LaunchedEffect(pairState) {
+        if (pairState is PairState.Paired) {
+            vm.consumePairSuccess()
+            onBack()
+        }
+    }
 
     Scaffold(containerColor = Color.Transparent) { padding ->
         Column(
@@ -81,6 +88,12 @@ fun PairScreen(vm: GsfViewModel) {
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp, vertical = 28.dp),
         ) {
+            TextButton(
+                onClick = {
+                    vm.cancelPairing()
+                    onBack()
+                },
+            ) { Text("返回", color = GsfMuted) }
             Text(
                 text = "GSFMobile",
                 color = GsfText,
@@ -135,6 +148,8 @@ fun PairScreen(vm: GsfViewModel) {
                             color = GsfMuted,
                             style = MaterialTheme.typography.bodySmall,
                         )
+                        Spacer(Modifier.height(8.dp))
+                        OutlinedButton(onClick = { vm.cancelPairing() }) { Text("取消配对") }
                     }
                 }
             } else {
@@ -220,5 +235,23 @@ fun PairScreen(vm: GsfViewModel) {
                 else -> Unit
             }
         }
+    }
+
+    val different = pairState as? PairState.ConfirmDifferentServer
+    if (different != null) {
+        AlertDialog(
+            onDismissRequest = { vm.cancelPairing() },
+            title = { Text("连接另一台电脑？") },
+            text = { Text(different.message) },
+            confirmButton = {
+                TextButton(onClick = { vm.pairFromPayload(different.payload, allowDifferentServer = true) }) {
+                    Text("确认切换")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { vm.cancelPairing() }) { Text("取消") }
+            },
+            containerColor = GsfSurface,
+        )
     }
 }

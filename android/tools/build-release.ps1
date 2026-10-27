@@ -54,7 +54,17 @@ New-Item -ItemType Directory -Force $dist | Out-Null
 $name = "GSFMobile-$version.apk"
 $destination = Join-Path $dist $name
 Copy-Item -LiteralPath $apk -Destination $destination -Force
-$hash = (Get-FileHash -LiteralPath $destination -Algorithm SHA256).Hash.ToLowerInvariant()
+$stream = [IO.File]::OpenRead($destination)
+try {
+    $sha256 = [Security.Cryptography.SHA256]::Create()
+    try {
+        $hash = ([BitConverter]::ToString($sha256.ComputeHash($stream))).Replace("-", "").ToLowerInvariant()
+    } finally {
+        $sha256.Dispose()
+    }
+} finally {
+    $stream.Dispose()
+}
 $update = [ordered]@{
     applicationId = $metadata.applicationId
     appName = "GSFMobile"

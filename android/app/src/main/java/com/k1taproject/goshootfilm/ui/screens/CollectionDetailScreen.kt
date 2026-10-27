@@ -15,6 +15,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -31,6 +32,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.k1taproject.goshootfilm.GsfViewModel
 import com.k1taproject.goshootfilm.data.EntityRecord
 import com.k1taproject.goshootfilm.data.int
@@ -58,8 +60,12 @@ fun CollectionDetailScreen(
     var parent by remember { mutableStateOf<EntityRecord?>(null) }
     var photos by remember { mutableStateOf<List<EntityRecord>>(emptyList()) }
     var viewerFile by remember { mutableStateOf<File?>(null) }
+    var downloadingPhotoId by remember { mutableStateOf<String?>(null) }
+    var downloadedBytes by remember { mutableStateOf(0L) }
+    var totalBytes by remember { mutableStateOf(0L) }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
+    val settings by vm.settings.collectAsStateWithLifecycle()
 
     LaunchedEffect(kind, syncId) {
         parent = vm.entity(kind, syncId)
@@ -118,6 +124,20 @@ fun CollectionDetailScreen(
             style = MaterialTheme.typography.labelSmall,
         )
         Spacer(Modifier.height(8.dp))
+        if (downloadingPhotoId != null) {
+            Text("正在下载调色图…", color = GsfCyan, style = MaterialTheme.typography.labelSmall)
+            if (totalBytes > 0) {
+                LinearProgressIndicator(
+                    progress = {
+                        (downloadedBytes.toFloat() / totalBytes).coerceIn(0f, 1f)
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            } else {
+                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+            }
+            Spacer(Modifier.height(8.dp))
+        }
         if (photos.isEmpty()) {
             EmptyState("这个集合还没有照片")
         } else {
@@ -130,18 +150,44 @@ fun CollectionDetailScreen(
                 items(photos, key = { it.syncId }) { photo ->
                     val photoType = photo.entityType
                     Column(
-                        modifier = Modifier.clickable {
+                        modifier = Modifier.clickable(enabled = downloadingPhotoId == null) {
                             scope.launch {
                                 val asset = vm.editOriginal(photoType, photo.syncId)
-                                val local = asset?.let { vm.localEditFile(it.id) }
-                                if (local == null) {
+                                if (asset == null || !asset.available) {
                                     Toast.makeText(
                                         context,
-                                        "该图片无本地缓存",
+                                        "该照片暂无调色图",
+                                        Toast.LENGTH_SHORT,
+                                    ).show()
+                                    return@launch
+                                }
+                                val local = asset?.let { vm.localEditFile(it.id) }
+                                if (local != null) {
+                                    viewerFile = local
+                                } else if (settings.serverUrl.isBlank()) {
+                                    Toast.makeText(
+                                        context,
+                                        "调色图尚未下载到本机，连接电脑后可下载",
                                         Toast.LENGTH_SHORT,
                                     ).show()
                                 } else {
-                                    viewerFile = local
+                                    downloadingPhotoId = photo.syncId
+                                    downloadedBytes = 0
+                                    totalBytes = asset.byteSize ?: 0
+                                    try {
+                                        viewerFile = vm.downloadEditOriginal(asset.id) { done, total ->
+                                            downloadedBytes = done
+                                            totalBytes = total
+                                        }
+                                    } catch (error: Exception) {
+                                        Toast.makeText(
+                                            context,
+                                            error.message ?: "调色图下载失败",
+                                            Toast.LENGTH_LONG,
+                                        ).show()
+                                    } finally {
+                                        downloadingPhotoId = null
+                                    }
                                 }
                             }
                         },

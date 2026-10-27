@@ -216,6 +216,9 @@ onBeforeUnmount(() => {
     <p class="sync-hint">
       同步服务默认关闭，只监听当前局域网地址，不会把正式图库作为静态目录暴露。第一版请只在可信局域网内使用。
     </p>
+    <p class="sync-hint">
+      服务重启后地址不变时，已配对手机可继续同步；若 IP 或端口变化，请在手机设置中选择“重新扫码更新连接”。
+    </p>
 
     <div class="sync-actions">
       <button

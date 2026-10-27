@@ -7,6 +7,8 @@ import com.k1taproject.goshootfilm.data.text
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
@@ -95,6 +97,31 @@ class ApiClientTest {
             assertEquals("/api/v1/resources/asset-1", downloadRequest.path)
             assertEquals("Bearer credential", downloadRequest.getHeader("Authorization"))
         } finally {
+            server.shutdown()
+        }
+    }
+
+    @Test
+    fun failedHashCheckKeepsPreviousCacheAndRemovesPartFile() {
+        val server = MockWebServer()
+        server.enqueue(MockResponse().setBody("corrupt replacement"))
+        server.start()
+        val target = File.createTempFile("gsfmobile-atomic", ".jpg")
+        try {
+            target.writeText("previous valid cache")
+            assertThrows(Exception::class.java) {
+                ApiClient().downloadThumbnail(
+                    "http://127.0.0.1:${server.port}",
+                    "credential",
+                    "asset-2",
+                    target,
+                    "not-the-real-hash",
+                ) { _, _ -> }
+            }
+            assertEquals("previous valid cache", target.readText())
+            assertFalse(File(target.parentFile, target.name + ".part").exists())
+        } finally {
+            target.delete()
             server.shutdown()
         }
     }

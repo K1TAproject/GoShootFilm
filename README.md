@@ -10,7 +10,7 @@
 
 GoShootFilm 把相机机身、镜头、胶卷、拍摄卷、数码相册和照片整理在同一个本地资料库中。它不需要注册账号，也不会把照片上传到云端：记录保存在本机 SQLite 数据库，原始影像保存在你指定的图库目录。
 
-> 当前版本 **0.3.7**，官方构建面向 **Windows x64**。安装后的日常操作见 [GoShootFilm 使用说明](./GoShootFilm-使用说明.md)。
+> 当前版本 **0.3.8**，官方构建面向 **Windows x64**。安装后的日常操作见 [GoShootFilm 使用说明](./GoShootFilm-使用说明.md)。
 
 ## 功能
 
@@ -41,11 +41,11 @@ GoShootFilm 把相机机身、镜头、胶卷、拍摄卷、数码相册和照�
 ### 移动端只读同步（第一版）
 
 - **局域网只读**：桌面端作为唯一权威数据源；手机通过二维码配对后，在同一局域网内只读浏览档案。
-- **增量同步**：稳定同步 ID、修订号、删除墓碑和同步游标；原生客户端使用 Room 事务、PWA 使用 IndexedDB 事务应用元数据，中断不会留下半更新状态。
+- **增量同步**：稳定同步 ID、修订号、删除墓碑和同步游标；原生客户端使用 Room 事务应用元数据，中断不会留下半更新状态。
 - **设备管理**：设置中可启动/停止同步服务、批准配对、查看设备名称和最近同步时间，并立即撤销设备。
-- **移动端图片**：缩略图默认同步；原生客户端在同步时自动预缓存所有标星照片的正式调色原图，其他照片不自动下载；无本地缓存时点击提示，长按可保存到系统相册。PWA 使用 2400px 查看版；不传输胶片扫描、RAW、CR2 或正式 TIFF。
-- **手机界面**：`android/` 的 GSFMobile 原生客户端提供首页、器材、Films、Rolls、Albums、图片查看、仅 Wi-Fi 同步和缓存上限设置；同步下载阶段显示进度条和百分比。`src-mobile/` PWA 保留为参考/调试实现。原生客户端可扫码、使用 Keystore 保存凭证，并预缓存标星照片的正式调色原图。已拍摄胶卷名片可进入关联 Rolls；Equipment 中的相机会显示拍摄卷数并可进入具体 Rolls。
-- **当前限制**：GSFMobile 已可构建 debug/release APK 并通过模拟器启动，但真实 Android 设备上的扫码、同步、弱网和大文件下载仍待验证；PWA 仍受局域网 HTTP 的摄像头/Service Worker 限制。详见 [MOBILE_SYNC.md](./MOBILE_SYNC.md)。
+- **移动端图片**：缩略图默认同步；原生客户端在同步时自动预缓存所有标星照片的正式调色原图，其他照片按需下载，长按可保存到系统相册。不传输胶片扫描、RAW、CR2 或正式 TIFF。
+- **手机界面**：`android/` 的 GSFMobile 原生客户端提供首页、器材、Films、Rolls、Albums、图片查看、仅 Wi-Fi 同步和缓存上限设置；同步下载阶段显示进度条和百分比。客户端可扫码、使用 Keystore 保存凭证，并预缓存标星照片的正式调色原图。已拍摄胶卷名片可进入关联 Rolls；Equipment 中的相机会显示拍摄卷数并可进入具体 Rolls。
+- **当前限制**：GSFMobile 已可构建 debug/release APK 并通过模拟器启动，但真实 Android 设备上的扫码、同步、弱网和大文件下载仍待验证。详见 [MOBILE_SYNC.md](./MOBILE_SYNC.md)。
 
 ### 支持的图片格式
 
@@ -107,7 +107,7 @@ GoShootFilm_<版本号>_x64-setup.exe
 - Tauri 2、Rust
 - SQLite、SQLx
 - `image` crate（TIFF / CR2 预览）
-- 移动端 PWA：Vue 3、IndexedDB、Web Crypto
+- Android：Kotlin、Jetpack Compose、Room、CameraX、Android Keystore
 - GitHub Actions（Windows 构建、测试与发布）
 
 ## 本地开发
@@ -150,15 +150,7 @@ npm run tauri build
 签名失败或漏签时，可以对已生成的安装包补签：
 
 ```powershell
-npm run tauri -- signer sign -f "$env:USERPROFILE\.tauri\goshootfilm.key" -p $env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD "src-tauri\target\release\bundle\nsis\GoShootFilm_0.3.7_x64-setup.exe"
-```
-
-手机端 PWA（保留为参考/调试）：
-
-```powershell
-npm run dev:mobile       # 手机访问电脑 IP:1422
-npm run build:mobile     # 输出 dist-mobile/
-npm run preview:mobile
+npm run tauri -- signer sign -f "$env:USERPROFILE\.tauri\goshootfilm.key" -p $env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD "src-tauri\target\release\bundle\nsis\GoShootFilm_0.3.8_x64-setup.exe"
 ```
 
 Android 原生客户端（GSFMobile）：
@@ -168,7 +160,7 @@ cd android
 powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\build-release.ps1
 ```
 
-输出 `android\dist\GSFMobile-0.3.7.apk` 和 `mobile-update.json`。需要 JDK 17+（含 `jlink`）和 Android SDK 35；本机路径配置在 `android/.local/`，不进入版本库。详见 [android/README.md](./android/README.md) 和 [MOBILE_SYNC.md](./MOBILE_SYNC.md)。
+输出 `android\dist\GSFMobile-0.3.8.apk` 和 `mobile-update.json`。需要 JDK 17+（含 `jlink`）和 Android SDK 35；本机路径配置在 `android/.local/`，不进入版本库。详见 [android/README.md](./android/README.md) 和 [MOBILE_SYNC.md](./MOBILE_SYNC.md)。
 
 提交前检查：
 
@@ -185,7 +177,6 @@ git diff --check
 ```text
 .github/workflows/release.yml   Windows 发布、测试与 Updater 构建
 MOBILE_SYNC.md                  移动端同步协议、安全边界与未完成项
-android/                        GSFMobile Kotlin + Compose 原生客户端
 design/                         应用图标概念稿
 public/film-stocks/             胶卷封面图与占位图
 scripts/sync-film-images.ps1    同步胶卷封面资源
@@ -202,10 +193,6 @@ src/
     Rolls.vue                   胶片拍摄卷
     Albums.vue                  数码相册
   App.vue / main.ts / router.ts / style.css
-src-mobile/                     移动优先 PWA（IndexedDB + 增量同步，保留）
-  src/lib/                      本地数据库、同步状态、HTTP 客户端、哈希与凭证桥接
-  src/views/                    首页、器材、Films、Rolls、Albums、详情、设置、配对
-  public/                       PWA manifest、Service Worker、图标
 android/                        GSFMobile Kotlin + Compose 原生客户端
   app/src/main/java/...         Room、同步、Keystore、CameraX/ZXing、Compose UI
   app/src/main/assets/          胶卷目录与优化后的 WebP 封面
@@ -233,7 +220,7 @@ allfims_official.txt            官方胶卷目录原始清单
 
 ## 发布说明
 
-推送 `v*` 标签后，[release.yml](./.github/workflows/release.yml) 会执行前端构建、Rust 格式检查、Clippy、测试和 SQL 迁移换行符检查，然后生成 Windows 安装包、Updater 签名及 `latest.json`。工作流默认创建草稿 Release，确认资产完整后再公开发布。
+推送 `v*` 标签后，[release.yml](./.github/workflows/release.yml) 会执行前端构建、Rust 格式检查、Clippy、测试和 SQL 迁移换行符检查，然后生成 Windows 安装包、Updater 签名及 `latest.json`。工作流默认创建草稿 Release；再把同版本的 Android APK 与 `mobile-update.json` 上传到该草稿，按 [Android 发布清单](./android/RELEASE.md) 核对完整后再公开发布。
 
 Updater 依赖 `tauri.conf.json` 中的公钥，以及 GitHub Actions 中的以下密钥：
 

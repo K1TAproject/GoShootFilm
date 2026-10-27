@@ -42,6 +42,8 @@ data class AssetRecord(
     val sha256: String?,
     val available: Boolean,
     val localPath: String?,
+    val localSha256: String? = null,
+    val localByteSize: Long? = null,
     val lastAccess: Long,
     val pinned: Boolean = false,
 )

@@ -100,8 +100,8 @@ fn descriptor_from_row(
     byte_size: Option<i64>,
     width: Option<i64>,
     height: Option<i64>,
+    source_available: bool,
 ) -> AssetDescriptor {
-    let available = sha256.is_some();
     AssetDescriptor {
         id,
         entity_type,
@@ -112,7 +112,8 @@ fn descriptor_from_row(
         byte_size,
         width,
         height,
-        available,
+        // “可下载”表示正式源文件存在；派生 JPEG 可在第一次请求时按需生成。
+        available: source_available,
     }
 }
 
@@ -181,6 +182,7 @@ async fn upsert_asset(
                 None,
                 None,
                 None,
+                source_size.is_some(),
             ));
         }
         return Ok(descriptor_from_row(
@@ -193,6 +195,7 @@ async fn upsert_asset(
             byte_size,
             width,
             height,
+            source_size.is_some(),
         ));
     }
 
@@ -232,6 +235,7 @@ async fn upsert_asset(
         None,
         None,
         None,
+        source_size.is_some(),
     ))
 }
 
@@ -547,7 +551,8 @@ mod tests {
             .iter()
             .find(|asset| asset.asset_type == "thumbnail")
             .expect("thumbnail descriptor");
-        assert!(!thumbnail.available);
+        assert!(thumbnail.available);
+        assert!(thumbnail.sha256.is_none());
 
         let generated = generate_file(&pool, &media, &previews, &thumbnail.id, &Semaphore::new(1))
             .await
@@ -580,6 +585,36 @@ mod tests {
             refreshed_thumbnail.sha256.as_deref(),
             Some(generated.sha256.as_str())
         );
+
+        std::thread::sleep(std::time::Duration::from_millis(1100));
+        image::RgbImage::from_pixel(900, 600, image::Rgb([130, 70, 40]))
+            .save_with_format(&source, image::ImageFormat::Jpeg)
+            .unwrap();
+        let changed = ensure_descriptors(
+            &pool,
+            &media,
+            "film_photo",
+            "photo-sync-1",
+            &[("edit".into(), "rolls/1/edit/01.jpg".into())],
+        )
+        .await
+        .expect("invalidate changed source");
+        let invalidated = changed
+            .iter()
+            .find(|asset| asset.asset_type == "thumbnail")
+            .expect("invalidated thumbnail");
+        assert!(invalidated.available);
+        assert!(invalidated.sha256.is_none());
+        let regenerated = generate_file(
+            &pool,
+            &media,
+            &previews,
+            &invalidated.id,
+            &Semaphore::new(1),
+        )
+        .await
+        .expect("regenerate thumbnail");
+        assert_ne!(regenerated.sha256, generated.sha256);
 
         pool.close().await;
         fs::remove_dir_all(root).expect("remove asset test directory");

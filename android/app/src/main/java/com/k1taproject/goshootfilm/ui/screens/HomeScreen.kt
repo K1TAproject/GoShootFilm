@@ -30,6 +30,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.k1taproject.goshootfilm.GsfViewModel
+import com.k1taproject.goshootfilm.ConnectionState
 import com.k1taproject.goshootfilm.SyncState
 import com.k1taproject.goshootfilm.data.EntityRecord
 import com.k1taproject.goshootfilm.data.SyncPhase
@@ -59,9 +60,11 @@ fun HomeScreen(
     onRoll: (String) -> Unit,
     onAlbum: (String) -> Unit,
     onOpenTab: (String) -> Unit,
+    onPair: () -> Unit,
 ) {
     val settings by vm.settings.collectAsStateWithLifecycle()
     val syncState by vm.syncState.collectAsStateWithLifecycle()
+    val connectionState by vm.connectionState.collectAsStateWithLifecycle()
     var counts by remember { mutableStateOf<Map<String, Int>>(emptyMap()) }
     var rolls by remember { mutableStateOf<List<EntityRecord>>(emptyList()) }
     var albums by remember { mutableStateOf<List<EntityRecord>>(emptyList()) }
@@ -100,23 +103,20 @@ fun HomeScreen(
                     Column {
                         Text(
                             text = when (val state = syncState) {
-                                is SyncState.Running -> when (state.phase) {
-                                    SyncPhase.Checking -> "正在检查更新"
-                                    SyncPhase.Downloading -> "正在下载数据"
-                                }
+                                is SyncState.Running -> syncPhaseLabel(state.progress.phase)
                                 is SyncState.Done -> state.message
                                 is SyncState.Failed -> "同步失败"
-                                SyncState.Idle -> "尚未同步"
+                                SyncState.Idle -> connectionLabel(connectionState)
                             },
                             color = GsfText,
                             fontWeight = FontWeight.SemiBold,
                         )
                         Text(
                             text = when (val state = syncState) {
-                                is SyncState.Running -> state.message
+                                is SyncState.Running -> state.progress.message
                                 is SyncState.Done -> formatTime(state.at)
                                 is SyncState.Failed -> state.message
-                                SyncState.Idle -> "点击右侧按钮开始"
+                                SyncState.Idle -> connectionMessage(connectionState)
                             },
                             color = if (syncState is SyncState.Failed) GsfDanger else GsfMuted,
                             style = MaterialTheme.typography.bodySmall,
@@ -129,13 +129,23 @@ fun HomeScreen(
                             Text("取消", color = GsfMuted)
                         }
                     } else {
-                        Button(onClick = { vm.sync() }) { Text("同步") }
+                        Button(onClick = if (settings.serverUrl.isBlank()) onPair else ({ vm.sync() })) {
+                            Text(if (settings.serverUrl.isBlank()) "连接电脑" else "同步")
+                        }
                     }
                 }
                 if (syncState is SyncState.Running) {
                     val running = syncState as SyncState.Running
                     Spacer(Modifier.height(10.dp))
-                    SyncProgressBar(running.progress)
+                    SyncProgressBar(running.progress.fraction)
+                    if (running.progress.totalItems > 0) {
+                        Text(
+                            "${running.progress.currentItems} / ${running.progress.totalItems}" +
+                                if (running.progress.failedItems > 0) " · 失败 ${running.progress.failedItems}" else "",
+                            color = GsfMuted,
+                            style = MaterialTheme.typography.labelSmall,
+                        )
+                    }
                 }
                 if (settings.lastSync > 0) {
                     Spacer(Modifier.height(10.dp))
@@ -311,3 +321,33 @@ private fun AlbumRow(album: EntityRecord, vm: GsfViewModel, onClick: () -> Unit)
 
 private fun formatTime(epochMillis: Long): String =
     SimpleDateFormat("MM-dd HH:mm", Locale.getDefault()).format(Date(epochMillis))
+
+private fun syncPhaseLabel(phase: SyncPhase): String = when (phase) {
+    SyncPhase.Connecting -> "正在连接电脑"
+    SyncPhase.Checking -> "正在检查缺失信息"
+    SyncPhase.Updating -> "正在更新档案"
+    SyncPhase.VerifyingCache -> "正在核对本地缓存"
+    SyncPhase.DownloadingThumbnails -> "正在下载缩略图"
+    SyncPhase.DownloadingPinned -> "正在下载标星调色图"
+    SyncPhase.Cleaning -> "正在整理缓存"
+    SyncPhase.Completed -> "同步完成"
+    SyncPhase.Partial -> "同步部分完成"
+}
+
+private fun connectionLabel(state: ConnectionState): String = when (state) {
+    ConnectionState.Unpaired -> "当前未配对"
+    ConnectionState.Connecting -> "正在连接电脑"
+    ConnectionState.Online -> "电脑在线"
+    is ConnectionState.Offline -> "离线浏览"
+    is ConnectionState.CredentialInvalid -> "配对已失效"
+    ConnectionState.Repairing -> "正在重新配对"
+}
+
+private fun connectionMessage(state: ConnectionState): String = when (state) {
+    ConnectionState.Unpaired -> "本地内容仍可浏览；连接电脑后可同步"
+    ConnectionState.Connecting -> "正在验证电脑地址与服务指纹"
+    ConnectionState.Online -> "已连接，可以开始同步"
+    is ConnectionState.Offline -> state.message
+    is ConnectionState.CredentialInvalid -> state.message
+    ConnectionState.Repairing -> "批准成功前会保留原连接与本地缓存"
+}

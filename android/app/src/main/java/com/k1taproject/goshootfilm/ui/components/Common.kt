@@ -18,7 +18,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -31,6 +30,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import kotlin.math.roundToInt
 import com.k1taproject.goshootfilm.GsfViewModel
@@ -129,31 +129,35 @@ fun LocalThumbnail(
     path: String?,
     modifier: Modifier = Modifier,
 ) {
+    var decodeFailed by remember(path) { mutableStateOf(false) }
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(10.dp))
             .background(GsfBorder.copy(alpha = 0.35f)),
         contentAlignment = Alignment.Center,
     ) {
-        if (path != null && File(path).isFile) {
+        if (path != null && File(path).isFile && !decodeFailed) {
             AsyncImage(
                 model = File(path),
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize(),
+                onError = { decodeFailed = true },
             )
         } else {
-            Text("GSF", color = GsfMuted, style = MaterialTheme.typography.labelSmall)
+            Text(
+                if (decodeFailed) "图片无法读取" else "GSF",
+                color = GsfMuted,
+                style = MaterialTheme.typography.labelSmall,
+            )
         }
     }
 }
 
 @Composable
 fun rememberThumbnail(vm: GsfViewModel, type: String, syncId: String): AssetRecord? {
-    var asset by remember(type, syncId) { mutableStateOf<AssetRecord?>(null) }
-    LaunchedEffect(type, syncId) {
-        asset = vm.thumbnail(type, syncId)
-    }
+    val flow = remember(type, syncId) { vm.thumbnail(type, syncId) }
+    val asset by flow.collectAsStateWithLifecycle(initialValue = null)
     return asset
 }
 

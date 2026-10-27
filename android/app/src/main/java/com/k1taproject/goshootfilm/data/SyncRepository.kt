@@ -14,19 +14,35 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import java.io.File
+import java.security.MessageDigest
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 
-class SyncException(message: String) : Exception(message)
+open class SyncException(message: String) : Exception(message)
+
+class DifferentServerException(message: String) : SyncException(message)
 
 enum class SyncPhase {
+    Connecting,
     Checking,
-    Downloading,
+    Updating,
+    VerifyingCache,
+    DownloadingThumbnails,
+    DownloadingPinned,
+    Cleaning,
+    Completed,
+    Partial,
 }
 
 data class SyncProgress(
     val phase: SyncPhase,
     val message: String,
+    val currentItems: Int = 0,
+    val totalItems: Int = 0,
+    val downloadedBytes: Long = 0,
+    val totalBytes: Long? = null,
     val fraction: Float? = null,
+    val failedItems: Int = 0,
 )
 
 data class PairingPayload(
@@ -36,6 +52,12 @@ data class PairingPayload(
     val fingerprint: String,
     val expiresAt: Long,
     val serverName: String,
+)
+
+private data class DownloadBatchResult(
+    val bytes: Long,
+    val completed: Int,
+    val failed: Int,
 )
 
 class SyncRepository(
@@ -48,6 +70,7 @@ class SyncRepository(
     private val appContext = context.applicationContext
     private val dao = db.dao()
     private val mutex = Mutex()
+    private val assetLocks = ConcurrentHashMap<String, Mutex>()
     private val cacheRoot = File(appContext.filesDir, "mobile-cache")
     private val connectivity = appContext.getSystemService(ConnectivityManager::class.java)
     private val thumbnailRoot = File(cacheRoot, "thumbs")
@@ -65,16 +88,18 @@ class SyncRepository(
 
     suspend fun allEntities(): List<EntityRecord> = dao.allEntities()
 
-    suspend fun thumbnail(type: String, syncId: String): AssetRecord? =
-        dao.asset(type, syncId, "edit", "thumbnail")
-            ?: dao.asset(type, syncId, "lab", "thumbnail")
-            ?: dao.asset(type, syncId, "raw", "thumbnail")
+    fun thumbnail(type: String, syncId: String): Flow<AssetRecord?> =
+        dao.observeThumbnail(type, syncId)
 
     suspend fun editOriginal(type: String, syncId: String): AssetRecord? =
         dao.asset(type, syncId, "edit", "edit_original")
 
-    suspend fun localEditFile(assetId: String): File? =
-        dao.assetById(assetId)?.localPath?.let(::File)?.takeIf { it.isFile }
+    suspend fun localEditFile(assetId: String): File? {
+        val asset = dao.assetById(assetId) ?: return null
+        if (localFileIsValid(asset)) return asset.localPath?.let(::File)
+        if (asset.localPath != null) dao.clearLocalPath(asset.id)
+        return null
+    }
 
     suspend fun currentSettings(): AppSettings = settings.current()
 
@@ -87,44 +112,61 @@ class SyncRepository(
         val current = settings.current()
         val credential = secure.credential()
         if (current.serverUrl.isBlank() || credential.isNullOrBlank()) {
-            throw SyncException("请先与电脑端配对")
+            throw SyncException("当前未配对，请先连接电脑")
         }
         if (current.wifiOnly && !isOnWifi()) {
             throw SyncException("当前不是 Wi-Fi 网络；请连接与电脑相同的 Wi-Fi 后再同步")
         }
+
+        onProgress(SyncProgress(SyncPhase.Connecting, "正在连接电脑…"))
+        validateServer(current)
+
         var cursor = current.cursor
         var pageCount = 0
-        var changed = false
+        var changedItems = 0
+        var resetHandled = false
+        onProgress(SyncProgress(SyncPhase.Checking, "正在检查缺失信息…"))
         while (pageCount++ < 500) {
             if (cancelRequested) throw SyncException("同步已取消")
-            onProgress(SyncProgress(SyncPhase.Checking, "正在检查桌面端更新…"))
-            val response = withContext(Dispatchers.IO) {
-                api.changes(current.serverUrl, credential, cursor)
+            val response = try {
+                withContext(Dispatchers.IO) {
+                    api.changes(current.serverUrl, credential, cursor)
+                }
+            } catch (error: ApiException) {
+                if (error.status == 401) {
+                    throw SyncException("配对已失效或设备已撤销，请重新配对")
+                }
+                throw SyncException(error.message)
+            } catch (_: Exception) {
+                throw SyncException("电脑离线或同步服务未启动")
             }
             val protocol = response.int("protocolVersion") ?: 0
             if (protocol != 1) throw SyncException("手机端与电脑端协议不兼容")
-            val resetRequired = response.bool("resetRequired")
-            if (resetRequired) {
-                db.withTransaction {
-                    dao.clearEntities()
-                    dao.clearAssets()
-                    dao.clearMeta()
-                }
-                deleteTree(thumbnailRoot)
-                deleteTree(editRoot)
+            if (response.bool("resetRequired")) {
+                if (resetHandled || cursor == 0L) throw SyncException("桌面端无法提供完整同步数据")
+                // 游标失效只重做稳定 ID 的元数据核对；本地档案和图片缓存必须保留。
                 cursor = 0
+                resetHandled = true
                 settings.setCursor(0)
-                onProgress(SyncProgress(SyncPhase.Checking, "电脑端要求重新同步…"))
+                onProgress(SyncProgress(SyncPhase.Checking, "正在重新核对全部档案…"))
                 continue
             }
             val changes = response["changes"]?.jsonArray
                 ?: throw SyncException("同步响应缺少 changes")
-            if (changes.isNotEmpty()) changed = true
+            val pageStart = changedItems
             db.withTransaction {
-                for (element in changes) {
+                for ((index, element) in changes.withIndex()) {
                     applyChange(element.jsonObject)
+                    onProgress(
+                        SyncProgress(
+                            SyncPhase.Updating,
+                            "正在更新档案 ${pageStart + index + 1} 项",
+                            currentItems = pageStart + index + 1,
+                        ),
+                    )
                 }
             }
+            changedItems += changes.size
             val nextCursor = response.long("cursor") ?: cursor
             val hasMore = response.bool("hasMore")
             cursor = nextCursor
@@ -135,67 +177,41 @@ class SyncRepository(
             if (!hasMore) break
             if (nextCursor == current.cursor && pageCount > 1) break
         }
+
+        onProgress(SyncProgress(SyncPhase.VerifyingCache, "正在核对本地缓存…"))
+        auditLocalResources()
         reconcilePinnedAssets()
         val thumbnailJobs = dao.allThumbnails().filter { asset ->
-            asset.available && asset.localPath?.let(::File)?.isFile != true
+            asset.available && asset.localPath == null
         }
         val pinnedJobs = dao.pinnedEditOriginals().filter { asset ->
-            asset.available && asset.localPath?.let(::File)?.isFile != true
-        }
-        val totalBytes = (thumbnailJobs + pinnedJobs)
-            .sumOf { (it.byteSize ?: 1L).coerceAtLeast(1L) }
-        var downloadedBytes = 0L
-        var lastReportedFraction = -1f
-        fun report(message: String, totalDownloaded: Long) {
-            val fraction = if (totalBytes > 0) {
-                (totalDownloaded.toFloat() / totalBytes).coerceIn(0f, 1f)
-            } else {
-                null
-            }
-            if (fraction != null && lastReportedFraction >= 0f &&
-                fraction - lastReportedFraction < 0.001f
-            ) {
-                return
-            }
-            lastReportedFraction = fraction ?: -1f
-            onProgress(SyncProgress(SyncPhase.Downloading, message, fraction))
+            asset.available && asset.localPath == null
         }
 
-        if (thumbnailJobs.isNotEmpty()) {
-            onProgress(SyncProgress(SyncPhase.Downloading, "正在下载数据…", 0f))
-            downloadedBytes = downloadThumbnails(thumbnailJobs) { totalSoFar ->
-                report("正在下载数据…", totalSoFar)
-            }
-        }
+        val thumbnailResult = downloadThumbnails(thumbnailJobs, onProgress)
         if (cancelRequested) throw SyncException("同步已取消")
-        var failedPinned = 0
-        if (pinnedJobs.isNotEmpty()) {
-            val startFraction = if (totalBytes > 0) {
-                (downloadedBytes.toFloat() / totalBytes).coerceIn(0f, 1f)
-            } else {
-                0f
-            }
-            onProgress(SyncProgress(SyncPhase.Downloading, "正在下载数据…", startFraction))
-            val baseBytes = downloadedBytes
-            val result = downloadPinnedEditOriginals(pinnedJobs) { currentBytes ->
-                report("正在下载数据…", baseBytes + currentBytes)
-            }
-            downloadedBytes = baseBytes + result.first
-            failedPinned = result.second
-        }
+        val pinnedResult = downloadPinnedEditOriginals(pinnedJobs, onProgress)
+        val failedItems = thumbnailResult.failed + pinnedResult.failed
+
+        onProgress(SyncProgress(SyncPhase.Cleaning, "正在整理缓存…"))
         settings.setLastSync(System.currentTimeMillis())
         cleanupCache(settings.current().cacheLimitMb)
         val hasDownloads = thumbnailJobs.isNotEmpty() || pinnedJobs.isNotEmpty()
         val finalMessage = when {
-            failedPinned > 0 -> "同步完成，部分标星原图下载失败"
-            !changed && !hasDownloads -> "已是最新"
+            failedItems > 0 -> "同步完成，$failedItems 张图片下载失败，可再次同步重试"
+            changedItems == 0 && !hasDownloads -> "已是最新"
             else -> "同步完成"
         }
         onProgress(
             SyncProgress(
-                if (hasDownloads) SyncPhase.Downloading else SyncPhase.Checking,
-                finalMessage,
-                1f,
+                phase = if (failedItems > 0) SyncPhase.Partial else SyncPhase.Completed,
+                message = finalMessage,
+                currentItems = thumbnailResult.completed + pinnedResult.completed,
+                totalItems = thumbnailJobs.size + pinnedJobs.size,
+                downloadedBytes = thumbnailResult.bytes + pinnedResult.bytes,
+                totalBytes = knownTotalBytes(thumbnailJobs + pinnedJobs),
+                fraction = 1f,
+                failedItems = failedItems,
             ),
         )
     }
@@ -231,7 +247,7 @@ class SyncRepository(
                 if (id.isBlank()) continue
                 val hash = asset.optionalText("sha256")
                 val old = dao.assetById(id)
-                val sameHash = old?.sha256 == hash
+                val sameHash = hash == null || old?.sha256 == hash || old?.localSha256 == hash
                 dao.upsertAsset(
                     AssetRecord(
                         id = id,
@@ -244,6 +260,8 @@ class SyncRepository(
                         sha256 = hash,
                         available = asset.bool("available"),
                         localPath = if (sameHash) old?.localPath else null,
+                        localSha256 = if (sameHash) old?.localSha256 else null,
+                        localByteSize = if (sameHash) old?.localByteSize else null,
                         lastAccess = old?.lastAccess ?: 0,
                         pinned = old?.pinned ?: false,
                     ),
@@ -267,7 +285,21 @@ class SyncRepository(
                         byteSize = edit.long("byteSize"),
                         sha256 = hash,
                         available = edit.bool("available"),
-                        localPath = if (old?.sha256 == hash) old?.localPath else null,
+                        localPath = if (hash == null || old?.sha256 == hash || old?.localSha256 == hash) {
+                            old?.localPath
+                        } else {
+                            null
+                        },
+                        localSha256 = if (hash == null || old?.sha256 == hash || old?.localSha256 == hash) {
+                            old?.localSha256
+                        } else {
+                            null
+                        },
+                        localByteSize = if (hash == null || old?.sha256 == hash || old?.localSha256 == hash) {
+                            old?.localByteSize
+                        } else {
+                            null
+                        },
                         lastAccess = old?.lastAccess ?: 0,
                         pinned = data.bool("isFavorite"),
                     ),
@@ -289,12 +321,15 @@ class SyncRepository(
 
     private suspend fun downloadThumbnails(
         jobs: List<AssetRecord>,
-        onProgress: (Long) -> Unit,
-    ): Long {
+        onProgress: (SyncProgress) -> Unit,
+    ): DownloadBatchResult {
         val current = settings.current()
         val credential = secure.credential() ?: throw SyncException("设备凭证已失效，请重新配对")
         var completedBytes = 0L
-        for (asset in jobs) {
+        var completed = 0
+        var failed = 0
+        val totalBytes = knownTotalBytes(jobs)
+        for ((index, asset) in jobs.withIndex()) {
             if (cancelRequested) throw SyncException("同步已取消")
             val target = File(thumbnailRoot, "${asset.id}.jpg")
             try {
@@ -305,22 +340,57 @@ class SyncRepository(
                         asset.id,
                         target,
                         asset.sha256,
-                    ) { done, _ -> onProgress(completedBytes + done) }
+                    ) { done, _ ->
+                        onProgress(
+                            downloadProgress(
+                                SyncPhase.DownloadingThumbnails,
+                                "正在下载缩略图 ${index + 1} / ${jobs.size}",
+                                index,
+                                jobs.size,
+                                completedBytes + done,
+                                totalBytes,
+                                failed,
+                            ),
+                        )
+                    }
                 }
-                dao.markDownloaded(asset.id, result.path, System.currentTimeMillis())
+                dao.markDownloaded(
+                    asset.id,
+                    result.path,
+                    result.sha256,
+                    result.byteSize,
+                    System.currentTimeMillis(),
+                )
                 completedBytes += result.byteSize
-                onProgress(completedBytes)
+                completed++
+            } catch (error: ApiException) {
+                if (error.status == 401) {
+                    throw SyncException("配对已失效或设备已撤销，请重新配对")
+                }
+                failed++
             } catch (_: Exception) {
                 // A single thumbnail failure must not abort the whole sync.
+                failed++
             }
+            onProgress(
+                downloadProgress(
+                    SyncPhase.DownloadingThumbnails,
+                    "正在下载缩略图 ${index + 1} / ${jobs.size}",
+                    index + 1,
+                    jobs.size,
+                    completedBytes,
+                    totalBytes,
+                    failed,
+                ),
+            )
         }
-        return completedBytes
+        return DownloadBatchResult(completedBytes, completed, failed)
     }
 
     private suspend fun downloadPinnedEditOriginals(
         jobs: List<AssetRecord>,
-        onProgress: (Long) -> Unit,
-    ): Pair<Long, Int> {
+        onProgress: (SyncProgress) -> Unit,
+    ): DownloadBatchResult {
         val required = jobs.sumOf { it.byteSize ?: 0L }
         val free = appContext.filesDir.usableSpace
         if (required > 0 && required + 256L * 1024 * 1024 > free) {
@@ -329,27 +399,55 @@ class SyncRepository(
             )
         }
         var completedBytes = 0L
+        var completed = 0
         var failed = 0
-        for (asset in jobs) {
+        val totalBytes = knownTotalBytes(jobs)
+        for ((index, asset) in jobs.withIndex()) {
             if (cancelRequested) throw SyncException("同步已取消")
             try {
                 val file = downloadEditOriginalInternal(asset) { done, _ ->
-                    onProgress(completedBytes + done)
+                    onProgress(
+                        downloadProgress(
+                            SyncPhase.DownloadingPinned,
+                            "正在下载标星调色图 ${index + 1} / ${jobs.size}",
+                            index,
+                            jobs.size,
+                            completedBytes + done,
+                            totalBytes,
+                            failed,
+                        ),
+                    )
                 }
                 completedBytes += file.length()
-                onProgress(completedBytes)
+                completed++
+            } catch (error: ApiException) {
+                if (error.status == 401) {
+                    throw SyncException("配对已失效或设备已撤销，请重新配对")
+                }
+                failed++
             } catch (_: Exception) {
                 failed++
             }
+            onProgress(
+                downloadProgress(
+                    SyncPhase.DownloadingPinned,
+                    "正在下载标星调色图 ${index + 1} / ${jobs.size}",
+                    index + 1,
+                    jobs.size,
+                    completedBytes,
+                    totalBytes,
+                    failed,
+                ),
+            )
         }
-        return completedBytes to failed
+        return DownloadBatchResult(completedBytes, completed, failed)
     }
 
     suspend fun downloadEditOriginal(
         assetId: String,
         onProgress: (Long, Long) -> Unit = { _, _ -> },
-    ): File = mutex.withLock {
-        val asset = dao.assetById(assetId) ?: throw SyncException("调色原图不存在")
+    ): File = assetLocks.getOrPut(assetId) { Mutex() }.withLock {
+        val asset = dao.assetById(assetId) ?: throw SyncException("调色图不存在")
         val file = downloadEditOriginalInternal(asset, onProgress)
         cleanupCache(settings.current().cacheLimitMb)
         file
@@ -360,12 +458,18 @@ class SyncRepository(
         onProgress: (Long, Long) -> Unit,
     ): File {
         val cached = asset.localPath?.let(::File)
-        if (cached != null && cached.isFile) {
+        if (cached != null && localFileIsValid(asset)) {
             dao.markAccessed(asset.id, System.currentTimeMillis())
             return cached
         }
+        if (asset.localPath != null) dao.clearLocalPath(asset.id)
+        if (!asset.available) throw SyncException("该照片暂无调色图")
         val current = settings.current()
         val credential = secure.credential() ?: throw SyncException("设备凭证已失效，请重新配对")
+        if (current.serverUrl.isBlank()) {
+            throw SyncException("调色图尚未下载到本机，连接电脑后可下载")
+        }
+        validateServer(current)
         val extension = when (asset.mimeType) {
             "image/png" -> "png"
             "image/webp" -> "webp"
@@ -382,7 +486,13 @@ class SyncRepository(
                 onProgress,
             )
         }
-        dao.markDownloaded(asset.id, result.path, System.currentTimeMillis())
+        dao.markDownloaded(
+            asset.id,
+            result.path,
+            result.sha256,
+            result.byteSize,
+            System.currentTimeMillis(),
+        )
         return File(result.path)
     }
 
@@ -423,7 +533,7 @@ class SyncRepository(
         for (asset in dao.cachedEditOriginals()) {
             if (total <= limit) break
             val path = asset.localPath ?: continue
-            val size = asset.byteSize ?: File(path).length()
+            val size = asset.localByteSize ?: File(path).length()
             if (runCatching { File(path).delete() }.getOrDefault(false)) {
                 dao.clearLocalPath(asset.id)
                 total -= size
@@ -442,13 +552,17 @@ class SyncRepository(
         settings.setLastSync(0)
     }
 
-    suspend fun beginPairing(rawPayload: String): String {
+    suspend fun beginPairing(rawPayload: String, allowDifferentServer: Boolean = false): String {
         val payload = parsePairingPayload(rawPayload)
         if (payload.protocolVersion != 1) throw SyncException("手机端与电脑端协议不兼容")
         if (payload.expiresAt > 0 && payload.expiresAt * 1000 < System.currentTimeMillis()) {
             throw SyncException("二维码已过期，请在电脑端重新生成")
         }
-        val health = withContext(Dispatchers.IO) { api.health(payload.url) }
+        val health = try {
+            withContext(Dispatchers.IO) { api.health(payload.url) }
+        } catch (_: Exception) {
+            throw SyncException("电脑离线或同步服务未启动")
+        }
         if (health.fingerprint.isNotBlank() &&
             payload.fingerprint.isNotBlank() &&
             health.fingerprint != payload.fingerprint
@@ -456,11 +570,21 @@ class SyncRepository(
             throw SyncException("服务指纹不一致，请确认连接的是自己的电脑")
         }
         val current = settings.current()
-        settings.setPendingPairing(payload.url, payload.fingerprint)
-        val request = withContext(Dispatchers.IO) {
-            api.pairRequest(payload.url, payload.token, current.deviceName)
+        if (!allowDifferentServer && current.serverFingerprint.isNotBlank() &&
+            payload.fingerprint.isNotBlank() &&
+            current.serverFingerprint != payload.fingerprint
+        ) {
+            throw DifferentServerException("检测到另一个数据源。确认后才会切换连接，本地数据不会被自动合并或删除。")
         }
-        return request.requestId
+        settings.setPendingPairing(payload.url, payload.fingerprint)
+        return try {
+            withContext(Dispatchers.IO) {
+                api.pairRequest(payload.url, payload.token, current.deviceName)
+            }.requestId
+        } catch (error: Exception) {
+            settings.clearPendingPairing()
+            throw error
+        }
     }
 
     suspend fun waitForPairing(
@@ -470,29 +594,124 @@ class SyncRepository(
         val pending = settings.current()
         val base = pending.pendingServerUrl.ifBlank { pending.serverUrl }
         if (base.isBlank()) throw SyncException("配对地址缺失")
-        repeat(90) {
-            val status = withContext(Dispatchers.IO) { api.pairStatus(base, requestId) }
-            onStatus(status.status)
-            when (status.status) {
-                "approved" -> {
-                    val credential = status.credential ?: throw SyncException("电脑端未返回设备凭证")
-                    val deviceId = status.deviceId ?: throw SyncException("电脑端未返回设备 ID")
-                    secure.saveCredential(credential)
-                    settings.setPairing(base, pending.pendingFingerprint, deviceId)
-                    return status
+        try {
+            repeat(90) {
+                val status = withContext(Dispatchers.IO) { api.pairStatus(base, requestId) }
+                onStatus(status.status)
+                when (status.status) {
+                    "approved" -> {
+                        val credential = status.credential ?: throw SyncException("电脑端未返回设备凭证")
+                        val deviceId = status.deviceId ?: throw SyncException("电脑端未返回设备 ID")
+                        val previousCredential = secure.credential()
+                        try {
+                            secure.saveCredential(credential)
+                            settings.setPairing(
+                                base,
+                                pending.pendingFingerprint,
+                                deviceId,
+                                resetCursor = true,
+                            )
+                        } catch (error: Exception) {
+                            if (previousCredential == null) {
+                                secure.clear()
+                            } else {
+                                secure.saveCredential(previousCredential)
+                            }
+                            throw error
+                        }
+                        return status
+                    }
+                    "denied" -> throw SyncException("电脑端拒绝了配对请求")
+                    "expired", "credentialExpired" -> throw SyncException("配对已过期，请重新生成二维码")
+                    "pending" -> delay(TimeUnit.SECONDS.toMillis(2))
+                    else -> delay(TimeUnit.SECONDS.toMillis(2))
                 }
-                "denied" -> throw SyncException("电脑端拒绝了配对请求")
-                "expired", "credentialExpired" -> throw SyncException("配对已过期，请重新生成二维码")
-                "pending" -> delay(TimeUnit.SECONDS.toMillis(2))
-                else -> delay(TimeUnit.SECONDS.toMillis(2))
             }
+            throw SyncException("等待电脑端批准超时")
+        } finally {
+            settings.clearPendingPairing()
         }
-        throw SyncException("等待电脑端批准超时")
     }
 
     suspend fun unpair() {
-        secure.clear()
-        settings.clearPairing()
+        cancelSync()
+        mutex.withLock {
+            secure.clear()
+            settings.clearPairing()
+        }
+    }
+
+    suspend fun cancelPairing() {
+        settings.clearPendingPairing()
+    }
+
+    private suspend fun validateServer(current: AppSettings): HealthInfo {
+        val health = try {
+            withContext(Dispatchers.IO) { api.health(current.serverUrl) }
+        } catch (_: Exception) {
+            throw SyncException("电脑离线或同步服务未启动；若电脑地址已变化，请重新扫码更新连接")
+        }
+        if (health.protocolVersion != 1) {
+            throw SyncException("手机端与电脑端协议不兼容")
+        }
+        if (current.serverFingerprint.isNotBlank() &&
+            health.fingerprint.isNotBlank() &&
+            current.serverFingerprint != health.fingerprint
+        ) {
+            throw SyncException("服务器指纹不匹配，未发送设备凭证；请确认电脑地址或重新配对")
+        }
+        return health
+    }
+
+    private suspend fun auditLocalResources() {
+        for (asset in dao.allAssets()) {
+            if (asset.localPath == null) continue
+            val inspected = inspectLocalFile(asset)
+            if (inspected == null) {
+                dao.clearLocalPath(asset.id)
+            } else {
+                dao.markDownloaded(
+                    asset.id,
+                    asset.localPath,
+                    inspected.first,
+                    inspected.second,
+                    asset.lastAccess,
+                )
+            }
+        }
+    }
+
+    private suspend fun localFileIsValid(asset: AssetRecord): Boolean =
+        inspectLocalFile(asset) != null
+
+    private suspend fun inspectLocalFile(asset: AssetRecord): Pair<String, Long>? =
+        withContext(Dispatchers.IO) { inspectCachedAsset(asset) }
+
+    private fun knownTotalBytes(assets: List<AssetRecord>): Long? {
+        if (assets.isEmpty() || assets.any { it.byteSize == null }) return null
+        return assets.sumOf { it.byteSize ?: 0L }
+    }
+
+    private fun downloadProgress(
+        phase: SyncPhase,
+        message: String,
+        currentItems: Int,
+        totalItems: Int,
+        downloadedBytes: Long,
+        totalBytes: Long?,
+        failedItems: Int,
+    ): SyncProgress {
+        val fraction = syncFraction(currentItems, totalItems, downloadedBytes, totalBytes)
+        return SyncProgress(
+            phase = phase,
+            message = message,
+            currentItems = currentItems,
+            totalItems = totalItems,
+            downloadedBytes = downloadedBytes,
+            totalBytes = totalBytes,
+            fraction = fraction,
+            failedItems = failedItems,
+        )
     }
 
     private fun isOnWifi(): Boolean {
@@ -516,6 +735,39 @@ class SyncRepository(
     fun thumbnailFile(asset: AssetRecord): File? = asset.localPath?.let(::File)?.takeIf { it.isFile }
 
     fun editFile(asset: AssetRecord): File? = asset.localPath?.let(::File)?.takeIf { it.isFile }
+}
+
+internal fun inspectCachedAsset(asset: AssetRecord): Pair<String, Long>? {
+    val file = asset.localPath?.let(::File)?.takeIf { it.isFile } ?: return null
+    val size = file.length()
+    val expectedSize = asset.localByteSize ?: asset.byteSize
+    if (expectedSize != null && expectedSize != size) return null
+    val digest = MessageDigest.getInstance("SHA-256")
+    file.inputStream().use { input ->
+        val buffer = ByteArray(64 * 1024)
+        while (true) {
+            val read = input.read(buffer)
+            if (read <= 0) break
+            digest.update(buffer, 0, read)
+        }
+    }
+    val hash = digest.digest().joinToString("") { "%02x".format(it) }
+    val expectedHash = asset.localSha256 ?: asset.sha256
+    if (expectedHash != null && !expectedHash.equals(hash, ignoreCase = true)) return null
+    return hash to size
+}
+
+internal fun syncFraction(
+    currentItems: Int,
+    totalItems: Int,
+    downloadedBytes: Long,
+    totalBytes: Long?,
+): Float? = if (totalBytes != null && totalBytes > 0) {
+    (downloadedBytes.toFloat() / totalBytes).coerceIn(0f, 1f)
+} else if (totalItems > 0) {
+    (currentItems.toFloat() / totalItems).coerceIn(0f, 1f)
+} else {
+    null
 }
 
 internal fun parsePairingPayload(raw: String): PairingPayload {

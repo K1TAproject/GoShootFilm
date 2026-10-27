@@ -21,7 +21,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
@@ -63,12 +62,7 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun GsfApp(vm: GsfViewModel = viewModel()) {
-    val settings by vm.settings.collectAsStateWithLifecycle()
-    if (settings.serverUrl.isBlank()) {
-        PairScreen(vm)
-    } else {
-        MainScaffold(vm)
-    }
+    MainScaffold(vm)
 }
 
 private data class Tab(val route: String, val label: String)
@@ -143,6 +137,7 @@ private fun MainScaffold(vm: GsfViewModel) {
                     onRoll = { navController.navigate("roll/$it") },
                     onAlbum = { navController.navigate("album/$it") },
                     onOpenTab = { route -> navController.navigate(route) },
+                    onPair = { navController.navigate("pair") },
                 )
             }
             composable("equipment") {
@@ -162,7 +157,14 @@ private fun MainScaffold(vm: GsfViewModel) {
                 AlbumsScreen(vm) { navController.navigate("album/$it") }
             }
             composable("settings") {
-                SettingsScreen(vm) { navController.popBackStack() }
+                SettingsScreen(
+                    vm = vm,
+                    onBack = { navController.popBackStack() },
+                    onPair = { navController.navigate("pair") },
+                )
+            }
+            composable("pair") {
+                PairScreen(vm = vm, onBack = { navController.popBackStack() })
             }
             composable("roll/{id}") { entry ->
                 CollectionDetailScreen(

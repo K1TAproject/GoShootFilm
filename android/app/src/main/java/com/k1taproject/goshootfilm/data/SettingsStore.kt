@@ -53,11 +53,17 @@ class SettingsStore(private val context: Context) {
 
     suspend fun current(): AppSettings = context.dataStore.data.first().toSettings()
 
-    suspend fun setPairing(serverUrl: String, fingerprint: String, deviceId: String) {
+    suspend fun setPairing(
+        serverUrl: String,
+        fingerprint: String,
+        deviceId: String,
+        resetCursor: Boolean = false,
+    ) {
         context.dataStore.edit {
             it[Keys.serverUrl] = serverUrl.trimEnd('/')
             it[Keys.serverFingerprint] = fingerprint
             it[Keys.deviceId] = deviceId
+            if (resetCursor) it[Keys.cursor] = 0L
             it.remove(Keys.pendingServerUrl)
             it.remove(Keys.pendingFingerprint)
         }

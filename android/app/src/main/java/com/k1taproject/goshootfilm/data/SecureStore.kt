@@ -18,7 +18,9 @@ class SecureStore(context: Context) {
         cipher.init(Cipher.ENCRYPT_MODE, key())
         val encrypted = cipher.doFinal(value.toByteArray(Charsets.UTF_8))
         val payload = Base64.encodeToString(cipher.iv + encrypted, Base64.NO_WRAP)
-        prefs.edit().putString(KEY_CREDENTIAL, payload).apply()
+        check(prefs.edit().putString(KEY_CREDENTIAL, payload).commit()) {
+            "无法保存设备凭证"
+        }
     }
 
     fun credential(): String? {
@@ -32,13 +34,13 @@ class SecureStore(context: Context) {
             cipher.init(Cipher.DECRYPT_MODE, key(), GCMParameterSpec(TAG_BITS, iv))
             String(cipher.doFinal(encrypted), Charsets.UTF_8)
         }.getOrElse {
-            prefs.edit().remove(KEY_CREDENTIAL).apply()
+            prefs.edit().remove(KEY_CREDENTIAL).commit()
             null
         }
     }
 
     fun clear() {
-        prefs.edit().remove(KEY_CREDENTIAL).apply()
+        prefs.edit().remove(KEY_CREDENTIAL).commit()
     }
 
     private fun key(): SecretKey {

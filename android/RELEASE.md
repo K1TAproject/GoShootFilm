@@ -22,7 +22,7 @@ Cannot read private member from an object whose class did not declare it
 - `README.md`
 - `android/app/build.gradle.kts` 的 `versionName` 和 `versionCode`
 
-沿用当前 scheme：`0.3.0 -> 30000`，`0.3.1 -> 30001`，`0.3.3 -> 30003`，`0.3.4 -> 30004`，`0.3.5 -> 30005`，`0.3.6 -> 30006`，`0.3.7 -> 30007`。
+沿用当前 scheme：`0.3.0 -> 30000`，`0.3.1 -> 30001`，`0.3.3 -> 30003`，`0.3.4 -> 30004`，`0.3.5 -> 30005`，`0.3.6 -> 30006`，`0.3.7 -> 30007`，`0.3.8 -> 30008`。
 
 ## 2. 验证
 
@@ -52,28 +52,35 @@ Android：
 npm run build:android
 ```
 
-产物：
+本地候选产物：
 
 ```text
-src-tauri\target\release\bundle\nsis\GoShootFilm_0.3.7_x64-setup.exe
-src-tauri\target\release\bundle\nsis\GoShootFilm_0.3.7_x64-setup.exe.sig
-src-tauri\target\release\bundle\nsis\latest.json
+src-tauri\target\release\bundle\nsis\GoShootFilm_0.3.8_x64-setup.exe
+src-tauri\target\release\bundle\nsis\GoShootFilm_0.3.8_x64-setup.exe.sig
 
-android\dist\GSFMobile-0.3.7.apk
+android\dist\GSFMobile-0.3.8.apk
 android\dist\mobile-update.json
 ```
 
+推送 `v0.3.8` 标签后，GitHub Actions 会在草稿 Release 中生成 Windows 安装包、对应 `.sig` 和 `latest.json`。不要上传旧版本遗留的本地 `latest.json`。
+
 ## 4. 创建 Release
 
-1. 推送代码，再创建并推送与桌面版本一致的 tag，例如 `v0.3.7`。
+1. 推送代码，再创建并推送与桌面版本一致的 tag，例如 `v0.3.8`。
 2. 等待桌面 Release 草稿生成。
 3. 把 Android APK 和 `mobile-update.json` 上传到同一个草稿。
-4. 核对：
+4. 确认草稿中最终包含且只使用本版本的以下更新资产：
+   - `GoShootFilm_0.3.8_x64-setup.exe`
+   - `GoShootFilm_0.3.8_x64-setup.exe.sig`
+   - `latest.json`
+   - `GSFMobile-0.3.8.apk`
+   - `mobile-update.json`
+5. 核对：
    - `latest.json` 的版本和安装包 URL 正确；
    - `mobile-update.json` 的 `versionCode`、`sha256`、`apkName` 与 APK 一致；
    - APK 已用 `apksigner verify` 验证；
    - Release 不是 Pre-release，且包含两个安装包。
-5. 点击 Publish release。
+6. 点击 Publish release。
 
 ## 5. 发布后验证
 

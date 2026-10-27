@@ -182,6 +182,8 @@ async fn http_pairing_sync_and_revocation_flow() {
         .find(|asset| asset["assetType"] == "thumbnail")
         .expect("thumbnail descriptor");
     let thumbnail_id = thumbnail["id"].as_str().expect("thumbnail id");
+    assert_eq!(thumbnail["available"], true);
+    assert!(thumbnail["sha256"].is_null());
 
     let edit_original = photo_change["editOriginal"]
         .as_object()
@@ -231,6 +233,23 @@ async fn http_pairing_sync_and_revocation_flow() {
         .count();
     assert!(generated_count > 0);
     assert_eq!(fs::read(&source).expect("read source again"), source_bytes);
+
+    manager
+        .stop()
+        .await
+        .expect("stop sync server before restart");
+    let restarted = manager
+        .start_on_for_test(IpAddr::V4(Ipv4Addr::LOCALHOST))
+        .await
+        .expect("restart loopback sync server");
+    assert_eq!(restarted.address.as_deref(), Some(base.as_str()));
+    let after_restart = client
+        .get(format!("{base}/api/v1/sync/changes?cursor=0"))
+        .bearer_auth(&credential)
+        .send()
+        .await
+        .expect("sync with old credential after restart");
+    assert!(after_restart.status().is_success());
 
     manager
         .revoke_device(&device_id)

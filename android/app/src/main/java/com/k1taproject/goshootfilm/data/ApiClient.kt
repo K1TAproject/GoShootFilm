@@ -14,6 +14,9 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 import java.io.File
 import java.io.FileOutputStream
+import java.nio.file.AtomicMoveNotSupportedException
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
 import java.security.MessageDigest
 import java.util.concurrent.TimeUnit
 
@@ -160,39 +163,51 @@ class ApiClient {
             val parent = destination.parentFile ?: throw ApiException(0, "缓存目录无效")
             if (!parent.exists() && !parent.mkdirs()) throw ApiException(0, "无法创建缓存目录")
             val temp = File(parent, destination.name + ".part")
-            var downloaded = 0L
-            val digest = MessageDigest.getInstance("SHA-256")
-            body.byteStream().use { input ->
-                FileOutputStream(temp).use { output ->
-                    val buffer = ByteArray(64 * 1024)
-                    while (true) {
-                        val read = input.read(buffer)
-                        if (read <= 0) break
-                        output.write(buffer, 0, read)
-                        digest.update(buffer, 0, read)
-                        downloaded += read
-                        onProgress(downloaded, total)
+            try {
+                var downloaded = 0L
+                val digest = MessageDigest.getInstance("SHA-256")
+                body.byteStream().use { input ->
+                    FileOutputStream(temp).use { output ->
+                        val buffer = ByteArray(64 * 1024)
+                        while (true) {
+                            val read = input.read(buffer)
+                            if (read <= 0) break
+                            output.write(buffer, 0, read)
+                            digest.update(buffer, 0, read)
+                            downloaded += read
+                            onProgress(downloaded, total)
+                        }
+                        output.fd.sync()
                     }
-                    output.fd.sync()
                 }
+                val hash = digest.digest().joinToString("") { "%02x".format(it) }
+                val expected = expectedSha256?.takeIf { it.isNotBlank() }
+                    ?: response.header("x-goshootfilm-sha256")
+                if (!expected.isNullOrBlank() && !expected.equals(hash, ignoreCase = true)) {
+                    throw ApiException(response.code, "图片校验失败，请重试")
+                }
+                try {
+                    Files.move(
+                        temp.toPath(),
+                        destination.toPath(),
+                        StandardCopyOption.ATOMIC_MOVE,
+                        StandardCopyOption.REPLACE_EXISTING,
+                    )
+                } catch (_: AtomicMoveNotSupportedException) {
+                    Files.move(
+                        temp.toPath(),
+                        destination.toPath(),
+                        StandardCopyOption.REPLACE_EXISTING,
+                    )
+                }
+                return DownloadResult(
+                    path = destination.absolutePath,
+                    sha256 = hash,
+                    byteSize = downloaded,
+                )
+            } finally {
+                if (temp.exists()) temp.delete()
             }
-            val hash = digest.digest().joinToString("") { "%02x".format(it) }
-            val expected = expectedSha256?.takeIf { it.isNotBlank() }
-                ?: response.header("x-goshootfilm-sha256")
-            if (!expected.isNullOrBlank() && !expected.equals(hash, ignoreCase = true)) {
-                temp.delete()
-                throw ApiException(response.code, "图片校验失败，请重试")
-            }
-            if (destination.exists()) destination.delete()
-            if (!temp.renameTo(destination)) {
-                temp.copyTo(destination, overwrite = true)
-                temp.delete()
-            }
-            return DownloadResult(
-                path = destination.absolutePath,
-                sha256 = hash,
-                byteSize = downloaded,
-            )
         }
     }
 

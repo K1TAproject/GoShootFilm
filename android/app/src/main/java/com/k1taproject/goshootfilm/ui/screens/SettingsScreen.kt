@@ -34,6 +34,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.k1taproject.goshootfilm.BuildConfig
+import com.k1taproject.goshootfilm.ConnectionState
 import com.k1taproject.goshootfilm.GsfViewModel
 import com.k1taproject.goshootfilm.SyncState
 import com.k1taproject.goshootfilm.UpdateState
@@ -54,10 +55,11 @@ import java.util.Date
 import java.util.Locale
 
 @Composable
-fun SettingsScreen(vm: GsfViewModel, onBack: () -> Unit) {
+fun SettingsScreen(vm: GsfViewModel, onBack: () -> Unit, onPair: () -> Unit) {
     val context = LocalContext.current
     val settings by vm.settings.collectAsStateWithLifecycle()
     val syncState by vm.syncState.collectAsStateWithLifecycle()
+    val connectionState by vm.connectionState.collectAsStateWithLifecycle()
     val updateState by vm.updateState.collectAsStateWithLifecycle()
     var confirmUnpair by remember { mutableStateOf(false) }
     var confirmClear by remember { mutableStateOf(false) }
@@ -99,6 +101,21 @@ fun SettingsScreen(vm: GsfViewModel, onBack: () -> Unit) {
                     "上次同步",
                     if (settings.lastSync > 0) formatTime(settings.lastSync) else "尚未同步",
                 )
+                InfoLine(
+                    "连接状态",
+                    when (val state = connectionState) {
+                        ConnectionState.Unpaired -> "未配对"
+                        ConnectionState.Connecting -> "正在连接"
+                        ConnectionState.Online -> "在线"
+                        is ConnectionState.Offline -> "电脑离线"
+                        is ConnectionState.CredentialInvalid -> "配对已失效"
+                        ConnectionState.Repairing -> "正在重新配对"
+                    },
+                )
+                Spacer(Modifier.height(10.dp))
+                OutlinedButton(onClick = onPair) {
+                    Text(if (settings.serverUrl.isBlank()) "连接电脑" else "重新扫码更新连接")
+                }
             }
         }
 
@@ -130,23 +147,31 @@ fun SettingsScreen(vm: GsfViewModel, onBack: () -> Unit) {
                 when (val state = syncState) {
                     is SyncState.Running -> {
                         Text(
-                            text = when (state.phase) {
-                                SyncPhase.Checking -> "检查更新"
-                                SyncPhase.Downloading -> "下载数据"
-                            },
+                            text = settingsPhaseLabel(state.progress.phase),
                             color = GsfCyan,
                             fontWeight = FontWeight.SemiBold,
                         )
-                        Text(state.message, color = GsfMuted)
+                        Text(state.progress.message, color = GsfMuted)
                         Spacer(Modifier.height(8.dp))
-                        SyncProgressBar(state.progress)
+                        SyncProgressBar(state.progress.fraction)
+                        if (state.progress.totalItems > 0) {
+                            Text(
+                                "${state.progress.currentItems} / ${state.progress.totalItems}" +
+                                    if (state.progress.failedItems > 0) " · 失败 ${state.progress.failedItems}" else "",
+                                color = GsfMuted,
+                                style = MaterialTheme.typography.labelSmall,
+                            )
+                        }
                     }
                     is SyncState.Failed -> Text(state.message, color = GsfDanger)
                     is SyncState.Done -> Text("${state.message}：${formatTime(state.at)}", color = GsfMuted)
                     SyncState.Idle -> Text("尚未同步", color = GsfMuted)
                 }
                 Spacer(Modifier.height(8.dp))
-                Button(onClick = { vm.sync() }, enabled = syncState !is SyncState.Running) {
+                Button(
+                    onClick = { vm.sync() },
+                    enabled = settings.serverUrl.isNotBlank() && syncState !is SyncState.Running,
+                ) {
                     Text("立即同步")
                 }
             }
@@ -250,7 +275,10 @@ fun SettingsScreen(vm: GsfViewModel, onBack: () -> Unit) {
                 InfoLine("协议版本", "v1")
                 InfoLine("包名", BuildConfig.APPLICATION_ID)
                 Spacer(Modifier.height(10.dp))
-                OutlinedButton(onClick = { confirmUnpair = true }) {
+                OutlinedButton(
+                    onClick = { confirmUnpair = true },
+                    enabled = settings.serverUrl.isNotBlank(),
+                ) {
                     Text("解除配对", color = GsfDanger)
                 }
                 Spacer(Modifier.height(4.dp))
@@ -266,7 +294,7 @@ fun SettingsScreen(vm: GsfViewModel, onBack: () -> Unit) {
         AlertDialog(
             onDismissRequest = { confirmUnpair = false },
             title = { Text("解除配对？") },
-            text = { Text("手机将无法继续同步，需要重新扫码配对。") },
+            text = { Text("将清除连接凭证，但保留本地档案、缩略图和已缓存调色图；之后可重新扫码配对。") },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -332,4 +360,16 @@ private fun formatBytes(bytes: Long): String {
     val mb = kb / 1024.0
     if (mb < 1024) return "%.1f MB".format(mb)
     return "%.2f GB".format(mb / 1024.0)
+}
+
+private fun settingsPhaseLabel(phase: SyncPhase): String = when (phase) {
+    SyncPhase.Connecting -> "连接电脑"
+    SyncPhase.Checking -> "检查缺失信息"
+    SyncPhase.Updating -> "更新档案"
+    SyncPhase.VerifyingCache -> "核对本地缓存"
+    SyncPhase.DownloadingThumbnails -> "下载缩略图"
+    SyncPhase.DownloadingPinned -> "下载标星调色图"
+    SyncPhase.Cleaning -> "整理缓存"
+    SyncPhase.Completed -> "同步完成"
+    SyncPhase.Partial -> "同步部分完成"
 }
