@@ -35,6 +35,7 @@ import coil.compose.AsyncImage
 import kotlin.math.roundToInt
 import com.k1taproject.goshootfilm.GsfViewModel
 import com.k1taproject.goshootfilm.data.AssetRecord
+import com.k1taproject.goshootfilm.data.SyncProgress
 import com.k1taproject.goshootfilm.ui.GsfBorder
 import com.k1taproject.goshootfilm.ui.GsfCyan
 import com.k1taproject.goshootfilm.ui.GsfMuted
@@ -235,6 +236,40 @@ fun SyncProgressBar(progress: Float?, modifier: Modifier = Modifier) {
             }
         }
     }
+}
+
+@Composable
+fun SyncProgressSummary(progress: SyncProgress, modifier: Modifier = Modifier) {
+    Column(modifier = modifier.fillMaxWidth()) {
+        SyncProgressBar(progress.fraction)
+        if (progress.totalItems > 0) {
+            Text(
+                text = "${progress.currentItems} / ${progress.totalItems}" +
+                    if (progress.failedItems > 0) " · 未完成 ${progress.failedItems}" else "",
+                color = GsfMuted,
+                style = MaterialTheme.typography.labelSmall,
+            )
+        }
+        if (progress.downloadedBytes > 0 || progress.totalBytes != null) {
+            Text(
+                text = if (progress.totalBytes != null) {
+                    "已缓存 ${formatBytes(progress.downloadedBytes)} / ${formatBytes(progress.totalBytes)}"
+                } else {
+                    "已缓存 ${formatBytes(progress.downloadedBytes)}"
+                },
+                color = GsfMuted,
+                style = MaterialTheme.typography.labelSmall,
+            )
+        }
+    }
+}
+
+private fun formatBytes(bytes: Long): String {
+    if (bytes < 1024) return "$bytes B"
+    val kb = bytes / 1024.0
+    if (kb < 1024) return "%.1f KB".format(kb)
+    val mb = kb / 1024.0
+    return if (mb < 1024) "%.1f MB".format(mb) else "%.2f GB".format(mb / 1024.0)
 }
 
 @Composable

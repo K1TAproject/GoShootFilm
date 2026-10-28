@@ -2,10 +2,13 @@ package com.k1taproject.goshootfilm
 
 import com.k1taproject.goshootfilm.data.AssetRecord
 import com.k1taproject.goshootfilm.data.EditCacheStatus
+import com.k1taproject.goshootfilm.data.capacityMessage
 import com.k1taproject.goshootfilm.data.editCacheStatus
 import com.k1taproject.goshootfilm.data.inspectCachedAsset
+import com.k1taproject.goshootfilm.data.pendingAvailableAssets
 import com.k1taproject.goshootfilm.data.syncFraction
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -83,6 +86,38 @@ class SyncPolicyTest {
         }
     }
 
+    @Test
+    fun allAvailableEditsAreQueuedRegardlessOfFavoriteState() {
+        val file = File.createTempFile("gsfmobile-edit", ".jpg")
+        try {
+            file.writeText("edit")
+            val base = editAsset(file)
+            val favorite = base.copy(
+                id = "favorite",
+                pinned = true,
+                localPath = null,
+                localSha256 = null,
+                localByteSize = null,
+            )
+            val ordinary = favorite.copy(id = "ordinary", pinned = false)
+            val unavailable = favorite.copy(id = "unavailable", available = false)
+
+            assertEquals(
+                listOf("favorite", "ordinary"),
+                pendingAvailableAssets(listOf(favorite, ordinary, unavailable, base)).map { it.id },
+            )
+        } finally {
+            file.delete()
+        }
+    }
+
+    @Test
+    fun capacityChecksCacheLimitAndReservedDeviceSpace() {
+        assertNull(capacityMessage(100, 200, 500, 1024L * 1024 * 1024))
+        assertNotNull(capacityMessage(400, 200, 500, Long.MAX_VALUE))
+        assertNotNull(capacityMessage(0, 1, null, 128L * 1024 * 1024))
+    }
+
     private fun asset(file: File, hash: String, size: Long) = AssetRecord(
         id = "asset-1",
         entityType = "film_photo",
@@ -99,7 +134,7 @@ class SyncPolicyTest {
         lastAccess = 0,
     )
 
-    private fun editAsset(file: File, localSha256: String? = "verified") = AssetRecord(
+    private fun editAsset(file: File, localSha256: String? = "server-hash") = AssetRecord(
         id = "edit-1",
         entityType = "film_photo",
         entitySyncId = "photo-1",

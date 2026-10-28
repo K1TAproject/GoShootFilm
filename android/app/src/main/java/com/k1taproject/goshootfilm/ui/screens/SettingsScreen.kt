@@ -49,7 +49,7 @@ import com.k1taproject.goshootfilm.ui.components.InfoLine
 import com.k1taproject.goshootfilm.ui.components.ScreenHeader
 import com.k1taproject.goshootfilm.ui.components.SectionLabel
 import com.k1taproject.goshootfilm.ui.components.StatusChip
-import com.k1taproject.goshootfilm.ui.components.SyncProgressBar
+import com.k1taproject.goshootfilm.ui.components.SyncProgressSummary
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -63,7 +63,7 @@ fun SettingsScreen(vm: GsfViewModel, onBack: () -> Unit, onPair: () -> Unit) {
     val updateState by vm.updateState.collectAsStateWithLifecycle()
     var confirmUnpair by remember { mutableStateOf(false) }
     var confirmClear by remember { mutableStateOf(false) }
-    var confirmPinned by remember { mutableStateOf(false) }
+    var confirmEditCache by remember { mutableStateOf(false) }
     var cacheVersion by remember { mutableStateOf(0) }
     val cachedBytes by produceState(
         initialValue = 0L,
@@ -71,14 +71,7 @@ fun SettingsScreen(vm: GsfViewModel, onBack: () -> Unit, onPair: () -> Unit) {
         syncState,
         settings.cacheLimitMb,
     ) {
-        value = vm.cachedBytes()
-    }
-    val pinnedBytes by produceState(
-        initialValue = 0L,
-        cacheVersion,
-        syncState,
-    ) {
-        value = vm.cachedPinnedBytes()
+        value = vm.cachedEditBytes()
     }
 
     Column(
@@ -153,15 +146,7 @@ fun SettingsScreen(vm: GsfViewModel, onBack: () -> Unit, onPair: () -> Unit) {
                         )
                         Text(state.progress.message, color = GsfMuted)
                         Spacer(Modifier.height(8.dp))
-                        SyncProgressBar(state.progress.fraction)
-                        if (state.progress.totalItems > 0) {
-                            Text(
-                                "${state.progress.currentItems} / ${state.progress.totalItems}" +
-                                    if (state.progress.failedItems > 0) " · 失败 ${state.progress.failedItems}" else "",
-                                color = GsfMuted,
-                                style = MaterialTheme.typography.labelSmall,
-                            )
-                        }
+                        SyncProgressSummary(state.progress)
                     }
                     is SyncState.Failed -> Text(state.message, color = GsfDanger)
                     is SyncState.Done -> Text("${state.message}：${formatTime(state.at)}", color = GsfMuted)
@@ -182,12 +167,13 @@ fun SettingsScreen(vm: GsfViewModel, onBack: () -> Unit, onPair: () -> Unit) {
         GsfCard(modifier = Modifier.fillMaxWidth()) {
             Column {
                 Text(
-                    "标星原图：${formatBytes(pinnedBytes)}",
+                    "调色图缓存：${formatBytes(cachedBytes)}",
                     color = GsfText,
                 )
                 Text(
-                    "查看图缓存：${formatBytes(cachedBytes)}",
-                    color = GsfText,
+                    "缓存限制适用于全部调色图；空间不足时同步会保留资料并提示重试",
+                    color = GsfMuted,
+                    style = MaterialTheme.typography.bodySmall,
                 )
                 Spacer(Modifier.height(8.dp))
                 val options = listOf(2048 to "2 GB", 5120 to "5 GB", 10240 to "10 GB", 0 to "不限制")
@@ -205,19 +191,12 @@ fun SettingsScreen(vm: GsfViewModel, onBack: () -> Unit, onPair: () -> Unit) {
                     }
                 }
                 Spacer(Modifier.height(8.dp))
-                OutlinedButton(onClick = {
-                    vm.clearViewCache()
-                    cacheVersion++
-                }) {
-                    Text("清理查看图缓存")
-                }
-                Spacer(Modifier.height(4.dp))
-                OutlinedButton(onClick = { confirmPinned = true }) {
-                    Text("清理标星原图", color = GsfDanger)
+                OutlinedButton(onClick = { confirmEditCache = true }) {
+                    Text("清理调色图缓存", color = GsfDanger)
                 }
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    "缩略图和元数据会保留；标星原图下次同步会重新下载",
+                    "缩略图和元数据会保留；清理后下次主动同步会重新补齐调色图",
                     color = GsfMuted,
                     style = MaterialTheme.typography.labelSmall,
                 )
@@ -328,22 +307,21 @@ fun SettingsScreen(vm: GsfViewModel, onBack: () -> Unit, onPair: () -> Unit) {
             containerColor = com.k1taproject.goshootfilm.ui.GsfSurface,
         )
     }
-    if (confirmPinned) {
+    if (confirmEditCache) {
         AlertDialog(
-            onDismissRequest = { confirmPinned = false },
-            title = { Text("清理标星原图？") },
-            text = { Text("将删除所有标星调色原图；下次同步会重新下载。") },
+            onDismissRequest = { confirmEditCache = false },
+            title = { Text("清理调色图缓存？") },
+            text = { Text("将删除本机缓存的调色图；缩略图、元数据和手机相册中的导出文件不会受影响。下次主动同步会重新下载。") },
             confirmButton = {
                 TextButton(
                     onClick = {
-                        confirmPinned = false
-                        vm.clearPinnedCache()
-                        cacheVersion++
+                        confirmEditCache = false
+                        vm.clearEditCache { cacheVersion++ }
                     },
                 ) { Text("清理", color = GsfDanger) }
             },
             dismissButton = {
-                TextButton(onClick = { confirmPinned = false }) { Text("取消") }
+                TextButton(onClick = { confirmEditCache = false }) { Text("取消") }
             },
             containerColor = com.k1taproject.goshootfilm.ui.GsfSurface,
         )
@@ -368,8 +346,8 @@ private fun settingsPhaseLabel(phase: SyncPhase): String = when (phase) {
     SyncPhase.Updating -> "更新档案"
     SyncPhase.VerifyingCache -> "核对本地缓存"
     SyncPhase.DownloadingThumbnails -> "下载缩略图"
-    SyncPhase.DownloadingPinned -> "下载标星调色图"
-    SyncPhase.Cleaning -> "整理缓存"
+    SyncPhase.DownloadingEdits -> "下载调色图"
+    SyncPhase.Cleaning -> "确认同步结果"
     SyncPhase.Completed -> "同步完成"
     SyncPhase.Partial -> "同步部分完成"
 }

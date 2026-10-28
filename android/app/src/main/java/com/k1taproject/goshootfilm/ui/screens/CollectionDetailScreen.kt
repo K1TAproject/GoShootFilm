@@ -6,6 +6,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -53,6 +55,7 @@ import com.k1taproject.goshootfilm.ui.GsfCyan
 import com.k1taproject.goshootfilm.ui.GsfDanger
 import com.k1taproject.goshootfilm.ui.GsfMuted
 import com.k1taproject.goshootfilm.ui.GsfPurple
+import com.k1taproject.goshootfilm.ui.GsfSurface
 import com.k1taproject.goshootfilm.ui.GsfText
 import com.k1taproject.goshootfilm.ui.components.EmptyState
 import com.k1taproject.goshootfilm.ui.components.GsfCard
@@ -226,10 +229,11 @@ fun CollectionDetailScreen(
 }
 
 @Composable
+@OptIn(ExperimentalLayoutApi::class)
 private fun PhotoCacheLegend() {
-    Row(
+    FlowRow(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.CenterVertically,
+        verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         CacheLegendItem("已缓存调色图", GsfCyan)
         CacheLegendItem("调色图未缓存", GsfDanger)
@@ -276,15 +280,16 @@ private fun PhotoGridCard(
         data.text("pairingKey").ifBlank { "Photo" }
     }
     val borderColor = when (status) {
-        EditCacheStatus.Cached -> GsfCyan
-        EditCacheStatus.NotCached -> GsfDanger
-        EditCacheStatus.NoEdit -> GsfPurple
-        EditCacheStatus.Checking -> GsfBorder
+        EditCacheStatus.Cached -> GsfCyan.copy(alpha = 0.58f)
+        EditCacheStatus.NotCached -> GsfDanger.copy(alpha = 0.58f)
+        EditCacheStatus.NoEdit -> GsfPurple.copy(alpha = 0.52f)
+        EditCacheStatus.Checking -> GsfBorder.copy(alpha = 0.8f)
     }
     val highlightColor = when (status) {
-        EditCacheStatus.Cached -> GsfCyan.copy(alpha = 0.06f)
-        EditCacheStatus.NotCached -> GsfDanger.copy(alpha = 0.06f)
-        else -> Color.Transparent
+        EditCacheStatus.Cached -> GsfCyan.copy(alpha = 0.035f)
+        EditCacheStatus.NotCached -> GsfDanger.copy(alpha = 0.035f)
+        EditCacheStatus.NoEdit -> GsfPurple.copy(alpha = 0.025f)
+        EditCacheStatus.Checking -> Color.Transparent
     }
     val statusDescription = when (status) {
         EditCacheStatus.Cached -> "已缓存调色图"
@@ -297,6 +302,7 @@ private fun PhotoGridCard(
     Column(
         modifier = Modifier
             .clip(shape)
+            .background(GsfSurface)
             .background(highlightColor)
             .border(1.dp, borderColor, shape)
             .semantics(mergeDescendants = true) {
@@ -318,7 +324,9 @@ private fun PhotoGridCard(
             style = MaterialTheme.typography.labelSmall,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(top = 3.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 7.dp, vertical = 6.dp),
         )
     }
 }

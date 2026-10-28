@@ -33,7 +33,7 @@ enum class SyncPhase {
     Updating,
     VerifyingCache,
     DownloadingThumbnails,
-    DownloadingPinned,
+    DownloadingEdits,
     Cleaning,
     Completed,
     Partial,
@@ -70,7 +70,12 @@ private data class DownloadBatchResult(
     val bytes: Long,
     val completed: Int,
     val failed: Int,
+    val reason: String? = null,
 )
+
+private class CacheCapacityException(message: String) : SyncException(message)
+
+private const val MIN_FREE_BYTES = 256L * 1024 * 1024
 
 class SyncRepository(
     context: Context,
@@ -202,36 +207,34 @@ class SyncRepository(
         onProgress(SyncProgress(SyncPhase.VerifyingCache, "正在核对本地缓存…"))
         auditLocalResources()
         reconcilePinnedAssets()
-        val thumbnailJobs = dao.allThumbnails().filter { asset ->
-            asset.available && asset.localPath == null
-        }
-        val pinnedJobs = dao.pinnedEditOriginals().filter { asset ->
-            asset.available && asset.localPath == null
-        }
+        val thumbnails = dao.allThumbnails().filter { it.available }
+        val edits = dao.allEditOriginals().filter { it.available }
 
-        val thumbnailResult = downloadThumbnails(thumbnailJobs, onProgress)
+        val thumbnailResult = downloadThumbnails(thumbnails, onProgress)
         if (cancelRequested) throw SyncException("同步已取消")
-        val pinnedResult = downloadPinnedEditOriginals(pinnedJobs, onProgress)
-        val failedItems = thumbnailResult.failed + pinnedResult.failed
+        val editResult = downloadEditOriginals(edits, onProgress)
+        val failedItems = thumbnailResult.failed + editResult.failed
 
-        onProgress(SyncProgress(SyncPhase.Cleaning, "正在整理缓存…"))
+        onProgress(SyncProgress(SyncPhase.Cleaning, "正在确认同步结果…"))
         settings.setLastSync(System.currentTimeMillis())
-        cleanupCache(settings.current().cacheLimitMb)
-        val hasDownloads = thumbnailJobs.isNotEmpty() || pinnedJobs.isNotEmpty()
+        val failureReason = listOfNotNull(thumbnailResult.reason, editResult.reason)
+            .distinct()
+            .joinToString("；")
         val finalMessage = when {
-            failedItems > 0 -> "同步完成，$failedItems 张图片下载失败，可再次同步重试"
-            changedItems == 0 && !hasDownloads -> "已是最新"
-            else -> "同步完成"
+            failedItems > 0 && failureReason.isNotBlank() ->
+                "资料已同步，$failedItems 张图片未完成缓存：$failureReason"
+            failedItems > 0 -> "资料已同步，$failedItems 张图片未完成缓存，点击同步可重试"
+            else -> "资料与图片均已同步"
         }
         onProgress(
             SyncProgress(
                 phase = if (failedItems > 0) SyncPhase.Partial else SyncPhase.Completed,
                 message = finalMessage,
-                currentItems = thumbnailResult.completed + pinnedResult.completed,
-                totalItems = thumbnailJobs.size + pinnedJobs.size,
-                downloadedBytes = thumbnailResult.bytes + pinnedResult.bytes,
-                totalBytes = knownTotalBytes(thumbnailJobs + pinnedJobs),
-                fraction = 1f,
+                currentItems = thumbnailResult.completed + editResult.completed,
+                totalItems = thumbnails.size + edits.size,
+                downloadedBytes = thumbnailResult.bytes + editResult.bytes,
+                totalBytes = knownTotalBytes(thumbnails + edits),
+                fraction = if (failedItems == 0) 1f else null,
                 failedItems = failedItems,
             ),
         )
@@ -341,15 +344,44 @@ class SyncRepository(
     }
 
     private suspend fun downloadThumbnails(
-        jobs: List<AssetRecord>,
+        assets: List<AssetRecord>,
         onProgress: (SyncProgress) -> Unit,
     ): DownloadBatchResult {
+        val jobs = pendingAvailableAssets(assets)
         val current = settings.current()
         val credential = secure.credential() ?: throw SyncException("设备凭证已失效，请重新配对")
-        var completedBytes = 0L
-        var completed = 0
+        var completedBytes = cachedBytes(assets)
+        var completed = assets.size - jobs.size
         var failed = 0
-        val totalBytes = knownTotalBytes(jobs)
+        var reason: String? = null
+        val totalBytes = knownTotalBytes(assets)
+        val required = knownTotalBytes(jobs)
+        if (required != null && required + MIN_FREE_BYTES > appContext.filesDir.usableSpace) {
+            reason = "手机空间不足，请释放空间后重试"
+            onProgress(
+                downloadProgress(
+                    SyncPhase.DownloadingThumbnails,
+                    reason,
+                    completed,
+                    assets.size,
+                    completedBytes,
+                    totalBytes,
+                    jobs.size,
+                ),
+            )
+            return DownloadBatchResult(completedBytes, completed, jobs.size, reason)
+        }
+        onProgress(
+            downloadProgress(
+                SyncPhase.DownloadingThumbnails,
+                if (jobs.isEmpty()) "缩略图已全部缓存" else "正在下载缩略图",
+                completed,
+                assets.size,
+                completedBytes,
+                totalBytes,
+                failed,
+            ),
+        )
         for ((index, asset) in jobs.withIndex()) {
             if (cancelRequested) throw SyncException("同步已取消")
             val target = File(thumbnailRoot, "${asset.id}.jpg")
@@ -362,12 +394,15 @@ class SyncRepository(
                         target,
                         asset.sha256,
                     ) { done, _ ->
+                        if (appContext.filesDir.usableSpace <= MIN_FREE_BYTES) {
+                            throw CacheCapacityException("手机空间不足，请释放空间后重试")
+                        }
                         onProgress(
                             downloadProgress(
                                 SyncPhase.DownloadingThumbnails,
-                                "正在下载缩略图 ${index + 1} / ${jobs.size}",
-                                index,
-                                jobs.size,
+                                "正在下载缩略图 ${completed + 1} / ${assets.size}",
+                                completed,
+                                assets.size,
                                 completedBytes + done,
                                 totalBytes,
                                 failed,
@@ -384,6 +419,10 @@ class SyncRepository(
                 )
                 completedBytes += result.byteSize
                 completed++
+            } catch (error: CacheCapacityException) {
+                reason = error.message
+                failed += jobs.size - index
+                break
             } catch (error: ApiException) {
                 if (error.status == 401) {
                     throw SyncException("配对已失效或设备已撤销，请重新配对")
@@ -396,51 +435,102 @@ class SyncRepository(
             onProgress(
                 downloadProgress(
                     SyncPhase.DownloadingThumbnails,
-                    "正在下载缩略图 ${index + 1} / ${jobs.size}",
-                    index + 1,
-                    jobs.size,
+                    "正在下载缩略图 $completed / ${assets.size}",
+                    completed,
+                    assets.size,
                     completedBytes,
                     totalBytes,
                     failed,
                 ),
             )
         }
-        return DownloadBatchResult(completedBytes, completed, failed)
+        return DownloadBatchResult(completedBytes, completed, failed, reason)
     }
 
-    private suspend fun downloadPinnedEditOriginals(
-        jobs: List<AssetRecord>,
+    private suspend fun downloadEditOriginals(
+        assets: List<AssetRecord>,
         onProgress: (SyncProgress) -> Unit,
     ): DownloadBatchResult {
+        val jobs = pendingAvailableAssets(assets)
+        var completedBytes = cachedBytes(assets)
+        var completed = assets.size - jobs.size
+        var failed = 0
+        var reason: String? = null
+        val totalBytes = knownTotalBytes(assets)
         val required = jobs.sumOf { it.byteSize ?: 0L }
-        val free = appContext.filesDir.usableSpace
-        if (required > 0 && required + 256L * 1024 * 1024 > free) {
-            throw SyncException(
-                "手机空间不足：标星调色图需要 ${formatBytes(required)}，请在设置中清理缓存或释放空间",
+        val cacheLimitBytes = settings.current().cacheLimitMb
+            .takeIf { it > 0 }
+            ?.toLong()
+            ?.times(1024 * 1024)
+        val preflightMessage = if (jobs.isEmpty()) {
+            null
+        } else {
+            capacityMessage(
+                cachedBytes = completedBytes,
+                requiredBytes = required,
+                cacheLimitBytes = cacheLimitBytes,
+                usableSpace = appContext.filesDir.usableSpace,
             )
         }
-        var completedBytes = 0L
-        var completed = 0
-        var failed = 0
-        val totalBytes = knownTotalBytes(jobs)
+        preflightMessage?.let { message ->
+            onProgress(
+                downloadProgress(
+                    SyncPhase.DownloadingEdits,
+                    message,
+                    completed,
+                    assets.size,
+                    completedBytes,
+                    totalBytes,
+                    jobs.size,
+                ),
+            )
+            return DownloadBatchResult(completedBytes, completed, jobs.size, message)
+        }
+        onProgress(
+            downloadProgress(
+                SyncPhase.DownloadingEdits,
+                if (jobs.isEmpty()) "调色图已全部缓存" else "正在下载调色图",
+                completed,
+                assets.size,
+                completedBytes,
+                totalBytes,
+                failed,
+            ),
+        )
         for ((index, asset) in jobs.withIndex()) {
             if (cancelRequested) throw SyncException("同步已取消")
             try {
-                val file = downloadEditOriginalInternal(asset) { done, _ ->
-                    onProgress(
-                        downloadProgress(
-                            SyncPhase.DownloadingPinned,
-                            "正在下载标星调色图 ${index + 1} / ${jobs.size}",
-                            index,
-                            jobs.size,
-                            completedBytes + done,
-                            totalBytes,
-                            failed,
-                        ),
-                    )
+                val file = assetLocks.getOrPut(asset.id) { Mutex() }.withLock {
+                    val currentAsset = dao.assetById(asset.id) ?: asset
+                    downloadEditOriginalInternal(currentAsset) { done, _ ->
+                        if (appContext.filesDir.usableSpace <= MIN_FREE_BYTES) {
+                            throw CacheCapacityException("手机剩余空间不足，请释放空间后重试")
+                        }
+                        capacityMessage(
+                            cachedBytes = completedBytes,
+                            requiredBytes = done,
+                            cacheLimitBytes = cacheLimitBytes,
+                            usableSpace = Long.MAX_VALUE,
+                        )?.let { throw CacheCapacityException(it) }
+                        onProgress(
+                            downloadProgress(
+                                SyncPhase.DownloadingEdits,
+                                "正在下载调色图 ${completed + 1} / ${assets.size}",
+                                completed,
+                                assets.size,
+                                completedBytes + done,
+                                totalBytes,
+                                failed,
+                            ),
+                        )
+                    }
                 }
                 completedBytes += file.length()
                 completed++
+            } catch (error: CacheCapacityException) {
+                reason = error.message
+                failed += jobs.size - index
+                break
             } catch (error: ApiException) {
                 if (error.status == 401) {
                     throw SyncException("配对已失效或设备已撤销，请重新配对")
@@ -451,17 +541,17 @@ class SyncRepository(
             }
             onProgress(
                 downloadProgress(
-                    SyncPhase.DownloadingPinned,
-                    "正在下载标星调色图 ${index + 1} / ${jobs.size}",
-                    index + 1,
-                    jobs.size,
+                    SyncPhase.DownloadingEdits,
+                    "正在下载调色图 $completed / ${assets.size}",
+                    completed,
+                    assets.size,
                     completedBytes,
                     totalBytes,
                     failed,
                 ),
             )
         }
-        return DownloadBatchResult(completedBytes, completed, failed)
+        return DownloadBatchResult(completedBytes, completed, failed, reason)
     }
 
     suspend fun downloadEditOriginal(
@@ -469,9 +559,31 @@ class SyncRepository(
         onProgress: (Long, Long) -> Unit = { _, _ -> },
     ): File = assetLocks.getOrPut(assetId) { Mutex() }.withLock {
         val asset = dao.assetById(assetId) ?: throw SyncException("调色图不存在")
-        val file = downloadEditOriginalInternal(asset, onProgress)
-        cleanupCache(settings.current().cacheLimitMb)
-        file
+        val cachedBytes = dao.cachedViewBytes()
+        val cacheLimitBytes = settings.current().cacheLimitMb
+            .takeIf { it > 0 }
+            ?.toLong()
+            ?.times(1024 * 1024)
+        if (asset.localPath == null) {
+            capacityMessage(
+                cachedBytes = cachedBytes,
+                requiredBytes = asset.byteSize ?: 0L,
+                cacheLimitBytes = cacheLimitBytes,
+                usableSpace = appContext.filesDir.usableSpace,
+            )?.let { throw SyncException(it) }
+        }
+        downloadEditOriginalInternal(asset) { done, total ->
+            if (appContext.filesDir.usableSpace <= MIN_FREE_BYTES) {
+                throw SyncException("手机剩余空间不足，请释放空间后重试")
+            }
+            capacityMessage(
+                cachedBytes = cachedBytes,
+                requiredBytes = done,
+                cacheLimitBytes = cacheLimitBytes,
+                usableSpace = Long.MAX_VALUE,
+            )?.let { throw SyncException(it) }
+            onProgress(done, total)
+        }
     }
 
     private suspend fun downloadEditOriginalInternal(
@@ -521,26 +633,17 @@ class SyncRepository(
         if (asset.lastAccess == 0L) dao.markAccessed(asset.id, System.currentTimeMillis())
     }
 
-    suspend fun cachedBytes(): Long = dao.cachedViewBytes()
-
-    suspend fun cachedPinnedBytes(): Long = dao.cachedPinnedBytes()
+    suspend fun cachedEditBytes(): Long = dao.cachedViewBytes()
 
     suspend fun setWifiOnly(value: Boolean) = settings.setWifiOnly(value)
 
-    suspend fun setCacheLimitMb(value: Int) {
+    suspend fun setCacheLimitMb(value: Int) = mutex.withLock {
         settings.setCacheLimitMb(value)
         cleanupCache(value)
     }
 
-    suspend fun clearViewCache() = mutex.withLock {
+    suspend fun clearEditCache() = mutex.withLock {
         for (asset in dao.cachedEditOriginals()) {
-            asset.localPath?.let { runCatching { File(it).delete() } }
-            dao.clearLocalPath(asset.id)
-        }
-    }
-
-    suspend fun clearPinnedEditOriginals() = mutex.withLock {
-        for (asset in dao.pinnedEditOriginals()) {
             asset.localPath?.let { runCatching { File(it).delete() } }
             dao.clearLocalPath(asset.id)
         }
@@ -743,11 +846,6 @@ class SyncRepository(
             capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)
     }
 
-    private fun formatBytes(bytes: Long): String {
-        val mb = bytes / 1024.0 / 1024.0
-        return if (mb < 1024) "%.1f MB".format(mb) else "%.2f GB".format(mb / 1024.0)
-    }
-
     private fun deleteTree(file: File) {
         if (!file.exists()) return
         file.walkBottomUp().forEach { runCatching { it.delete() } }
@@ -759,7 +857,9 @@ class SyncRepository(
 }
 
 internal fun inspectCachedAsset(asset: AssetRecord): Pair<String, Long>? {
-    val file = asset.localPath?.let(::File)?.takeIf { it.isFile } ?: return null
+    val path = asset.localPath ?: return null
+    if (path.endsWith(".part", ignoreCase = true)) return null
+    val file = File(path).takeIf { it.isFile } ?: return null
     val size = file.length()
     val expectedSize = asset.localByteSize ?: asset.byteSize
     if (expectedSize != null && expectedSize != size) return null
@@ -787,12 +887,33 @@ internal fun editCacheStatus(hasEdit: Boolean, asset: AssetRecord?): EditCacheSt
     if (path.endsWith(".part", ignoreCase = true)) return EditCacheStatus.NotCached
     val file = File(path)
     val expectedSize = asset.localByteSize ?: return EditCacheStatus.NotCached
-    val hasVerifiedMetadata = !asset.localSha256.isNullOrBlank()
-    return if (hasVerifiedMetadata && file.isFile && file.length() == expectedSize) {
+    val localHash = asset.localSha256 ?: return EditCacheStatus.NotCached
+    val matchesCurrentVersion = asset.sha256.isNullOrBlank() || asset.sha256.equals(localHash, ignoreCase = true)
+    return if (matchesCurrentVersion && file.isFile && file.length() == expectedSize) {
         EditCacheStatus.Cached
     } else {
         EditCacheStatus.NotCached
     }
+}
+
+internal fun pendingAvailableAssets(assets: List<AssetRecord>): List<AssetRecord> =
+    assets.filter { it.available && it.localPath == null }
+
+private fun cachedBytes(assets: List<AssetRecord>): Long = assets
+    .filter { it.localPath != null }
+    .sumOf { it.localByteSize ?: it.byteSize ?: 0L }
+
+internal fun capacityMessage(
+    cachedBytes: Long,
+    requiredBytes: Long,
+    cacheLimitBytes: Long?,
+    usableSpace: Long,
+): String? = when {
+    cacheLimitBytes != null && cachedBytes + requiredBytes > cacheLimitBytes ->
+        "调色图缓存限制不足，请在设置中提高限制或清理缓存后重试"
+    requiredBytes + MIN_FREE_BYTES > usableSpace ->
+        "手机剩余空间不足，请释放空间后重试"
+    else -> null
 }
 
 internal fun syncFraction(

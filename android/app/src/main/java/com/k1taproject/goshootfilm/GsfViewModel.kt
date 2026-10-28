@@ -208,15 +208,10 @@ class GsfViewModel(application: Application) : AndroidViewModel(application) {
         repository.cancelSync()
     }
 
-    fun clearViewCache() {
+    fun clearEditCache(onComplete: () -> Unit = {}) {
         viewModelScope.launch {
-            repository.clearViewCache()
-        }
-    }
-
-    fun clearPinnedCache() {
-        viewModelScope.launch {
-            repository.clearPinnedEditOriginals()
+            repository.clearEditCache()
+            onComplete()
         }
     }
 
@@ -261,9 +256,7 @@ class GsfViewModel(application: Application) : AndroidViewModel(application) {
 
     suspend fun entity(type: String, syncId: String) = repository.entity(type, syncId)
 
-    suspend fun cachedBytes() = repository.cachedBytes()
-
-    suspend fun cachedPinnedBytes() = repository.cachedPinnedBytes()
+    suspend fun cachedEditBytes() = repository.cachedEditBytes()
 
     fun consumePairError() {
         if (_pairState.value is PairState.Failed) _pairState.value = PairState.Idle

@@ -47,7 +47,7 @@ import com.k1taproject.goshootfilm.ui.components.EmptyState
 import com.k1taproject.goshootfilm.ui.components.GsfCard
 import com.k1taproject.goshootfilm.ui.components.ScreenHeader
 import com.k1taproject.goshootfilm.ui.components.SectionLabel
-import com.k1taproject.goshootfilm.ui.components.SyncProgressBar
+import com.k1taproject.goshootfilm.ui.components.SyncProgressSummary
 import com.k1taproject.goshootfilm.ui.components.ThumbnailFor
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -105,7 +105,8 @@ fun HomeScreen(
                             text = when (val state = syncState) {
                                 is SyncState.Running -> syncPhaseLabel(state.progress.phase)
                                 is SyncState.Done -> state.message
-                                is SyncState.Failed -> "同步失败"
+                                is SyncState.Failed ->
+                                    if (state.message == "同步已取消") "同步已取消" else "同步失败"
                                 SyncState.Idle -> connectionLabel(connectionState)
                             },
                             color = GsfText,
@@ -137,15 +138,7 @@ fun HomeScreen(
                 if (syncState is SyncState.Running) {
                     val running = syncState as SyncState.Running
                     Spacer(Modifier.height(10.dp))
-                    SyncProgressBar(running.progress.fraction)
-                    if (running.progress.totalItems > 0) {
-                        Text(
-                            "${running.progress.currentItems} / ${running.progress.totalItems}" +
-                                if (running.progress.failedItems > 0) " · 失败 ${running.progress.failedItems}" else "",
-                            color = GsfMuted,
-                            style = MaterialTheme.typography.labelSmall,
-                        )
-                    }
+                    SyncProgressSummary(running.progress)
                 }
                 if (settings.lastSync > 0) {
                     Spacer(Modifier.height(10.dp))
@@ -328,8 +321,8 @@ private fun syncPhaseLabel(phase: SyncPhase): String = when (phase) {
     SyncPhase.Updating -> "正在更新档案"
     SyncPhase.VerifyingCache -> "正在核对本地缓存"
     SyncPhase.DownloadingThumbnails -> "正在下载缩略图"
-    SyncPhase.DownloadingPinned -> "正在下载标星调色图"
-    SyncPhase.Cleaning -> "正在整理缓存"
+    SyncPhase.DownloadingEdits -> "正在下载调色图"
+    SyncPhase.Cleaning -> "正在确认同步结果"
     SyncPhase.Completed -> "同步完成"
     SyncPhase.Partial -> "同步部分完成"
 }
