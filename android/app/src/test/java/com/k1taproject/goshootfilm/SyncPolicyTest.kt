@@ -1,6 +1,8 @@
 package com.k1taproject.goshootfilm
 
 import com.k1taproject.goshootfilm.data.AssetRecord
+import com.k1taproject.goshootfilm.data.EditCacheStatus
+import com.k1taproject.goshootfilm.data.editCacheStatus
 import com.k1taproject.goshootfilm.data.inspectCachedAsset
 import com.k1taproject.goshootfilm.data.syncFraction
 import org.junit.Assert.assertEquals
@@ -42,6 +44,45 @@ class SyncPolicyTest {
         assertTrue((syncFraction(5, 1, 2000, 1000) ?: 0f) <= 1f)
     }
 
+    @Test
+    fun editCacheStatusUsesMetadataAndLocalFileWithoutHashing() {
+        val file = File.createTempFile("gsfmobile-edit", ".jpg")
+        try {
+            file.writeText("cached edit image")
+            val asset = editAsset(file)
+
+            assertEquals(EditCacheStatus.NoEdit, editCacheStatus(false, asset))
+            assertEquals(EditCacheStatus.Cached, editCacheStatus(true, asset))
+            assertEquals(EditCacheStatus.NotCached, editCacheStatus(true, null))
+
+            file.delete()
+            assertEquals(EditCacheStatus.NotCached, editCacheStatus(true, asset))
+        } finally {
+            file.delete()
+        }
+    }
+
+    @Test
+    fun partialOrUnverifiedEditFileIsNotReportedAsCached() {
+        val partial = File.createTempFile("gsfmobile-edit", ".part")
+        val unverified = File.createTempFile("gsfmobile-edit", ".jpg")
+        try {
+            partial.writeText("unfinished")
+            unverified.writeText("unverified")
+            assertEquals(
+                EditCacheStatus.NotCached,
+                editCacheStatus(true, editAsset(partial)),
+            )
+            assertEquals(
+                EditCacheStatus.NotCached,
+                editCacheStatus(true, editAsset(unverified, localSha256 = null)),
+            )
+        } finally {
+            partial.delete()
+            unverified.delete()
+        }
+    }
+
     private fun asset(file: File, hash: String, size: Long) = AssetRecord(
         id = "asset-1",
         entityType = "film_photo",
@@ -55,6 +96,22 @@ class SyncPolicyTest {
         localPath = file.absolutePath,
         localSha256 = hash,
         localByteSize = size,
+        lastAccess = 0,
+    )
+
+    private fun editAsset(file: File, localSha256: String? = "verified") = AssetRecord(
+        id = "edit-1",
+        entityType = "film_photo",
+        entitySyncId = "photo-1",
+        assetType = "edit_original",
+        version = "edit",
+        mimeType = "image/jpeg",
+        byteSize = file.length(),
+        sha256 = "server-hash",
+        available = true,
+        localPath = file.absolutePath,
+        localSha256 = localSha256,
+        localByteSize = file.length(),
         lastAccess = 0,
     )
 }

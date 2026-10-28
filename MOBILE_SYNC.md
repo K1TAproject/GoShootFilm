@@ -208,7 +208,7 @@ npm run tauri dev
 - `cargo test --manifest-path src-tauri/Cargo.toml`：42 个单元测试 + 1 个 HTTP 集成测试 + 3 个配对集成测试；覆盖服务重建后的旧凭证鉴权、资源按需生成和源文件变化后的失效重建
 - `:app:testDebugUnitTest`：10 个 Android 单元测试通过；覆盖原子下载、缓存哈希/大小核对和未知字节数时的项目进度
 - `:app:assembleDebug` 通过
-- 当前源码版本为 `0.3.8`（Android `versionCode 30008`）；发布签名与真机安装仍需在发布候选构建后复核。
+- 当前源码版本为 `0.3.9`（Android `versionCode 30009`）；发布签名与真机安装仍需在发布候选构建后复核。
 
 未完成：
 

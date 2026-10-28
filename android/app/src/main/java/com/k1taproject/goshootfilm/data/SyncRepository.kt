@@ -7,6 +7,11 @@ import androidx.room.withTransaction
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -32,6 +37,13 @@ enum class SyncPhase {
     Cleaning,
     Completed,
     Partial,
+}
+
+enum class EditCacheStatus {
+    Checking,
+    Cached,
+    NotCached,
+    NoEdit,
 }
 
 data class SyncProgress(
@@ -93,6 +105,15 @@ class SyncRepository(
 
     suspend fun editOriginal(type: String, syncId: String): AssetRecord? =
         dao.asset(type, syncId, "edit", "edit_original")
+
+    fun editCacheStatus(type: String, syncId: String, hasEdit: Boolean): Flow<EditCacheStatus> {
+        if (!hasEdit) return flowOf(EditCacheStatus.NoEdit)
+        return dao.observeAsset(type, syncId, "edit", "edit_original")
+            .map { asset -> editCacheStatus(hasEdit = true, asset = asset) }
+            .onStart { emit(EditCacheStatus.Checking) }
+            .distinctUntilChanged()
+            .flowOn(Dispatchers.IO)
+    }
 
     suspend fun localEditFile(assetId: String): File? {
         val asset = dao.assetById(assetId) ?: return null
@@ -755,6 +776,23 @@ internal fun inspectCachedAsset(asset: AssetRecord): Pair<String, Long>? {
     val expectedHash = asset.localSha256 ?: asset.sha256
     if (expectedHash != null && !expectedHash.equals(hash, ignoreCase = true)) return null
     return hash to size
+}
+
+internal fun editCacheStatus(hasEdit: Boolean, asset: AssetRecord?): EditCacheStatus {
+    if (!hasEdit) return EditCacheStatus.NoEdit
+    if (asset == null || asset.assetType != "edit_original" || asset.version != "edit") {
+        return EditCacheStatus.NotCached
+    }
+    val path = asset.localPath ?: return EditCacheStatus.NotCached
+    if (path.endsWith(".part", ignoreCase = true)) return EditCacheStatus.NotCached
+    val file = File(path)
+    val expectedSize = asset.localByteSize ?: return EditCacheStatus.NotCached
+    val hasVerifiedMetadata = !asset.localSha256.isNullOrBlank()
+    return if (hasVerifiedMetadata && file.isFile && file.length() == expectedSize) {
+        EditCacheStatus.Cached
+    } else {
+        EditCacheStatus.NotCached
+    }
 }
 
 internal fun syncFraction(

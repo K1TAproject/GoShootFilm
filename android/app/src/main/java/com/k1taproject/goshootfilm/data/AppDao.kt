@@ -34,6 +34,9 @@ interface AppDao {
     @Query("SELECT * FROM assets WHERE entityType = :type AND entitySyncId = :syncId AND version = :version AND assetType = :assetType LIMIT 1")
     suspend fun asset(type: String, syncId: String, version: String, assetType: String): AssetRecord?
 
+    @Query("SELECT * FROM assets WHERE entityType = :type AND entitySyncId = :syncId AND version = :version AND assetType = :assetType LIMIT 1")
+    fun observeAsset(type: String, syncId: String, version: String, assetType: String): Flow<AssetRecord?>
+
     @Query("SELECT * FROM assets WHERE entityType = :type AND entitySyncId = :syncId AND assetType = 'thumbnail' AND (available = 1 OR localPath IS NOT NULL) ORDER BY CASE version WHEN 'edit' THEN 0 WHEN 'lab' THEN 1 WHEN 'raw' THEN 2 ELSE 3 END LIMIT 1")
     fun observeThumbnail(type: String, syncId: String): Flow<AssetRecord?>
 

@@ -1,7 +1,10 @@
 package com.k1taproject.goshootfilm.ui.screens
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -28,19 +31,28 @@ import androidx.compose.runtime.setValue
 import android.widget.Toast
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.k1taproject.goshootfilm.GsfViewModel
+import com.k1taproject.goshootfilm.data.EditCacheStatus
 import com.k1taproject.goshootfilm.data.EntityRecord
+import com.k1taproject.goshootfilm.data.bool
 import com.k1taproject.goshootfilm.data.int
 import com.k1taproject.goshootfilm.data.obj
 import com.k1taproject.goshootfilm.data.optionalText
 import com.k1taproject.goshootfilm.data.text
+import com.k1taproject.goshootfilm.ui.GsfBorder
 import com.k1taproject.goshootfilm.ui.GsfCyan
+import com.k1taproject.goshootfilm.ui.GsfDanger
 import com.k1taproject.goshootfilm.ui.GsfMuted
+import com.k1taproject.goshootfilm.ui.GsfPurple
 import com.k1taproject.goshootfilm.ui.GsfText
 import com.k1taproject.goshootfilm.ui.components.EmptyState
 import com.k1taproject.goshootfilm.ui.components.GsfCard
@@ -58,7 +70,6 @@ fun CollectionDetailScreen(
     onBack: () -> Unit,
 ) {
     var parent by remember { mutableStateOf<EntityRecord?>(null) }
-    var photos by remember { mutableStateOf<List<EntityRecord>>(emptyList()) }
     var viewerFile by remember { mutableStateOf<File?>(null) }
     var downloadingPhotoId by remember { mutableStateOf<String?>(null) }
     var downloadedBytes by remember { mutableStateOf(0L) }
@@ -66,18 +77,23 @@ fun CollectionDetailScreen(
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val settings by vm.settings.collectAsStateWithLifecycle()
-
-    LaunchedEffect(kind, syncId) {
-        parent = vm.entity(kind, syncId)
-        photos = if (kind == "roll") {
-            vm.entities("film_photo")
+    val photoType = if (kind == "roll") "film_photo" else "digital_photo"
+    val allPhotos by remember(photoType) { vm.entitiesFlow(photoType) }
+        .collectAsStateWithLifecycle(initialValue = emptyList())
+    val photos = remember(allPhotos, kind, syncId) {
+        if (kind == "roll") {
+            allPhotos
                 .filter { it.obj().text("rollSyncId") == syncId }
                 .sortedBy { it.obj().int("frameNumber") ?: 0 }
         } else {
-            vm.entities("digital_photo")
+            allPhotos
                 .filter { it.obj().text("albumSyncId") == syncId }
                 .sortedBy { it.obj().text("pairingKey") }
         }
+    }
+
+    LaunchedEffect(kind, syncId) {
+        parent = vm.entity(kind, syncId)
     }
 
     Column(
@@ -123,6 +139,8 @@ fun CollectionDetailScreen(
             color = GsfMuted,
             style = MaterialTheme.typography.labelSmall,
         )
+        Spacer(Modifier.height(6.dp))
+        PhotoCacheLegend()
         Spacer(Modifier.height(8.dp))
         if (downloadingPhotoId != null) {
             Text("正在下载调色图…", color = GsfCyan, style = MaterialTheme.typography.labelSmall)
@@ -148,11 +166,13 @@ fun CollectionDetailScreen(
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 items(photos, key = { it.syncId }) { photo ->
-                    val photoType = photo.entityType
-                    Column(
-                        modifier = Modifier.clickable(enabled = downloadingPhotoId == null) {
+                    PhotoGridCard(
+                        vm = vm,
+                        photo = photo,
+                        enabled = downloadingPhotoId == null,
+                        onClick = {
                             scope.launch {
-                                val asset = vm.editOriginal(photoType, photo.syncId)
+                                val asset = vm.editOriginal(photo.entityType, photo.syncId)
                                 if (asset == null || !asset.available) {
                                     Toast.makeText(
                                         context,
@@ -191,28 +211,7 @@ fun CollectionDetailScreen(
                                 }
                             }
                         },
-                    ) {
-                        ThumbnailFor(
-                            vm = vm,
-                            type = photoType,
-                            syncId = photo.syncId,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .aspectRatio(1f),
-                        )
-                        Text(
-                            text = if (photoType == "film_photo") {
-                                photo.obj().text("displayName").ifBlank { "Frame" }
-                            } else {
-                                photo.obj().text("pairingKey").ifBlank { "Photo" }
-                            },
-                            color = GsfMuted,
-                            style = MaterialTheme.typography.labelSmall,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.padding(top = 3.dp),
-                        )
-                    }
+                    )
                 }
             }
         }
@@ -222,6 +221,104 @@ fun CollectionDetailScreen(
         PhotoViewerDialog(
             file = file,
             onDismiss = { viewerFile = null },
+        )
+    }
+}
+
+@Composable
+private fun PhotoCacheLegend() {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        CacheLegendItem("已缓存调色图", GsfCyan)
+        CacheLegendItem("调色图未缓存", GsfDanger)
+        CacheLegendItem("无调色图", GsfPurple)
+    }
+}
+
+@Composable
+private fun CacheLegendItem(label: String, color: Color) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier
+                .height(8.dp)
+                .aspectRatio(1f)
+                .clip(RoundedCornerShape(2.dp))
+                .background(color),
+        )
+        Text(
+            text = label,
+            color = GsfMuted,
+            style = MaterialTheme.typography.labelSmall,
+        )
+    }
+}
+
+@Composable
+private fun PhotoGridCard(
+    vm: GsfViewModel,
+    photo: EntityRecord,
+    enabled: Boolean,
+    onClick: () -> Unit,
+) {
+    val data = photo.obj()
+    val hasEdit = data.bool("editAvailable")
+    val status by remember(photo.entityType, photo.syncId, hasEdit) {
+        vm.editCacheStatus(photo.entityType, photo.syncId, hasEdit)
+    }.collectAsStateWithLifecycle(initialValue = EditCacheStatus.Checking)
+    val label = if (photo.entityType == "film_photo") {
+        data.text("displayName").ifBlank { "Frame" }
+    } else {
+        data.text("pairingKey").ifBlank { "Photo" }
+    }
+    val borderColor = when (status) {
+        EditCacheStatus.Cached -> GsfCyan
+        EditCacheStatus.NotCached -> GsfDanger
+        EditCacheStatus.NoEdit -> GsfPurple
+        EditCacheStatus.Checking -> GsfBorder
+    }
+    val highlightColor = when (status) {
+        EditCacheStatus.Cached -> GsfCyan.copy(alpha = 0.06f)
+        EditCacheStatus.NotCached -> GsfDanger.copy(alpha = 0.06f)
+        else -> Color.Transparent
+    }
+    val statusDescription = when (status) {
+        EditCacheStatus.Cached -> "已缓存调色图"
+        EditCacheStatus.NotCached -> "调色图未缓存"
+        EditCacheStatus.NoEdit -> "无调色图"
+        EditCacheStatus.Checking -> "正在确认调色图缓存状态"
+    }
+    val shape = RoundedCornerShape(8.dp)
+
+    Column(
+        modifier = Modifier
+            .clip(shape)
+            .background(highlightColor)
+            .border(1.dp, borderColor, shape)
+            .semantics(mergeDescendants = true) {
+                contentDescription = "$label，$statusDescription"
+            }
+            .clickable(enabled = enabled, onClick = onClick),
+    ) {
+        ThumbnailFor(
+            vm = vm,
+            type = photo.entityType,
+            syncId = photo.syncId,
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(1f),
+        )
+        Text(
+            text = label,
+            color = GsfMuted,
+            style = MaterialTheme.typography.labelSmall,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(top = 3.dp),
         )
     }
 }

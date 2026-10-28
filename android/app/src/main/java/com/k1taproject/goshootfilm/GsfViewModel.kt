@@ -242,6 +242,11 @@ class GsfViewModel(application: Application) : AndroidViewModel(application) {
     fun thumbnail(type: String, syncId: String) =
         repository.thumbnail(type, syncId)
 
+    fun entitiesFlow(type: String) = repository.entities(type)
+
+    fun editCacheStatus(type: String, syncId: String, hasEdit: Boolean) =
+        repository.editCacheStatus(type, syncId, hasEdit)
+
     suspend fun editOriginal(type: String, syncId: String): AssetRecord? =
         repository.editOriginal(type, syncId)
 
